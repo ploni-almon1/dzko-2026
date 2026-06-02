@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking } from 'react-native';
+// PŘIDÁNO: Image
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 
-// --- GENERÁTOR MAPY (Nyní s podporou ikon FontAwesome uvnitř kapky) ---
+// --- GENERÁTOR MAPY ---
 const generateMapHtml = (focusLat, focusLng, focusTitle) => `
 <!DOCTYPE html>
 <html>
@@ -21,7 +22,6 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
         
         .dzko-pin-wrapper { background: transparent; border: none; }
         
-        /* Kapkovitý špendlík */
         .dzko-pin {
             width: 28px; height: 28px;
             background-color: #8B5CF6; border: 2px solid white;
@@ -30,7 +30,6 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             display: flex; align-items: center; justify-content: center;
         }
         
-        /* Ikonka uvnitř špendlíku - otočíme ji zpět, aby nebyla nakřivo */
         .dzko-pin i {
             transform: rotate(45deg);
             color: white; font-size: 11px;
@@ -59,7 +58,6 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             attribution: '&copy; <a href="https://www.seznam.cz" target="_blank">Seznam.cz, a.s.</a>'
         }).addTo(map);
 
-        // Funkce pro tvorbu špendlíku s ikonou (výchozí je ikona budovy 'fa-building')
         function pridejMisto(lat, lng, nazev, iconName) {
             var currentIcon = iconName || 'fa-building';
             var dzkoIcon = L.divIcon({
@@ -75,12 +73,10 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             }
         }
 
-        // --- FESTIVALOVÉ LOKACE S IKONKAMI ---
         pridejMisto(49.5980481, 17.2610522, 'Mozarteum', 'fa-landmark');
         pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií', 'fa-graduation-cap');
         pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc', 'fa-synagogue');
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
-        // Pro Central můžeme dát třeba ikonu lístku nebo kina 'fa-ticket'
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-ticket');
     </script>
 </body>
@@ -240,19 +236,14 @@ export default function App() {
   if (!fontsLoaded) return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center'}} />;
 
   return (
-    // HLAVNÍ STRUKTURA: Vyladěná barva pozadí a prolnutí status baru
     <View style={{ flex: 1, backgroundColor: '#8B5CF6' }}>
-      
       <StatusBar style="light" backgroundColor="#8B5CF6" translucent={false} />
-      
       <SafeAreaView style={styles.mainContainer}>
         
-        {/* HLAVIČKA - Zde se opravila ta drobná mezera/čárka */}
         <View style={styles.header}>
           <Text style={styles.headerText}>DŽKO</Text>
         </View>
 
-        {/* ŠEDÉ TĚLO APLIKACE */}
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           {aktivniTab === 'Mapa' ? (
             <View style={styles.mapTabContainer}>
@@ -310,8 +301,12 @@ export default function App() {
                   </View>
 
                   <View style={styles.socialContainer}>
+                    {/* ZDE SE NAČÍTÁ TVŮJ VLASTNÍ OBRÁZEK Z ASSETS */}
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz')}>
-                      <Text style={styles.socialCircleText}>M</Text>
+                      <Image 
+                        source={require('./assets/muo-icon.png')} 
+                        style={styles.customMuoIcon} 
+                      />
                     </TouchableOpacity>
                     
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://facebook.com')}>
@@ -327,7 +322,6 @@ export default function App() {
             </ScrollView>
           )}
 
-          {/* SPODNÍ NAVIGACE */}
           <View style={styles.bottomNav}>
             <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Program')}>
               <Ionicons name={aktivniTab === 'Program' ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' ? '#8B5CF6' : 'black'} />
@@ -364,8 +358,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, 
     paddingBottom: 15,
     paddingTop: Platform.OS === 'ios' ? 10 : 20,
-    borderTopWidth: 0, // Oprava mezery pod stavovým řádkem
-    marginTop: -1 // Umělé stlačení pro zamezení čárky
+    borderTopWidth: 0,
+    marginTop: -1 
   },
   headerText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20 },
   content: { flex: 1, paddingHorizontal: 15 },
@@ -390,8 +384,6 @@ const styles = StyleSheet.create({
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 12, lineHeight: 16 },
   heartIconBtn: { paddingBottom: 2, paddingLeft: 10 },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#6B7280', textAlign: 'center', marginTop: 30, lineHeight: 22 },
-  
-  /* Sekce Další */
   dalsiContainer: { paddingTop: 20, paddingBottom: 40 },
   dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#000', marginBottom: 30, lineHeight: 34 },
   menuList: { marginBottom: 30 },
@@ -404,7 +396,9 @@ const styles = StyleSheet.create({
   contentInlineLink: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563' },
   socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
-  socialCircleText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20, fontWeight: 'bold', transform: [{ translateY: -1 }] },
+  
+  /* PŘIDÁNO: Styl pro tvou vlastní nahranou ikonu, aby se dokonale zakulatila na 36x36 */
+  customMuoIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover' },
   
   bottomNav: { flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: 'white', borderTopWidth: 1, borderColor: '#E5E7EB', height: Platform.OS === 'web' ? 60 : 'auto', alignItems: Platform.OS === 'web' ? 'center' : 'stretch', paddingTop: Platform.OS === 'web' ? 0 : 10, paddingBottom: Platform.OS === 'web' ? 0 : (Platform.OS === 'android' ? 50 : 40) },
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
