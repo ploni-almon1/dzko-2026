@@ -2,8 +2,12 @@
   "cleanUrls": true,
   "routes": [
     {
-      "src": "/pwa-icon.png",
-      "dest": "/public/pwa-icon.png"
+      "src": "/pwa-icon-192.png",
+      "dest": "/public/pwa-icon-192.png"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "dest": "/public/pwa-icon-512.png"
     },
     {
       "src": "/manifest.json",
