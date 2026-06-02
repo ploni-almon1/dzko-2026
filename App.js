@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, Act
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StatusBar } from 'expo-status-bar'; // PŘIDÁNO: Pro obarvení oblasti s hodinami a baterií
 
 // --- GENERÁTOR MAPY ---
 const generateMapHtml = (focusLat, focusLng, focusTitle) => `
@@ -151,7 +152,6 @@ export default function App() {
     }
   };
 
-  // --- VYKRESLENÍ POLOŽKY S TEXTEM NEBO ODKAZY ---
   const vykresliPolozkuMenu = (title, type, content) => (
     <View key={title} style={styles.menuItemWrapper}>
       <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress(title, type, content)} activeOpacity={0.6}>
@@ -166,7 +166,7 @@ export default function App() {
           {typeof content === 'string' ? (
             <Text style={styles.menuExpandedText}>{content}</Text>
           ) : (
-            // Pokud je obsahem pole (jako u Pořadatelů), vykreslíme klikací seznam
+            // Změněno: Odkazy již nejsou podtržené ani fialové
             content.map((linkObj, index) => (
               <TouchableOpacity key={index} onPress={() => Linking.openURL(linkObj.url)} style={styles.contentLinkRow} activeOpacity={0.6}>
                 <Text style={styles.contentInlineLink}>{linkObj.label}</Text>
@@ -196,12 +196,8 @@ export default function App() {
             </>
           )}
         </View>
-        
         <Text style={styles.cardTitle}>{item.nazev}</Text>
-        {item.host !== '' && (
-          <Text style={styles.cardHost}>host: {item.host}</Text>
-        )}
-        
+        {item.host !== '' && <Text style={styles.cardHost}>host: {item.host}</Text>}
         <View style={styles.cardBottomRow}>
           <View style={styles.tagsContainer}>
             {item.tag.map((t, index) => (
@@ -221,117 +217,124 @@ export default function App() {
   if (!fontsLoaded) return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center'}} />;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>DŽKO 26</Text>
-      </View>
+    <View style={{ flex: 1 }}>
+      {/* Fialový status bar pro ikony baterie a signálu (bílé ikonky na fialové) */}
+      <StatusBar style="light" backgroundColor="#8B5CF6" />
+      
+      {/* Horní bezpečnostní zóna - Fialová! */}
+      <SafeAreaView style={{ flex: 0, backgroundColor: '#8B5CF6' }} />
 
-      {aktivniTab === 'Mapa' ? (
-        <View style={styles.mapTabContainer}>
-          <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
-          {Platform.OS === 'web' ? (
-            <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title)} style={styles.webMap} frameBorder="0" />
-          ) : (
-            <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
-          )}
-        </View>
-      ) : (
-        <ScrollView style={styles.content}>
-          {aktivniTab === 'Program' && (
-            <>
-              <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7}>
-                <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
-              </TouchableOpacity>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
-                {dny.map((den, index) => (
-                  <TouchableOpacity key={index} style={[styles.dayPill, (vybranyDen === den && !vybranyTag) && styles.dayPillActive]}
-                    onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
-                    <Text style={[styles.dayText, (vybranyDen === den && !vybranyTag) && styles.dayTextActive]}>{den}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              {zobrazenePrednasky.length > 0 ? zobrazenePrednasky.map(vykresliKartu) : <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>}
-            </>
-          )}
-          
-          {aktivniTab === 'Oblíbené' && (
-            <>
-              <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
-              {oblibeneZobrazeni.length > 0 ? oblibeneZobrazeni.map(vykresliKartu) : <Text style={styles.emptyText}>Zatím si sem můžete přidat akce kliknutím na srdíčko.</Text>}
-            </>
-          )}
-          
-          {aktivniTab === 'Další' && (
-            <View style={styles.dalsiContainer}>
-              <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
-              
-              <View style={styles.menuList}>
-                {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.')}
-                
-                {vykresliPolozkuMenu('Archiv', 'link', 'https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}
-                {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
-                {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
-                
-                {vykresliPolozkuMenu('Pořadatelé', 'expand', [
-                  { label: 'Muzeum umění Olomouc', url: 'https://muo.cz/' },
-                  { label: 'Židovská obec Olomouc', url: 'https://kehila-olomouc.cz/rs/' },
-                  { label: 'Centrum judaistických studií', url: 'https://judaistika.upol.cz/' }
-                ])}
-                
-                {vykresliPolozkuMenu('Kontakt', 'expand', 'Produkce festivalu\nAlexandr Jeništa\njenista@muo.cz\n+420 770 147 527\n\nPokladna MUO | CENTRAL\n+420 585 514 241\npokladna@muo.cz\nút–ne 10-18 hodin\n\nMuzeum umění Olomouc\nDenisova 47, 771 11 Olomouc\n+420 585 514 111\ninfo@muo.cz')}
-              </View>
-
-              <View style={styles.socialContainer}>
-                {/* Nová, vyčištěná ikona "M" */}
-                <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz')}>
-                  <Text style={styles.socialCircleText}>M</Text>
-                </TouchableOpacity>
-                
-                {/* Opravený Facebook - Čisté f logo v černém kruhu */}
-                <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://facebook.com')}>
-                  <Ionicons name="logo-facebook" size={22} color="white" />
-                </TouchableOpacity>
-                
-                {/* Instagram */}
-                <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://instagram.com')}>
-                  <Ionicons name="logo-instagram" size={20} color="white" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </ScrollView>
-      )}
-
-      {/* SPODNÍ NAVIGACE */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Program')}>
-          <Ionicons name={aktivniTab === 'Program' ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' ? '#8B5CF6' : 'black'} />
-          <Text style={[styles.navText, { color: aktivniTab === 'Program' ? '#8B5CF6' : 'black' }]}>Program</Text>
-        </TouchableOpacity>
+      {/* Spodní hlavní tělo aplikace - Světle šedé */}
+      <SafeAreaView style={styles.container}>
         
-        <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Oblíbené')}>
-          <Ionicons name={aktivniTab === 'Oblíbené' ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' ? '#8B5CF6' : 'black'} />
-          <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' ? '#8B5CF6' : 'black' }]}>Oblíbené</Text>
-        </TouchableOpacity>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>DŽKO</Text>
+        </View>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Mapá'); setMapFocus(null); }}>
-          <Ionicons name={aktivniTab === 'Mapa' ? "map" : "map-outline"} size={24} color={aktivniTab === 'Mapa' ? '#8B5CF6' : 'black'} />
-          <Text style={[styles.navText, { color: aktivniTab === 'Mapa' ? '#8B5CF6' : 'black' }]}>Mapa</Text>
-        </TouchableOpacity>
+        {aktivniTab === 'Mapa' ? (
+          <View style={styles.mapTabContainer}>
+            <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
+            {Platform.OS === 'web' ? (
+              <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title)} style={styles.webMap} frameBorder="0" />
+            ) : (
+              <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
+            )}
+          </View>
+        ) : (
+          <ScrollView style={styles.content}>
+            {aktivniTab === 'Program' && (
+              <>
+                <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7}>
+                  <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
+                </TouchableOpacity>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
+                  {dny.map((den, index) => (
+                    <TouchableOpacity key={index} style={[styles.dayPill, (vybranyDen === den && !vybranyTag) && styles.dayPillActive]}
+                      onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
+                      <Text style={[styles.dayText, (vybranyDen === den && !vybranyTag) && styles.dayTextActive]}>{den}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                {zobrazenePrednasky.length > 0 ? zobrazenePrednasky.map(vykresliKartu) : <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>}
+              </>
+            )}
+            
+            {aktivniTab === 'Oblíbené' && (
+              <>
+                <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
+                {oblibeneZobrazeni.length > 0 ? oblibeneZobrazeni.map(vykresliKartu) : <Text style={styles.emptyText}>Zatím si sem můžete přidat akce kliknutím na srdíčko.</Text>}
+              </>
+            )}
+            
+            {aktivniTab === 'Další' && (
+              <View style={styles.dalsiContainer}>
+                <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
+                
+                <View style={styles.menuList}>
+                  {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.')}
+                  
+                  {vykresliPolozkuMenu('Archiv', 'link', 'https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}
+                  {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
+                  {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
+                  
+                  {vykresliPolozkuMenu('Pořadatelé', 'expand', [
+                    { label: 'Muzeum umění Olomouc', url: 'https://muo.cz/' },
+                    { label: 'Židovská obec Olomouc', url: 'https://kehila-olomouc.cz/rs/' },
+                    { label: 'Centrum judaistických studií', url: 'https://judaistika.upol.cz/' }
+                  ])}
+                  
+                  {vykresliPolozkuMenu('Kontakt', 'expand', 'Produkce festivalu\nAlexandr Jeništa\njenista@muo.cz\n+420 770 147 527\n\nPokladna MUO | CENTRAL\n+420 585 514 241\npokladna@muo.cz\nút–ne 10-18 hodin\n\nMuzeum umění Olomouc\nDenisova 47, 771 11 Olomouc\n+420 585 514 111\ninfo@muo.cz')}
+                </View>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Další')}>
-          <Ionicons name={aktivniTab === 'Další' ? "grid" : "grid-outline"} size={24} color={aktivniTab === 'Další' ? '#8B5CF6' : 'black'} />
-          <Text style={[styles.navText, { color: aktivniTab === 'Další' ? '#8B5CF6' : 'black' }]}>Další</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+                <View style={styles.socialContainer}>
+                  <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz')}>
+                    <Text style={styles.socialCircleText}>M</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://facebook.com')}>
+                    <Ionicons name="logo-facebook" size={22} color="white" />
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://instagram.com')}>
+                    <Ionicons name="logo-instagram" size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        )}
+
+        {/* SPODNÍ NAVIGACE */}
+        <View style={styles.bottomNav}>
+          <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Program')}>
+            <Ionicons name={aktivniTab === 'Program' ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' ? '#8B5CF6' : 'black'} />
+            <Text style={[styles.navText, { color: aktivniTab === 'Program' ? '#8B5CF6' : 'black' }]}>Program</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Oblíbené')}>
+            <Ionicons name={aktivniTab === 'Oblíbené' ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' ? '#8B5CF6' : 'black'} />
+            <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' ? '#8B5CF6' : 'black' }]}>Oblíbené</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Mapa'); setMapFocus(null); }}>
+            <Ionicons name={aktivniTab === 'Mapa' ? "map" : "map-outline"} size={24} color={aktivniTab === 'Mapa' ? '#8B5CF6' : 'black'} />
+            <Text style={[styles.navText, { color: aktivniTab === 'Mapa' ? '#8B5CF6' : 'black' }]}>Mapa</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Další')}>
+            <Ionicons name={aktivniTab === 'Další' ? "grid" : "grid-outline"} size={24} color={aktivniTab === 'Další' ? '#8B5CF6' : 'black'} />
+            <Text style={[styles.navText, { color: aktivniTab === 'Další' ? '#8B5CF6' : 'black' }]}>Další</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { backgroundColor: '#8B5CF6', padding: 20, paddingTop: Platform.OS === 'android' ? 40 : 20 },
-  headerText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 24 },
+  header: { backgroundColor: '#8B5CF6', padding: 20, paddingTop: Platform.OS === 'android' ? 30 : 15 },
+  headerText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20 },
   content: { flex: 1, paddingHorizontal: 15 },
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
   pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28, marginTop: 20, marginBottom: 15 },
@@ -358,15 +361,21 @@ const styles = StyleSheet.create({
   /* Sekce Další */
   dalsiContainer: { paddingTop: 20, paddingBottom: 40 },
   dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#000', marginBottom: 30, lineHeight: 34 },
-  menuList: { marginBottom: 30 },
+  
+  // Změněno: Přidáno paddingLeft pro posunutí celého menu a ikon doprava
+  menuList: { marginBottom: 30, paddingLeft: 20 },
   menuItemWrapper: { marginBottom: 15 },
   menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
   menuItemText: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#000' },
   menuExpandedContent: { marginTop: 10, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: '#8B5CF6' },
   menuExpandedText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563', lineHeight: 22 },
-  contentLinkRow: { paddingVertical: 6 },
-  contentInlineLink: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#8B5CF6', textDecorationLine: 'underline' },
-  socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
+  contentLinkRow: { paddingVertical: 6, paddingLeft: 5 },
+  
+  // Změněno: Odkazy v sekci Pořadatelé vypadají jako normální text (bez podtržení, tmavě šedé)
+  contentInlineLink: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563' },
+  
+  // Změněno: Posunutí sociálních ikon doprava
+  socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10, paddingLeft: 20 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
   socialCircleText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20, fontWeight: 'bold', transform: [{ translateY: -1 }] },
   
