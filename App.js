@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// PŘIDÁNO: Image
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
@@ -301,18 +300,23 @@ export default function App() {
                   </View>
 
                   <View style={styles.socialContainer}>
-                    {/* ZDE SE NAČÍTÁ TVŮJ VLASTNÍ OBRÁZEK Z ASSETS */}
+                    {/* MUO Ikona */}
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz')}>
                       <Image 
                         source={require('./assets/muo-icon.png')} 
-                        style={styles.customMuoIcon} 
+                        style={styles.customSocialIcon} 
                       />
                     </TouchableOpacity>
                     
+                    {/* Nová nahraná Facebook ikona */}
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://facebook.com')}>
-                      <Ionicons name="logo-facebook" size={22} color="white" />
+                      <Image 
+                        source={require('./assets/facebook-icon.png')} 
+                        style={styles.customSocialIcon} 
+                      />
                     </TouchableOpacity>
                     
+                    {/* Instagram (zatím zachován původní z knihovny Ionicons) */}
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://instagram.com')}>
                       <Ionicons name="logo-instagram" size={20} color="white" />
                     </TouchableOpacity>
@@ -397,8 +401,8 @@ const styles = StyleSheet.create({
   socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
   
-  /* PŘIDÁNO: Styl pro tvou vlastní nahranou ikonu, aby se dokonale zakulatila na 36x36 */
-  customMuoIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover' },
+  /* ZMĚNĚNO NA customSocialIcon: Tento styl zakulatí jakýkoliv nahraný obrázek na 36x36px kruh */
+  customSocialIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover' },
   
   bottomNav: { flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: 'white', borderTopWidth: 1, borderColor: '#E5E7EB', height: Platform.OS === 'web' ? 60 : 'auto', alignItems: Platform.OS === 'web' ? 'center' : 'stretch', paddingTop: Platform.OS === 'web' ? 0 : 10, paddingBottom: Platform.OS === 'web' ? 0 : (Platform.OS === 'android' ? 50 : 40) },
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
