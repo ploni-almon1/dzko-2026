@@ -95,8 +95,6 @@ export default function App() {
   const [vybranyTag, setVybranyTag] = useState(null);
   const [mapFocus, setMapFocus] = useState(null);
   const [rozbaleno, setRozbaleno] = useState(null);
-  
-  // ZMĚNĚNO: Stav pro uchování informace o tom, kterou akci máme rozkliknutou do detailu
   const [detailAkce, setDetailAkce] = useState(null);
 
   useEffect(() => {
@@ -119,7 +117,6 @@ export default function App() {
     nactiOblibene();
   }, []); 
 
-  // ZMĚNĚNO: Přidána položka "popis" k první akci
   const prednaskyVsechny = [
     { id: 1, den: 'PO 12', cas: 'PO 12 | 16:45 | CJS', nazev: 'Mährisch Deutsch a geniza', host: 'Lenka Uličná', tag: ['PŘEDNÁŠKA'], popis: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec nisi felis, fringilla ac facilisis a, gravida ut enim. Nam venenatis pretium justo, id ultrices ex euismod at. Praesent a lectus sem. Vivamus libero ligula, dapibus vel consequat eget, dignissim quis eros. Praesent tempor accumsan mi quis sodales. Donec ac nisi interdum, tristique nunc sit amet, egestas orci. Phasellus efficitur metus et elit molestie consectetur. Cras eu finibus tortor, at tincidunt diam. Nunc placerat nisl ut eleifend egestas. Nam nec ligula lorem.' },
     { id: 2, den: 'PO 12', cas: 'PO 12 | 18:30 | Beseda', nazev: 'HLASY', host: '', tag: ['VERNISÁŽ', 'ZAHÁJENÍ'] },
@@ -165,7 +162,6 @@ export default function App() {
     const coords = mapaLokace[mistoText];
     if (coords) setMapFocus(coords); 
     else setMapFocus(null);
-    // Pokud jsme v detailu, tak z něj vyskočíme rovnou do mapy
     setDetailAkce(null);
     setAktivniTab('Mapa');
   };
@@ -222,7 +218,6 @@ export default function App() {
           )}
         </View>
         
-        {/* ZMĚNĚNO: Nadpis je nyní klikací a otevírá detail */}
         <TouchableOpacity onPress={() => setDetailAkce(item)} activeOpacity={0.6}>
           <Text style={styles.cardTitle}>{item.nazev}</Text>
         </TouchableOpacity>
@@ -245,7 +240,6 @@ export default function App() {
     );
   };
 
-  // ZMĚNĚNO: Vykreslení obrazovky detailu
   const vykresliDetail = () => {
     const item = detailAkce;
     const casParts = item.cas.split(' | ');
@@ -269,9 +263,10 @@ export default function App() {
           {mistoText && (
             <>
               <Text style={styles.cardTime}>  |  </Text>
-              <Ionicons name="location-outline" size={16} color="#8B5CF6" style={{ marginRight: 5 }} />
+              {/* Ikona a text změněny na neutrální šedou, bez podtržení */}
+              <Ionicons name="location-outline" size={16} color="#4B5563" style={{ marginRight: 5 }} />
               <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                <Text style={[styles.locationLink, { color: '#8B5CF6', textDecorationLine: 'underline' }]}>{mistoText}</Text>
+                <Text style={styles.locationLink}>{mistoText}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -294,9 +289,7 @@ export default function App() {
               </View>
             ))}
           </View>
-          <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
-            <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={32} color="#8B5CF6" />
-          </TouchableOpacity>
+          {/* Srdíčko odstraněno podle zadání */}
         </View>
       </ScrollView>
     );
@@ -315,7 +308,6 @@ export default function App() {
 
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
-          {/* Zobrazení mapy */}
           {aktivniTab === 'Mapa' && (
             <View style={styles.mapTabContainer}>
               <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
@@ -327,7 +319,6 @@ export default function App() {
             </View>
           )}
 
-          {/* Zobrazení Programu, Oblíbených nebo Další (pokud zrovna nejsme v detailu akce) */}
           {aktivniTab !== 'Mapa' && !detailAkce && (
             <ScrollView style={styles.content}>
               {aktivniTab === 'Program' && (
@@ -387,7 +378,6 @@ export default function App() {
             </ScrollView>
           )}
 
-          {/* Zobrazení Detailu akce */}
           {detailAkce && vykresliDetail()}
 
           <View style={styles.bottomNav}>
@@ -457,7 +447,7 @@ const styles = StyleSheet.create({
   wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   wireframeText: { fontFamily: 'Inter_400Regular', color: '#9CA3AF', marginTop: 10 },
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
-  detailBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
+  detailBottomRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
   
   dalsiContainer: { paddingTop: 20, paddingBottom: 40 },
   dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#000', marginBottom: 30, lineHeight: 34 },
