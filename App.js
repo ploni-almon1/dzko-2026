@@ -127,7 +127,7 @@ export default function App() {
           <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
           {Platform.OS === 'web' ? (
             <iframe 
-              src="https://api.mapy.cz/frame?id=1711200&x=17.2514&y=49.5938&z=14&source=coor&title=Festival%20D%C5%BDKO" 
+              src="/mapa.html" 
               style={styles.webMap}
               frameBorder="0"
             />
