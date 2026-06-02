@@ -118,65 +118,81 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       
       <View style={styles.header}>
-        <Text style={styles.headerText}>DŽKO 26</Text>
+        <Text style={styles.headerText}>DŽKO</Text>
       </View>
 
-      <ScrollView style={styles.content}>
-        
-        {/* ZÁLOŽKA: PROGRAM */}
-        {aktivniTab === 'Program' && (
-          <>
-            <TouchableOpacity 
-              onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} 
-              activeOpacity={0.7}
-            >
-              <Text style={styles.pageTitle}>
-                {vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}
-              </Text>
-            </TouchableOpacity>
+      {/* POKUD JE AKTIVNÍ MAPA, NEBALÍME JI DO SCROLLVIEW (ABY ŠLO MAPOU POSOUVAT) */}
+      {aktivniTab === 'Mapa' ? (
+        <View style={styles.mapTabContainer}>
+          <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
+          {Platform.OS === 'web' ? (
+            <iframe 
+              src="https://api.mapy.cz/frame?id=1711200&x=17.2514&y=49.5938&z=14&source=coor&title=Festival%20D%C5%BDKO" 
+              style={styles.webMap}
+              frameBorder="0"
+            />
+          ) : (
+            <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
+          )}
+        </View>
+      ) : (
+        <ScrollView style={styles.content}>
+          
+          {/* ZÁLOŽKA: PROGRAM */}
+          {aktivniTab === 'Program' && (
+            <>
+              <TouchableOpacity 
+                onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} 
+                activeOpacity={0.7}
+              >
+                <Text style={styles.pageTitle}>
+                  {vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}
+                </Text>
+              </TouchableOpacity>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
-              {dny.map((den, index) => (
-                <TouchableOpacity 
-                  key={index} 
-                  style={[styles.dayPill, (vybranyDen === den && !vybranyTag) && styles.dayPillActive]}
-                  onPress={() => { setVybranyDen(den); setVybranyTag(null); }} 
-                >
-                  <Text style={[styles.dayText, (vybranyDen === den && !vybranyTag) && styles.dayTextActive]}>{den}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
+                {dny.map((den, index) => (
+                  <TouchableOpacity 
+                    key={index} 
+                    style={[styles.dayPill, (vybranyDen === den && !vybranyTag) && styles.dayPillActive]}
+                    onPress={() => { setVybranyDen(den); setVybranyTag(null); }} 
+                  >
+                    <Text style={[styles.dayText, (vybranyDen === den && !vybranyTag) && styles.dayTextActive]}>{den}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
 
-            {zobrazenePrednasky.length > 0 ? (
-              zobrazenePrednasky.map(vykresliKartu)
-            ) : (
-              <Text style={styles.emptyText}>Pro tento výběr zatím není naplánován žádný program.</Text>
-            )}
-          </>
-        )}
+              {zobrazenePrednasky.length > 0 ? (
+                zobrazenePrednasky.map(vykresliKartu)
+              ) : (
+                <Text style={styles.emptyText}>Pro tento výběr zatím není naplánován žádný program.</Text>
+              )}
+            </>
+          )}
 
-        {/* ZÁLOŽKA: OBLÍBENÉ */}
-        {aktivniTab === 'Oblíbené' && (
-          <>
-            <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
-            
-            {oblibeneZobrazeni.length > 0 ? (
-              oblibeneZobrazeni.map(vykresliKartu)
-            ) : (
-              <Text style={styles.emptyText}>Zatím si sem můžete přidat oblíbené akce z programu kliknutím na srdíčko vpravo dole na kartě.</Text>
-            )}
-          </>
-        )}
+          {/* ZÁLOŽKA: OBLÍBENÉ */}
+          {aktivniTab === 'Oblíbené' && (
+            <>
+              <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
+              
+              {oblibeneZobrazeni.length > 0 ? (
+                oblibeneZobrazeni.map(vykresliKartu)
+              ) : (
+                <Text style={styles.emptyText}>Zatím si sem můžete přidat oblíbené akce z programu kliknutím na srdíčko vpravo dole na kartě.</Text>
+              )}
+            </>
+          )}
 
-        {/* ZÁLOŽKA: MAPA & REZERVACE */}
-        {(aktivniTab === 'Mapa' || aktivniTab === 'Rezervace') && (
-          <>
-            <Text style={styles.pageTitle}>{aktivniTab.toUpperCase()}</Text>
-            <Text style={styles.emptyText}>Tato sekce se zatím připravuje.</Text>
-          </>
-        )}
-        
-      </ScrollView>
+          {/* ZÁLOŽKA: REZERVACE */}
+          {aktivniTab === 'Rezervace' && (
+            <>
+              <Text style={styles.pageTitle}>REZERVACE</Text>
+              <Text style={styles.emptyText}>Tato sekce se zatím připravuje.</Text>
+            </>
+          )}
+          
+        </ScrollView>
+      )}
 
       {/* SPODNÍ NAVIGACE */}
       <View style={styles.bottomNav}>
@@ -224,11 +240,29 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 15,
   },
+  mapTabContainer: {
+    flex: 1,
+    paddingHorizontal: 15,
+  },
   pageTitle: {
     fontFamily: 'Inter_400Regular',
     fontSize: 28,
     marginTop: 20,
     marginBottom: 15,
+  },
+  pageTitleInternal: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 28,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  webMap: {
+    flex: 1,
+    width: '100%',
+    borderRadius: 15,
+    marginBottom: 15,
+    borderWidth: 0,
+    minHeight: 350,
   },
   daysContainer: {
     flexDirection: 'row',
