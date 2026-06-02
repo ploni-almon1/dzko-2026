@@ -4,7 +4,7 @@
     "slug": "dzko-2026",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./public/pwa-icon.png",
+    "icon": "./assets/icon.png",
     "assetBundlePatterns": [
       "**/*"
     ],
