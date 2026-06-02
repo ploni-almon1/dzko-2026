@@ -5,7 +5,7 @@ import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 
-// --- GENERÁTOR MAPY ---
+// --- GENERÁTOR MAPY (Nyní s podporou ikon FontAwesome uvnitř kapky) ---
 const generateMapHtml = (focusLat, focusLng, focusTitle) => `
 <!DOCTYPE html>
 <html>
@@ -13,17 +13,28 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body { padding: 0; margin: 0; }
         html, body, #map { height: 100%; width: 100%; }
         
         .dzko-pin-wrapper { background: transparent; border: none; }
+        
+        /* Kapkovitý špendlík */
         .dzko-pin {
-            width: 22px; height: 22px;
-            background-color: #8B5CF6; border: 3px solid white;
+            width: 28px; height: 28px;
+            background-color: #8B5CF6; border: 2px solid white;
             border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
-            box-shadow: -2px 2px 5px rgba(0,0,0,0.4); margin: 2px auto 0 auto;
+            box-shadow: -2px 2px 5px rgba(0,0,0,0.3); 
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        /* Ikonka uvnitř špendlíku - otočíme ji zpět, aby nebyla nakřivo */
+        .dzko-pin i {
+            transform: rotate(45deg);
+            color: white; font-size: 11px;
+            margin-bottom: 2px; margin-left: 2px;
         }
         
         .leaflet-popup-content-wrapper { border-radius: 8px; }
@@ -48,26 +59,29 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             attribution: '&copy; <a href="https://www.seznam.cz" target="_blank">Seznam.cz, a.s.</a>'
         }).addTo(map);
 
-        var dzkoIcon = L.divIcon({
-            className: 'dzko-pin-wrapper',
-            html: '<div class="dzko-pin"></div>',
-            iconSize: [28, 30], iconAnchor: [14, 30], popupAnchor: [0, -30]
-        });
+        // Funkce pro tvorbu špendlíku s ikonou (výchozí je ikona budovy 'fa-building')
+        function pridejMisto(lat, lng, nazev, iconName) {
+            var currentIcon = iconName || 'fa-building';
+            var dzkoIcon = L.divIcon({
+                className: 'dzko-pin-wrapper',
+                html: '<div class="dzko-pin"><i class="fa-solid ' + currentIcon + '"></i></div>',
+                iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32]
+            });
 
-        var targetTitle = ${focusTitle ? `'${focusTitle}'` : 'null'};
-
-        function pridejMisto(lat, lng, nazev) {
             var marker = L.marker([lat, lng], {icon: dzkoIcon}).addTo(map).bindPopup(nazev);
+            var targetTitle = ${focusTitle ? `'${focusTitle}'` : 'null'};
             if (targetTitle === nazev) {
                 setTimeout(() => marker.openPopup(), 300);
             }
         }
 
-        pridejMisto(49.5980481, 17.2610522, 'Mozarteum');
-        pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií');
-        pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc');
-        pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL');
-        pridejMisto(49.5695, 17.2912, 'Sladovna Holice');
+        // --- FESTIVALOVÉ LOKACE S IKONKAMI ---
+        pridejMisto(49.5980481, 17.2610522, 'Mozarteum', 'fa-landmark');
+        pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií', 'fa-graduation-cap');
+        pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc', 'fa-synagogue');
+        pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
+        // Pro Central můžeme dát třeba ikonu lístku nebo kina 'fa-ticket'
+        pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-ticket');
     </script>
 </body>
 </html>
@@ -87,7 +101,6 @@ export default function App() {
   const [rozbaleno, setRozbaleno] = useState(null);
 
   useEffect(() => {
-    // Trik pro webovou verzi / PWA aplikaci, aby systém zafarbil lištu prohlížeče
     if (Platform.OS === 'web') {
       let meta = document.querySelector('meta[name="theme-color"]');
       if (!meta) {
@@ -227,14 +240,14 @@ export default function App() {
   if (!fontsLoaded) return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center'}} />;
 
   return (
-    // FIALOVÝ ZÁKLAD: Toto probarví systémovou lištu u baterky a hodin
+    // HLAVNÍ STRUKTURA: Vyladěná barva pozadí a prolnutí status baru
     <View style={{ flex: 1, backgroundColor: '#8B5CF6' }}>
       
-      <StatusBar style="light" backgroundColor="#8B5CF6" translucent={true} />
+      <StatusBar style="light" backgroundColor="#8B5CF6" translucent={false} />
       
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.mainContainer}>
         
-        {/* HLAVIČKA */}
+        {/* HLAVIČKA - Zde se opravila ta drobná mezera/čárka */}
         <View style={styles.header}>
           <Text style={styles.headerText}>DŽKO</Text>
         </View>
@@ -314,7 +327,7 @@ export default function App() {
             </ScrollView>
           )}
 
-          {/* SPODNÍ NAVIGACE (zůstává na bílém podkladu) */}
+          {/* SPODNÍ NAVIGACE */}
           <View style={styles.bottomNav}>
             <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Program')}>
               <Ionicons name={aktivniTab === 'Program' ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' ? '#8B5CF6' : 'black'} />
@@ -344,8 +357,16 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  mainContainer: { flex: 1, backgroundColor: '#8B5CF6' },
   container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { backgroundColor: '#8B5CF6', padding: 20, paddingTop: Platform.OS === 'android' ? 40 : 20, paddingBottom: 15 },
+  header: { 
+    backgroundColor: '#8B5CF6', 
+    paddingHorizontal: 20, 
+    paddingBottom: 15,
+    paddingTop: Platform.OS === 'ios' ? 10 : 20,
+    borderTopWidth: 0, // Oprava mezery pod stavovým řádkem
+    marginTop: -1 // Umělé stlačení pro zamezení čárky
+  },
   headerText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20 },
   content: { flex: 1, paddingHorizontal: 15 },
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
@@ -373,21 +394,14 @@ const styles = StyleSheet.create({
   /* Sekce Další */
   dalsiContainer: { paddingTop: 20, paddingBottom: 40 },
   dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#000', marginBottom: 30, lineHeight: 34 },
-  
-  // Zrušeno předchozí odsazení (paddingLeft), lícujeme s nadpisem
   menuList: { marginBottom: 30 },
   menuItemWrapper: { marginBottom: 15 },
   menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
-  
-  // Písmo zvětšeno z 18 na 20
   menuItemText: { fontFamily: 'Inter_400Regular', fontSize: 20, color: '#000' },
-  
   menuExpandedContent: { marginTop: 10, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: '#8B5CF6' },
   menuExpandedText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563', lineHeight: 22 },
   contentLinkRow: { paddingVertical: 6, paddingLeft: 5 },
   contentInlineLink: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563' },
-  
-  // Odsazení smazáno i u ikon sociálních sítí
   socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
   socialCircleText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20, fontWeight: 'bold', transform: [{ translateY: -1 }] },
