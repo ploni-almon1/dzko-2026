@@ -4,6 +4,69 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// --- ZDE JE TVOJE MAPA VLOŽENÁ PŘÍMO DO KÓDU (Tím obejdeme Vercel 404 Error) ---
+const mapHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { padding: 0; margin: 0; }
+        html, body, #map { height: 100%; width: 100%; }
+        
+        .dzko-pin {
+            background-color: #8B5CF6;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+        
+        .leaflet-popup-content-wrapper { border-radius: 8px; }
+        .leaflet-popup-content {
+            font-family: sans-serif;
+            font-weight: bold;
+            color: #374151;
+            text-align: center;
+            margin: 10px 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        var map = L.map('map').setView([49.594, 17.254], 14);
+
+        var apiKey = 'gRioCnF44GOOJJaSU3aLnzGM48hcumaNIilX_748pbM';
+        L.tileLayer('https://api.mapy.cz/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=' + apiKey, {
+            minZoom: 10,
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.seznam.cz" target="_blank">Seznam.cz, a.s.</a>'
+        }).addTo(map);
+
+        var dzkoIcon = L.divIcon({
+            className: 'dzko-pin',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12]
+        });
+
+        function pridejMisto(lat, lng, nazev) {
+            L.marker([lat, lng], {icon: dzkoIcon}).addTo(map).bindPopup(nazev);
+        }
+
+        pridejMisto(49.5942, 17.2505, 'CJS (Centrum judaistických studií)');
+        pridejMisto(49.5961, 17.2568, 'Beseda');
+        pridejMisto(49.5695, 17.2912, 'Sladovna Holice');
+        pridejMisto(49.5955, 17.2533, 'Central / Mozarteum');
+        pridejMisto(49.5975, 17.2571, 'ŽOO (Komenského 9)');
+    </script>
+</body>
+</html>
+`;
+
 export default function App() {
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -127,7 +190,7 @@ export default function App() {
           <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
           {Platform.OS === 'web' ? (
             <iframe 
-              src="/mapa.html" 
+              srcDoc={mapHtml} 
               style={styles.webMap}
               frameBorder="0"
             />
