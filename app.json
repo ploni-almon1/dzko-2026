@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "DŽKO 26",
+    "name": "DŽKO",
     "slug": "dzko-2026",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./public/pwa-icon.png",
     "assetBundlePatterns": [
       "**/*"
     ],
