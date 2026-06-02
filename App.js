@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// --- ZDE JE TVOJE MAPA VLOŽENÁ PŘÍMO DO KÓDU (Tím obejdeme Vercel 404 Error) ---
+// --- ZDE JE TVOJE MAPA S PŘESNÝMI SOUŘADNICEMI A NOVOU IKONKOU ---
 const mapHtml = `
 <!DOCTYPE html>
 <html>
@@ -17,11 +17,23 @@ const mapHtml = `
         body { padding: 0; margin: 0; }
         html, body, #map { height: 100%; width: 100%; }
         
+        .dzko-pin-wrapper {
+            background: transparent;
+            border: none;
+        }
+        
+        /* Tvorba klasického kapkovitého mapového špendlíku */
         .dzko-pin {
+            width: 22px;
+            height: 22px;
             background-color: #8B5CF6;
             border: 3px solid white;
-            border-radius: 50%;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            /* 3 kulaté rohy, 1 ostrý (špička) */
+            border-radius: 50% 50% 50% 0;
+            /* Pootočení, aby špička mířila přesně dolů */
+            transform: rotate(-45deg);
+            box-shadow: -2px 2px 5px rgba(0,0,0,0.4);
+            margin: 2px auto 0 auto;
         }
         
         .leaflet-popup-content-wrapper { border-radius: 8px; }
@@ -37,7 +49,8 @@ const mapHtml = `
 <body>
     <div id="map"></div>
     <script>
-        var map = L.map('map').setView([49.594, 17.254], 14);
+        // Centrování mapy optimalizované pro tvé nové body
+        var map = L.map('map').setView([49.595, 17.255], 14);
 
         var apiKey = 'gRioCnF44GOOJJaSU3aLnzGM48hcumaNIilX_748pbM';
         L.tileLayer('https://api.mapy.cz/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=' + apiKey, {
@@ -46,22 +59,28 @@ const mapHtml = `
             attribution: '&copy; <a href="https://www.seznam.cz" target="_blank">Seznam.cz, a.s.</a>'
         }).addTo(map);
 
+        // Nastavení nové ikonky (kotva je posunutá tak, aby na místo ukazovala přesně špička)
         var dzkoIcon = L.divIcon({
-            className: 'dzko-pin',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
-            popupAnchor: [0, -12]
+            className: 'dzko-pin-wrapper',
+            html: '<div class="dzko-pin"></div>',
+            iconSize: [28, 30],
+            iconAnchor: [14, 30],
+            popupAnchor: [0, -30]
         });
 
         function pridejMisto(lat, lng, nazev) {
             L.marker([lat, lng], {icon: dzkoIcon}).addTo(map).bindPopup(nazev);
         }
 
-        pridejMisto(49.5942, 17.2505, 'CJS (Centrum judaistických studií)');
+        // --- TVÁ PŘESNÁ MÍSTA ---
+        pridejMisto(49.5980481, 17.2610522, 'Mozarteum');
+        pridejMisto(49.5904358, 17.2513681, 'CJS');
+        pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc');
+        pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL');
+
+        // --- ZBÝVAJÍCÍ MÍSTA Z PROGRAMU ---
         pridejMisto(49.5961, 17.2568, 'Beseda');
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice');
-        pridejMisto(49.5955, 17.2533, 'Central / Mozarteum');
-        pridejMisto(49.5975, 17.2571, 'ŽOO (Komenského 9)');
     </script>
 </body>
 </html>
