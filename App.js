@@ -21,7 +21,6 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
         
         .dzko-pin-wrapper { background: transparent; border: none; }
         
-        /* Vráceno k plnému stylu, piny jsou o něco zvětšené */
         .dzko-pin {
             width: 32px; height: 32px;
             background-color: #8B5CF6; border: 2px solid white;
@@ -30,7 +29,6 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             display: flex; align-items: center; justify-content: center;
         }
         
-        /* Ikony jsou plné, dobře čitelné a větší */
         .dzko-pin i {
             transform: rotate(45deg);
             font-size: 14px;
@@ -75,9 +73,8 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             }
         }
 
-        /* Ikony vráceny na plný styl, přidána Davidova hvězda pro Židovskou obec a film pro Central */
         pridejMisto(49.5980481, 17.2610522, 'Mozarteum', 'fa-landmark');
-        pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií', 'fa-book');
+        pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií', 'fa-graduation-cap');
         pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc', 'fa-star-of-david');
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
@@ -92,17 +89,15 @@ export default function App() {
   });
 
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
-  
-  // ZMĚNĚNO: Výchozí den je 'VŠE', aby byl hned po otevření načtený celý program
   const [vybranyDen, setVybranyDen] = useState('VŠE');
-  
-  // ZMĚNĚNO: Výchozí tab je 'Další', aby se aplikace otevřela na této obrazovce
   const [aktivniTab, setAktivniTab] = useState('Další');
-  
   const [oblibeneIds, setOblibeneIds] = useState([]);
   const [vybranyTag, setVybranyTag] = useState(null);
   const [mapFocus, setMapFocus] = useState(null);
   const [rozbaleno, setRozbaleno] = useState(null);
+  
+  // ZMĚNĚNO: Stav pro uchování informace o tom, kterou akci máme rozkliknutou do detailu
+  const [detailAkce, setDetailAkce] = useState(null);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -124,8 +119,9 @@ export default function App() {
     nactiOblibene();
   }, []); 
 
+  // ZMĚNĚNO: Přidána položka "popis" k první akci
   const prednaskyVsechny = [
-    { id: 1, den: 'PO 12', cas: 'PO 12 | 16:45 | CJS', nazev: 'Mährisch Deutsch a geniza', host: 'Lenka Uličná', tag: ['PŘEDNÁŠKA'] },
+    { id: 1, den: 'PO 12', cas: 'PO 12 | 16:45 | CJS', nazev: 'Mährisch Deutsch a geniza', host: 'Lenka Uličná', tag: ['PŘEDNÁŠKA'], popis: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec nisi felis, fringilla ac facilisis a, gravida ut enim. Nam venenatis pretium justo, id ultrices ex euismod at. Praesent a lectus sem. Vivamus libero ligula, dapibus vel consequat eget, dignissim quis eros. Praesent tempor accumsan mi quis sodales. Donec ac nisi interdum, tristique nunc sit amet, egestas orci. Phasellus efficitur metus et elit molestie consectetur. Cras eu finibus tortor, at tincidunt diam. Nunc placerat nisl ut eleifend egestas. Nam nec ligula lorem.' },
     { id: 2, den: 'PO 12', cas: 'PO 12 | 18:30 | Beseda', nazev: 'HLASY', host: '', tag: ['VERNISÁŽ', 'ZAHÁJENÍ'] },
     { id: 3, den: 'PO 12', cas: 'PO 12 | 20:00', nazev: 'Kafka Band', host: '', tag: ['KONCERT'] },
     { id: 4, den: 'ÚT 13', cas: 'ÚT 13 | 17:00 | Sladovna Holice', nazev: 'Olomoucké sladovny', host: 'Michael Viktořík', tag: ['PŘEDNÁŠKA'] },
@@ -169,6 +165,8 @@ export default function App() {
     const coords = mapaLokace[mistoText];
     if (coords) setMapFocus(coords); 
     else setMapFocus(null);
+    // Pokud jsme v detailu, tak z něj vyskočíme rovnou do mapy
+    setDetailAkce(null);
     setAktivniTab('Mapa');
   };
 
@@ -223,8 +221,14 @@ export default function App() {
             </>
           )}
         </View>
-        <Text style={styles.cardTitle}>{item.nazev}</Text>
+        
+        {/* ZMĚNĚNO: Nadpis je nyní klikací a otevírá detail */}
+        <TouchableOpacity onPress={() => setDetailAkce(item)} activeOpacity={0.6}>
+          <Text style={styles.cardTitle}>{item.nazev}</Text>
+        </TouchableOpacity>
+        
         {item.host !== '' && <Text style={styles.cardHost}>host: {item.host}</Text>}
+        
         <View style={styles.cardBottomRow}>
           <View style={styles.tagsContainer}>
             {item.tag.map((t, index) => (
@@ -241,6 +245,63 @@ export default function App() {
     );
   };
 
+  // ZMĚNĚNO: Vykreslení obrazovky detailu
+  const vykresliDetail = () => {
+    const item = detailAkce;
+    const casParts = item.cas.split(' | ');
+    const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
+    const mistoText = casParts.length > 2 ? casParts[2] : null;
+
+    return (
+      <ScrollView style={styles.content}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
+          <Ionicons name="arrow-back" size={20} color="#8B5CF6" />
+          <Text style={styles.backBtnText}>Zpět</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.detailMainTitle}>
+          {item.host !== '' ? `${item.host}: ${item.nazev}` : item.nazev}
+        </Text>
+
+        <View style={styles.detailTimeLocationRow}>
+          <Ionicons name="time-outline" size={16} color="#4B5563" style={{ marginRight: 5 }} />
+          <Text style={styles.cardTime}>{timeText}</Text>
+          {mistoText && (
+            <>
+              <Text style={styles.cardTime}>  |  </Text>
+              <Ionicons name="location-outline" size={16} color="#8B5CF6" style={{ marginRight: 5 }} />
+              <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                <Text style={[styles.locationLink, { color: '#8B5CF6', textDecorationLine: 'underline' }]}>{mistoText}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        <View style={styles.wireframeImage}>
+          <Ionicons name="image-outline" size={40} color="#9CA3AF" />
+          <Text style={styles.wireframeText}>Místo pro fotografii</Text>
+        </View>
+
+        <Text style={styles.detailDescription}>
+          {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
+        </Text>
+
+        <View style={styles.detailBottomRow}>
+          <View style={styles.tagsContainer}>
+            {item.tag.map((t, index) => (
+              <View key={index} style={styles.tagPill}>
+                <Text style={styles.tagText}>{t}</Text>
+              </View>
+            ))}
+          </View>
+          <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
+            <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={32} color="#8B5CF6" />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  };
+
   if (!fontsLoaded) return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center'}} />;
 
   return (
@@ -253,7 +314,9 @@ export default function App() {
         </View>
 
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
-          {aktivniTab === 'Mapa' ? (
+          
+          {/* Zobrazení mapy */}
+          {aktivniTab === 'Mapa' && (
             <View style={styles.mapTabContainer}>
               <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
               {Platform.OS === 'web' ? (
@@ -262,15 +325,16 @@ export default function App() {
                 <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
               )}
             </View>
-          ) : (
+          )}
+
+          {/* Zobrazení Programu, Oblíbených nebo Další (pokud zrovna nejsme v detailu akce) */}
+          {aktivniTab !== 'Mapa' && !detailAkce && (
             <ScrollView style={styles.content}>
               {aktivniTab === 'Program' && (
                 <>
-                  {/* Kliknutí na slovo PROGRAM zruší výběr dne a ukáže vše */}
                   <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7}>
                     <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                   </TouchableOpacity>
-                  
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
                     {dny.map((den, index) => (
                       <TouchableOpacity key={index} style={[styles.dayPill, (vybranyDen === den && !vybranyTag) && styles.dayPillActive]}
@@ -296,17 +360,14 @@ export default function App() {
                   
                   <View style={styles.menuList}>
                     {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.')}
-                    
                     {vykresliPolozkuMenu('Archiv', 'link', 'https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}
                     {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
                     {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
-                    
                     {vykresliPolozkuMenu('Pořadatelé', 'expand', [
                       { label: 'Muzeum umění Olomouc', url: 'https://muo.cz/' },
                       { label: 'Židovská obec Olomouc', url: 'https://kehila-olomouc.cz/rs/' },
                       { label: 'Centrum judaistických studií', url: 'https://judaistika.upol.cz/' }
                     ])}
-                    
                     {vykresliPolozkuMenu('Kontakt', 'expand', 'Produkce festivalu\nAlexandr Jeništa\njenista@muo.cz\n+420 770 147 527\n\nPokladna MUO | CENTRAL\n+420 585 514 241\npokladna@muo.cz\nút–ne 10-18 hodin\n\nMuzeum umění Olomouc\nDenisova 47, 771 11 Olomouc\n+420 585 514 111\ninfo@muo.cz')}
                   </View>
 
@@ -314,11 +375,9 @@ export default function App() {
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
                       <Image source={require('./assets/muo-icon.png')} style={styles.customSocialIcon} />
                     </TouchableOpacity>
-                    
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')}>
                       <Image source={require('./assets/facebook-icon.png')} style={styles.customSocialIcon} />
                     </TouchableOpacity>
-                    
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                       <Ionicons name="logo-instagram" size={20} color="white" />
                     </TouchableOpacity>
@@ -328,24 +387,26 @@ export default function App() {
             </ScrollView>
           )}
 
+          {/* Zobrazení Detailu akce */}
+          {detailAkce && vykresliDetail()}
+
           <View style={styles.bottomNav}>
-            {/* Kliknutí na Program vynutí zobrazení celého programu (VŠE), aby se choval přesně podle zadání */}
-            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); }}>
-              <Ionicons name={aktivniTab === 'Program' ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' ? '#8B5CF6' : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Program' ? '#8B5CF6' : 'black' }]}>Program</Text>
+            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
+              <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? '#8B5CF6' : 'black'} />
+              <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? '#8B5CF6' : 'black' }]}>Program</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Oblíbené')}>
-              <Ionicons name={aktivniTab === 'Oblíbené' ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' ? '#8B5CF6' : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' ? '#8B5CF6' : 'black' }]}>Oblíbené</Text>
+            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Oblíbené'); setDetailAkce(null); }}>
+              <Ionicons name={aktivniTab === 'Oblíbené' && !detailAkce ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' && !detailAkce ? '#8B5CF6' : 'black'} />
+              <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' && !detailAkce ? '#8B5CF6' : 'black' }]}>Oblíbené</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Mapa'); setMapFocus(null); }}>
+            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Mapa'); setMapFocus(null); setDetailAkce(null); }}>
               <Ionicons name={aktivniTab === 'Mapa' ? "map" : "map-outline"} size={24} color={aktivniTab === 'Mapa' ? '#8B5CF6' : 'black'} />
               <Text style={[styles.navText, { color: aktivniTab === 'Mapa' ? '#8B5CF6' : 'black' }]}>Mapa</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Další')}>
+            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Další'); setDetailAkce(null); }}>
               <Ionicons name={aktivniTab === 'Další' ? "grid" : "grid-outline"} size={24} color={aktivniTab === 'Další' ? '#8B5CF6' : 'black'} />
               <Text style={[styles.navText, { color: aktivniTab === 'Další' ? '#8B5CF6' : 'black' }]}>Další</Text>
             </TouchableOpacity>
@@ -361,12 +422,8 @@ const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#8B5CF6' },
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   header: { 
-    backgroundColor: '#8B5CF6', 
-    paddingHorizontal: 20, 
-    paddingBottom: 15,
-    paddingTop: Platform.OS === 'ios' ? 10 : 20,
-    borderTopWidth: 0,
-    marginTop: -1 
+    backgroundColor: '#8B5CF6', paddingHorizontal: 20, paddingBottom: 15,
+    paddingTop: Platform.OS === 'ios' ? 10 : 20, borderTopWidth: 0, marginTop: -1 
   },
   headerText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20 },
   content: { flex: 1, paddingHorizontal: 15 },
@@ -383,7 +440,7 @@ const styles = StyleSheet.create({
   timeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' },
   cardTime: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563' },
   locationLink: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563' },
-  cardTitle: { fontFamily: 'Inter_400Regular', fontSize: 16, marginBottom: 10 },
+  cardTitle: { fontFamily: 'Inter_400Regular', fontSize: 16, marginBottom: 10, color: '#111827' },
   cardHost: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#374151', marginBottom: 10 },
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
@@ -391,6 +448,17 @@ const styles = StyleSheet.create({
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 12, lineHeight: 16 },
   heartIconBtn: { paddingBottom: 2, paddingLeft: 10 },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#6B7280', textAlign: 'center', marginTop: 30, lineHeight: 22 },
+  
+  /* Styly pro detail akce */
+  backBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, alignSelf: 'flex-start' },
+  backBtnText: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 16, marginLeft: 5 },
+  detailMainTitle: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', marginBottom: 15, lineHeight: 32 },
+  detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
+  wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  wireframeText: { fontFamily: 'Inter_400Regular', color: '#9CA3AF', marginTop: 10 },
+  detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
+  detailBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
+  
   dalsiContainer: { paddingTop: 20, paddingBottom: 40 },
   dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#000', marginBottom: 30, lineHeight: 34 },
   menuList: { marginBottom: 30 },
@@ -404,6 +472,7 @@ const styles = StyleSheet.create({
   socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
   customSocialIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover' },
+  
   bottomNav: { flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: 'white', borderTopWidth: 1, borderColor: '#E5E7EB', height: Platform.OS === 'web' ? 60 : 'auto', alignItems: Platform.OS === 'web' ? 'center' : 'stretch', paddingTop: Platform.OS === 'web' ? 0 : 10, paddingBottom: Platform.OS === 'web' ? 0 : (Platform.OS === 'android' ? 50 : 40) },
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
   navText: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: Platform.OS === 'web' ? 2 : 4 }
