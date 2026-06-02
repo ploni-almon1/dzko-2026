@@ -21,27 +21,21 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
         
         .dzko-pin-wrapper { background: transparent; border: none; }
         
+        /* Vráceno k plnému stylu, piny jsou o něco zvětšené */
         .dzko-pin {
-            width: 28px; height: 28px;
+            width: 32px; height: 32px;
             background-color: #8B5CF6; border: 2px solid white;
             border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
             box-shadow: -2px 2px 5px rgba(0,0,0,0.3); 
             display: flex; align-items: center; justify-content: center;
         }
         
-        /* Zvětšení ikon a úprava na OUTLINE (obrysový) styl */
+        /* Ikony jsou plné, dobře čitelné a větší */
         .dzko-pin i {
             transform: rotate(45deg);
-            font-size: 14px; /* Zvětšeno */
-            color: transparent; /* Zprůhlední vnitřek */
-            -webkit-text-stroke: 1.5px white; /* Přidá bílý obrys */
-            margin-bottom: 2px; margin-left: 2px;
-        }
-
-        /* Výjimka pro Davidovu hvězdu (ta už je obrysová přirozeně, tah navíc by ji slil do fleku) */
-        .dzko-pin i.fa-star-of-david {
+            font-size: 14px;
             color: white;
-            -webkit-text-stroke: 0px;
+            margin-bottom: 2px; margin-left: 2px;
         }
         
         .leaflet-popup-content-wrapper { border-radius: 8px; }
@@ -71,7 +65,7 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             var dzkoIcon = L.divIcon({
                 className: 'dzko-pin-wrapper',
                 html: '<div class="dzko-pin"><i class="fa-solid ' + currentIcon + '"></i></div>',
-                iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32]
+                iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36]
             });
 
             var marker = L.marker([lat, lng], {icon: dzkoIcon}).addTo(map).bindPopup(nazev);
@@ -81,7 +75,7 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             }
         }
 
-        /* PŘIDÁNY NOVÉ IKONY (Větší a v outline stylu) */
+        /* Ikony vráceny na plný styl, přidána Davidova hvězda pro Židovskou obec a film pro Central */
         pridejMisto(49.5980481, 17.2610522, 'Mozarteum', 'fa-landmark');
         pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií', 'fa-book');
         pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc', 'fa-star-of-david');
@@ -98,8 +92,13 @@ export default function App() {
   });
 
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
-  const [vybranyDen, setVybranyDen] = useState('PO 12');
-  const [aktivniTab, setAktivniTab] = useState('Program');
+  
+  // ZMĚNĚNO: Výchozí den je 'VŠE', aby byl hned po otevření načtený celý program
+  const [vybranyDen, setVybranyDen] = useState('VŠE');
+  
+  // ZMĚNĚNO: Výchozí tab je 'Další', aby se aplikace otevřela na této obrazovce
+  const [aktivniTab, setAktivniTab] = useState('Další');
+  
   const [oblibeneIds, setOblibeneIds] = useState([]);
   const [vybranyTag, setVybranyTag] = useState(null);
   const [mapFocus, setMapFocus] = useState(null);
@@ -267,9 +266,11 @@ export default function App() {
             <ScrollView style={styles.content}>
               {aktivniTab === 'Program' && (
                 <>
+                  {/* Kliknutí na slovo PROGRAM zruší výběr dne a ukáže vše */}
                   <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7}>
                     <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                   </TouchableOpacity>
+                  
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
                     {dny.map((den, index) => (
                       <TouchableOpacity key={index} style={[styles.dayPill, (vybranyDen === den && !vybranyTag) && styles.dayPillActive]}
@@ -310,7 +311,6 @@ export default function App() {
                   </View>
 
                   <View style={styles.socialContainer}>
-                    {/* ZMĚNĚNÉ ODKAZY */}
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
                       <Image source={require('./assets/muo-icon.png')} style={styles.customSocialIcon} />
                     </TouchableOpacity>
@@ -329,7 +329,8 @@ export default function App() {
           )}
 
           <View style={styles.bottomNav}>
-            <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Program')}>
+            {/* Kliknutí na Program vynutí zobrazení celého programu (VŠE), aby se choval přesně podle zadání */}
+            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); }}>
               <Ionicons name={aktivniTab === 'Program' ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' ? '#8B5CF6' : 'black'} />
               <Text style={[styles.navText, { color: aktivniTab === 'Program' ? '#8B5CF6' : 'black' }]}>Program</Text>
             </TouchableOpacity>
