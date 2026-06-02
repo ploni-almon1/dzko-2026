@@ -29,10 +29,19 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             display: flex; align-items: center; justify-content: center;
         }
         
+        /* Zvětšení ikon a úprava na OUTLINE (obrysový) styl */
         .dzko-pin i {
             transform: rotate(45deg);
-            color: white; font-size: 11px;
+            font-size: 14px; /* Zvětšeno */
+            color: transparent; /* Zprůhlední vnitřek */
+            -webkit-text-stroke: 1.5px white; /* Přidá bílý obrys */
             margin-bottom: 2px; margin-left: 2px;
+        }
+
+        /* Výjimka pro Davidovu hvězdu (ta už je obrysová přirozeně, tah navíc by ji slil do fleku) */
+        .dzko-pin i.fa-star-of-david {
+            color: white;
+            -webkit-text-stroke: 0px;
         }
         
         .leaflet-popup-content-wrapper { border-radius: 8px; }
@@ -72,11 +81,12 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
             }
         }
 
+        /* PŘIDÁNY NOVÉ IKONY (Větší a v outline stylu) */
         pridejMisto(49.5980481, 17.2610522, 'Mozarteum', 'fa-landmark');
-        pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií', 'fa-graduation-cap');
-        pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc', 'fa-synagogue');
+        pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií', 'fa-book');
+        pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc', 'fa-star-of-david');
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
-        pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-ticket');
+        pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
     </script>
 </body>
 </html>
@@ -300,24 +310,16 @@ export default function App() {
                   </View>
 
                   <View style={styles.socialContainer}>
-                    {/* MUO Ikona */}
-                    <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz')}>
-                      <Image 
-                        source={require('./assets/muo-icon.png')} 
-                        style={styles.customSocialIcon} 
-                      />
+                    {/* ZMĚNĚNÉ ODKAZY */}
+                    <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
+                      <Image source={require('./assets/muo-icon.png')} style={styles.customSocialIcon} />
                     </TouchableOpacity>
                     
-                    {/* Nová nahraná Facebook ikona */}
-                    <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://facebook.com')}>
-                      <Image 
-                        source={require('./assets/facebook-icon.png')} 
-                        style={styles.customSocialIcon} 
-                      />
+                    <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')}>
+                      <Image source={require('./assets/facebook-icon.png')} style={styles.customSocialIcon} />
                     </TouchableOpacity>
                     
-                    {/* Instagram (zatím zachován původní z knihovny Ionicons) */}
-                    <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://instagram.com')}>
+                    <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                       <Ionicons name="logo-instagram" size={20} color="white" />
                     </TouchableOpacity>
                   </View>
@@ -400,10 +402,7 @@ const styles = StyleSheet.create({
   contentInlineLink: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563' },
   socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
-  
-  /* ZMĚNĚNO NA customSocialIcon: Tento styl zakulatí jakýkoliv nahraný obrázek na 36x36px kruh */
   customSocialIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover' },
-  
   bottomNav: { flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: 'white', borderTopWidth: 1, borderColor: '#E5E7EB', height: Platform.OS === 'web' ? 60 : 'auto', alignItems: Platform.OS === 'web' ? 'center' : 'stretch', paddingTop: Platform.OS === 'web' ? 0 : 10, paddingBottom: Platform.OS === 'web' ? 0 : (Platform.OS === 'android' ? 50 : 40) },
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
   navText: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: Platform.OS === 'web' ? 2 : 4 }
