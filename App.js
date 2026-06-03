@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -92,6 +92,7 @@ export default function App() {
   const [vybranyDen, setVybranyDen] = useState('VŠE');
   const [aktivniTab, setAktivniTab] = useState('Program');
   const [oblibeneIds, setOblibeneIds] = useState([]);
+  const [mojeRezervace, setMojeRezervace] = useState([]); // STAV PRO ULOZENÉ REZERVACE
   const [vybranyTag, setVybranyTag] = useState(null);
   const [mapFocus, setMapFocus] = useState(null);
   const [rozbaleno, setRozbaleno] = useState(null);
@@ -106,6 +107,7 @@ export default function App() {
   const [rezervaceEmail, setRezervaceEmail] = useState('');
   const [odesilaRezervaci, setOdesilaRezervaci] = useState(false);
   const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
+  const [rezervaceChyba, setRezervaceChyba] = useState(null); 
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -118,13 +120,16 @@ export default function App() {
       meta.content = '#8B5CF6';
     }
 
-    const nactiOblibene = async () => {
+    const nactiData = async () => {
       try {
         const ulozenaData = await AsyncStorage.getItem('@moje_srdicka');
         if (ulozenaData !== null) setOblibeneIds(JSON.parse(ulozenaData));
-      } catch (error) { console.error('Chyba při načítání srdíček:', error); }
+        
+        const ulozeneRezervace = await AsyncStorage.getItem('@moje_rezervace');
+        if (ulozeneRezervace !== null) setMojeRezervace(JSON.parse(ulozeneRezervace));
+      } catch (error) { console.error('Chyba při načítání lokálních dat:', error); }
     };
-    nactiOblibene();
+    nactiData();
 
     const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
     const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
@@ -162,7 +167,7 @@ export default function App() {
               popis: f['Anotace'] || '',
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
               odkaz: f['Vstupenky'] || null, 
-              rezervace: !!f['Rezervace'] // Bezpečný převod na true/false
+              rezervace: !!f['Rezervace']
             };
           });
 
@@ -224,11 +229,21 @@ export default function App() {
     setRezervaceEmail('');
     setOdesilaRezervaci(false);
     setRezervaceOdeslana(false);
+    setRezervaceChyba(null);
+  };
+
+  const clickTagNaProgram = (tag) => {
+    setVybranyTag(tag);
+    setVybranyDen('VŠE');
+    setAktivniTab('Program');
+    setDetailAkce(null);
   };
 
   const handleOdeslatRezervaci = async () => {
+    setRezervaceChyba(null); 
+    
     if (!rezervaceJmeno.trim() || !rezervaceEmail.trim()) {
-      alert('Prosím, vyplňte jméno i e-mail pro rezervaci.');
+      setRezervaceChyba('Prosím, vyplňte jméno i e-mail.');
       return;
     }
     
@@ -246,7 +261,7 @@ export default function App() {
         body: JSON.stringify({
           records: [{
             fields: {
-              "Akce": detailAkce.nazev,
+              "Akce": [detailAkce.id], 
               "Jméno": rezervaceJmeno,
               "Email": rezervaceEmail
             }
@@ -254,11 +269,30 @@ export default function App() {
         })
       });
 
-      if (!response.ok) throw new Error('Nepodařilo se odeslat rezervaci. Zkuste to prosím později.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log("Airtable chyba:", errorData);
+        setRezervaceChyba(`Airtable zamítl uložení: ${errorData?.error?.message || 'Neznámý problém'}`);
+        setOdesilaRezervaci(false);
+        return;
+      }
       
       setRezervaceOdeslana(true);
+      
+      // Uložení infa, že máme rezervaci
+      const noveRezervace = [...new Set([...mojeRezervace, detailAkce.id])];
+      setMojeRezervace(noveRezervace);
+      await AsyncStorage.setItem('@moje_rezervace', JSON.stringify(noveRezervace));
+
+      // Automatické přidání do oblíbených, pokud to tam není
+      if (!oblibeneIds.includes(detailAkce.id)) {
+        const noveOblibene = [...oblibeneIds, detailAkce.id];
+        setOblibeneIds(noveOblibene);
+        await AsyncStorage.setItem('@moje_srdicka', JSON.stringify(noveOblibene));
+      }
+
     } catch (err) {
-      alert(err.message);
+      setRezervaceChyba(`Chyba připojení: ${err.message}`);
     } finally {
       setOdesilaRezervaci(false);
     }
@@ -293,6 +327,7 @@ export default function App() {
     const casParts = item.cas.split(' | ');
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
     const mistoText = casParts.length > 2 ? casParts[2] : null;
+    const maRezervaci = mojeRezervace.includes(item.id);
 
     return (
       <View key={item.id} style={styles.card}>
@@ -317,22 +352,26 @@ export default function App() {
         <View style={styles.cardBottomRow}>
           <View style={styles.tagsContainer}>
             {item.tag && item.tag.map((t, index) => (
-              <TouchableOpacity key={index} style={styles.tagPill} onPress={() => setVybranyTag(t)} activeOpacity={0.7}>
+              <TouchableOpacity key={index} style={styles.tagPill} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
                 <Text style={styles.tagText}>{t}</Text>
               </TouchableOpacity>
             ))}
             
-            {/* GHOST BUTTON VSTUPENKY */}
             {item.odkaz && (
               <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
                 <Text style={styles.tagTextOutline}>VSTUPENKY</Text>
               </TouchableOpacity>
             )}
 
-            {/* GHOST BUTTON REZERVACE (Proklik na detail) */}
             {item.rezervace && (
-              <TouchableOpacity style={styles.tagPillOutline} onPress={() => otevriDetail(item)} activeOpacity={0.7}>
-                <Text style={styles.tagTextOutline}>NUTNÁ REZERVACE</Text>
+              <TouchableOpacity 
+                style={[styles.tagPillOutline, maRezervaci && styles.tagPillRezervovano]} 
+                onPress={() => otevriDetail(item)} 
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.tagTextOutline, maRezervaci && styles.tagTextRezervovano]}>
+                  {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -349,10 +388,7 @@ export default function App() {
     const casParts = item.cas.split(' | ');
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
     const mistoText = casParts.length > 2 ? casParts[2] : null;
-
-    const zobrazenyTitulek = (item.host !== '' && !item.nazev.startsWith(item.host)) 
-      ? `${item.host}: ${item.nazev}` 
-      : item.nazev;
+    const maRezervaci = mojeRezervace.includes(item.id);
 
     return (
       <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
@@ -361,15 +397,20 @@ export default function App() {
           <Text style={styles.backBtnText}>Zpět</Text>
         </TouchableOpacity>
 
-        <Text style={styles.detailMainTitle}>{zobrazenyTitulek}</Text>
+        {/* SRDÍČKO PŘIDÁNO K NÁZVU */}
+        <View style={styles.detailTitleRow}>
+          <Text style={styles.detailMainTitle}>{item.nazev}</Text>
+          <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartBtn}>
+            <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.detailTimeLocationRow}>
-          <Ionicons name="time-outline" size={16} color="#4B5563" style={{ marginRight: 5 }} />
+          {/* IKONKY ČASU A PINU ODEBRÁNY */}
           <Text style={styles.cardTime}>{timeText}</Text>
           {mistoText && (
             <>
               <Text style={styles.cardTime}>  |  </Text>
-              <Ionicons name="location-outline" size={16} color="#4B5563" style={{ marginRight: 5 }} />
               <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
                 <Text style={styles.locationLink}>{mistoText}</Text>
               </TouchableOpacity>
@@ -393,11 +434,16 @@ export default function App() {
         {/* REZERVAČNÍ FORMULÁŘ */}
         {item.rezervace && (
           <View style={styles.formContainer}>
-            <Text style={styles.formTitle}>Rezervace místa</Text>
+            <Text style={styles.formTitle}>Rezervace</Text>
+            
             {rezervaceOdeslana ? (
               <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
             ) : (
               <>
+                {rezervaceChyba && (
+                  <Text style={styles.errorText}>{rezervaceChyba}</Text>
+                )}
+                
                 <TextInput
                   style={styles.input}
                   placeholder="Jméno a příjmení"
@@ -428,21 +474,23 @@ export default function App() {
 
         <View style={styles.detailBottomRow}>
           <View style={styles.tagsContainer}>
+            {/* TAGY JSOU KLIKACÍ I V DETAILU */}
             {item.tag && item.tag.map((t, index) => (
-              <View key={index} style={styles.tagPill}>
+              <TouchableOpacity key={index} style={styles.tagPill} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
                 <Text style={styles.tagText}>{t}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
             
-            {/* GHOST BUTTONY V DETAILU */}
             {item.odkaz && (
               <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
                 <Text style={styles.tagTextOutline}>VSTUPENKY ↗</Text>
               </TouchableOpacity>
             )}
             {item.rezervace && (
-              <View style={styles.tagPillOutline}>
-                <Text style={styles.tagTextOutline}>NUTNÁ REZERVACE</Text>
+              <View style={[styles.tagPillOutline, maRezervaci && styles.tagPillRezervovano]}>
+                <Text style={[styles.tagTextOutline, maRezervaci && styles.tagTextRezervovano]}>
+                  {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
+                </Text>
               </View>
             )}
           </View>
@@ -495,11 +543,26 @@ export default function App() {
                 </>
               )}
               
+              {/* ROZDĚLENÍ OBLÍBENÝCH PO DNECH */}
               {aktivniTab === 'Oblíbené' && (
-                <>
+                <View style={{ paddingBottom: 20 }}>
                   <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
-                  {oblibeneZobrazeni.length > 0 ? oblibeneZobrazeni.map(vykresliKartu) : <Text style={styles.emptyText}>Zatím si sem můžete přidat akce kliknutím na srdíčko.</Text>}
-                </>
+                  {oblibeneZobrazeni.length > 0 ? (
+                    dny.map((den, index) => {
+                      const akceDne = oblibeneZobrazeni.filter(item => item.den === den);
+                      if (akceDne.length === 0) return null;
+                      
+                      return (
+                        <View key={index} style={{ marginBottom: 15 }}>
+                          <Text style={styles.favoriteDayHeader}>{den}</Text>
+                          {akceDne.map(vykresliKartu)}
+                        </View>
+                      );
+                    })
+                  ) : (
+                    <Text style={styles.emptyText}>Zatím si sem můžete přidat akce kliknutím na srdíčko.</Text>
+                  )}
+                </View>
               )}
               
               {aktivniTab === 'Další' && (
@@ -577,6 +640,9 @@ const styles = StyleSheet.create({
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
   pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28, marginTop: 20, marginBottom: 15 },
   pageTitleInternal: { fontFamily: 'Inter_400Regular', fontSize: 28, marginTop: 20, marginBottom: 10 },
+  
+  favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, // Nápisy dnů v oblíbených
+  
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
   daysContainer: { flexDirection: 'row', marginBottom: 20 },
   dayPill: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: '#D1D5DB', marginRight: 6, backgroundColor: 'transparent' },
@@ -591,12 +657,16 @@ const styles = StyleSheet.create({
   cardHost: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#374151', marginBottom: 10 },
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
-  tagPill: { backgroundColor: '#8B5CF6', alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 15, marginRight: 8, marginTop: 5 },
-  tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 12, lineHeight: 16 },
   
-  // GHOST BUTTONY
+  // ZMENŠENÉ KLASICKÉ TAGY
+  tagPill: { backgroundColor: '#8B5CF6', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5 },
+  tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 11, fontWeight: '600' },
+  
+  // GHOST A REZERVAČNÍ TAGY
   tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5, borderWidth: 1, borderColor: '#8B5CF6' },
   tagTextOutline: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 11, fontWeight: '600' },
+  tagPillRezervovano: { backgroundColor: '#00ff7f', borderColor: '#00ff7f' },
+  tagTextRezervovano: { color: '#000' },
 
   heartIconBtn: { paddingBottom: 2, paddingLeft: 10 },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#6B7280', textAlign: 'center', marginTop: 30, lineHeight: 22 },
@@ -604,20 +674,25 @@ const styles = StyleSheet.create({
   /* Styly pro detail akce */
   backBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, alignSelf: 'flex-start' },
   backBtnText: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 16, marginLeft: 5 },
-  detailMainTitle: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', marginBottom: 15, lineHeight: 32 },
+  
+  detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
+  detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', lineHeight: 32 },
+  detailHeartBtn: { marginLeft: 10, paddingTop: 2 },
+  
   detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
   wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
   wireframeText: { fontFamily: 'Inter_400Regular', color: '#9CA3AF', marginTop: 10 },
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
   detailBottomRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
   
-  // Styly pro rezervační formulář
+  /* Formular a zprava s chybou */
   formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
   formTitle: { fontFamily: 'Inter_400Regular', fontSize: 18, marginBottom: 15, color: '#111827', fontWeight: 'bold' },
   input: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, marginBottom: 12, fontFamily: 'Inter_400Regular', fontSize: 14, color: '#111827', backgroundColor: '#F9FAFB' },
   submitBtn: { backgroundColor: '#8B5CF6', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 5 },
   submitBtnText: { color: 'white', fontFamily: 'Inter_400Regular', fontSize: 14, fontWeight: 'bold' },
   successText: { color: '#10B981', fontFamily: 'Inter_400Regular', fontSize: 15, textAlign: 'center', marginVertical: 10, fontWeight: 'bold' },
+  errorText: { color: '#EF4444', fontFamily: 'Inter_400Regular', fontSize: 13, marginBottom: 12, lineHeight: 18 }, 
 
   dalsiContainer: { paddingTop: 20, paddingBottom: 40 },
   dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#000', marginBottom: 30, lineHeight: 34 },
@@ -637,4 +712,3 @@ const styles = StyleSheet.create({
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
   navText: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: Platform.OS === 'web' ? 2 : 4 }
 });
-
