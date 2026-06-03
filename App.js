@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,9 +15,15 @@ export default function App() {
   const [aktivniTab, setAktivniTab] = useState('Program');
   const [oblibeneIds, setOblibeneIds] = useState([]);
   const [vybranyTag, setVybranyTag] = useState(null);
+  
+  // Nové stavy pro načítání dat z Airtable
+  const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // --- NAČTENÍ PAMĚTI PO ZAPNUTÍ APLIKACE ---
+  // --- NAČTENÍ PAMĚTI A DATA Z AIRTABLE PO ZAPNUTÍ ---
   useEffect(() => {
+    // 1. Načtení srdíček z paměti telefonu
     const nactiOblibene = async () => {
       try {
         const ulozenaData = await AsyncStorage.getItem('@moje_srdicka');
@@ -29,36 +35,70 @@ export default function App() {
       }
     };
     nactiOblibene();
+
+    // 2. Stažení ostrých dat z tvého Airtablu
+    const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
+    const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
+
+    if (!baseId || !token) {
+      setError('Chybí konfigurace API klíčů ve Vercelu.');
+      setLoading(false);
+      return;
+    }
+
+    fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Nepodařilo se připojit k Airtable.');
+        return response.json();
+      })
+      .then((data) => {
+        // Převod Airtable řádků na tvůj přesný formát karet
+        const upravenaData = data.records
+          .filter(record => record.fields['Název akce']) // Skryje úplně prázdné řádky
+          .map(record => {
+            const f = record.fields;
+            
+            // Složíme řádek s časem a místem přesně tak, jak jsi ho měl ty natvrdo zapsaný
+            const denText = f['Den'] || 'PO 12';
+            const casText = f['Čas'] || '--:--';
+            const mistoText = f['Místo'] || '';
+            const slozenyCas = [denText, casText, mistoText].filter(Boolean).join(' | ');
+
+            return {
+              id: record.id, // Airtable používá textové ID typu 'recXXXXXX'
+              den: f['Den'] || 'PO 12',
+              cas: slozenyCas,
+              nazev: f['Název akce'],
+              host: f['Host'] || '',
+              tag: f['Tagy'] || [],
+              // Podpora pro tvůj testovací obrázek (botu)
+              image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : ''
+            };
+          });
+
+        // Seřadíme přednášky podle času, aby šly chronologicky za sebou
+        upravenaData.sort((a, b) => a.cas.localeCompare(b.cas));
+
+        setPrednaskyVsechny(upravenaData);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(err.message);
+        setLoading(false);
+      });
   }, []); 
 
-  // --- DATABÁZE AKCÍ ---
-  const prednaskyVsechny = [
-    { id: 1, den: 'PO 12', cas: 'PO 12 | 16:45 | CJS', nazev: 'Mährisch Deutsch a geniza', host: 'Lenka Uličná', tag: ['PŘEDNÁŠKA'] },
-    { id: 2, den: 'PO 12', cas: 'PO 12 | 18:30 | Beseda', nazev: 'HLASY', host: '', tag: ['VERNISÁŽ', 'ZAHÁJENÍ'] },
-    { id: 3, den: 'PO 12', cas: 'PO 12 | 20:00', nazev: 'Kafka Band', host: '', tag: ['KONCERT'] },
-    { id: 4, den: 'ÚT 13', cas: 'ÚT 13 | 17:00 | Sladovna Holice', nazev: 'Olomoucké sladovny', host: 'Michael Viktořík', tag: ['PŘEDNÁŠKA'] },
-    { id: 5, den: 'ÚT 13', cas: 'ÚT 13 | 19:00 | Central', nazev: 'Happy Days in Brno...; Dopisy z Brna', host: '', tag: ['FILM'] },
-    { id: 6, den: 'ST 14', cas: 'ST 14 | 17:00 | Mozarteum', nazev: 'Brněnští německy píšící židovští autoři', host: 'Ingeborg Fialová', tag: ['PŘEDNÁŠKA'] },
-    { id: 7, den: 'ST 14', cas: 'ST 14 | 18:00 | Central', nazev: 'Mladé víno z moravských (a českých) obcí', host: 'Anna Štičková, Klára Goldstein, Tim Postovit', tag: ['AUTORSKÉ ČTENÍ'] },
-    { id: 8, den: 'ST 14', cas: 'ST 14 | 20:00 | Central', nazev: 'JAZZ', host: '', tag: ['KONCERT'] },
-    { id: 9, den: 'ČT 15', cas: 'ČT 15 | 17:00', nazev: 'Brněnští židovští podnikatelé v kontextu textilního průmyslu', host: 'Michal Doležel', tag: ['PŘEDNÁŠKA'] },
-    { id: 10, den: 'ČT 15', cas: 'ČT 15 | 19:00 | Central', nazev: 'Návrat do hořícího domu', host: '', tag: ['FILM'] },
-    { id: 11, den: 'SO 17', cas: 'SO 17 | 10:00 | Prostějov', nazev: 'Hanácký Jeruzalém: Komentovaná prohlídka', host: '', tag: ['PROHLÍDKA'] },
-    { id: 12, den: 'SO 17', cas: 'SO 17 | 15:30 | Mozarteum/Central?', nazev: 'Workshop pro rodiny s dětmi', host: '', tag: ['WORKSHOP'] },
-    { id: 13, den: 'SO 17', cas: 'SO 17 | 17:00', nazev: 'Komentovaná prohlídka Centralu - rodina Donathových', host: 'Jan Jeništa/Saša Jeništa', tag: ['PROHLÍDKA'] },
-    { id: 14, den: 'NE 18', cas: 'NE 18 | 10:00 | ŽOO, Komenského 9', nazev: 'Den otevřených dveří', host: '', tag: ['ŽOO - Den otevřených dveří'] },
-    { id: 15, den: 'NE 18', cas: 'NE 18 | 11:00', nazev: 'Komentovaná prohlídka nového a starého židovského hřbitova v Olomouci', host: 'Daniel Soukup', tag: ['PROHLÍDKA'] },
-    { id: 16, den: 'NE 18', cas: 'NE 18 | 20:00 | Kostel Panny Marie Sněžné?', nazev: 'Oratorium Josef', host: '', tag: ['KONCERT'] },
-  ];
-
-  // --- LOGIKA FILTROVÁNÍ ---
+  // --- LOGIKA FILTROVÁNÍ (Zůstala 100% tvá původní) ---
   const zobrazenePrednasky = vybranyTag
-    ? prednaskyVsechny.filter(item => item.tag.includes(vybranyTag))
+    ? prednaskyVsechny.filter(item => item.tag && item.tag.includes(vybranyTag))
     : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
 
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
 
-  // --- UKLÁDÁNÍ DO PAMĚTI ---
+  // --- UKLÁDÁNÍ DO PAMĚTI (Zůstala 100% tvá původní) ---
   const prepniOblibene = async (id) => {
     let novySeznam;
     if (oblibeneIds.includes(id)) {
@@ -76,9 +116,14 @@ export default function App() {
     }
   };
 
-  // --- VYKRESLENÍ KARTY ---
+  // --- VYKRESLENÍ KARTY (Tvá původní, jen s volitelným obrázkem) ---
   const vykresliKartu = (item) => (
     <View key={item.id} style={styles.card}>
+      {/* Pokud editor nahraje obrázek, vykreslí se na začátku karty */}
+      {item.image ? (
+        <Image source={{ uri: item.image }} style={styles.cardImage} />
+      ) : null}
+
       <Text style={styles.cardTime}>{item.cas}</Text>
       <Text style={styles.cardTitle}>{item.nazev}</Text>
       {item.host !== '' && (
@@ -87,7 +132,7 @@ export default function App() {
       
       <View style={styles.cardBottomRow}>
         <View style={styles.tagsContainer}>
-          {item.tag.map((t, index) => (
+          {item.tag && item.tag.map((t, index) => (
             <TouchableOpacity 
               key={index} 
               style={styles.tagPill} 
@@ -110,8 +155,18 @@ export default function App() {
     </View>
   );
 
-  if (!fontsLoaded) {
-    return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center'}} />;
+  // Načítací kolečko během stahování dat
+  if (!fontsLoaded || loading) {
+    return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
+  }
+
+  // Zobrazení případné fatální chyby sítě
+  if (error) {
+    return (
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6', padding: 20}}>
+        <Text style={{color: '#ef4444', fontFamily: 'Inter_400Regular', textAlign: 'center'}}>{error}</Text>
+      </View>
+    );
   }
 
   return (
@@ -121,7 +176,7 @@ export default function App() {
         <Text style={styles.headerText}>DŽKO</Text>
       </View>
 
-      {/* POKUD JE AKTIVNÍ MAPA, NEBALÍME JI DO SCROLLVIEW (ABY ŠLO MAPOU POSOUVAT) */}
+      {/* MAPA (Tvá původní přesná specifikace) */}
       {aktivniTab === 'Mapa' ? (
         <View style={styles.mapTabContainer}>
           <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
@@ -178,7 +233,7 @@ export default function App() {
               {oblibeneZobrazeni.length > 0 ? (
                 oblibeneZobrazeni.map(vykresliKartu)
               ) : (
-                <Text style={styles.emptyText}>Zatím si sem můžete přidat oblíbené akce z programu kliknutím na srdíčko vpravo dole na kartě.</Text>
+                <Text style={styles.emptyText}>Zatím si sem můžete přidat oblíbené akce z programu kliktumím na srdíčko vpravo dole na kartě.</Text>
               )}
             </>
           )}
@@ -194,7 +249,7 @@ export default function App() {
         </ScrollView>
       )}
 
-      {/* SPODNÍ NAVIGACE */}
+      {/* SPODNÍ NAVIGACE (Tvá původní elegantní lišta) */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Program')}>
           <Ionicons name={aktivniTab === 'Program' ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' ? '#8B5CF6' : 'black'} />
@@ -221,6 +276,7 @@ export default function App() {
   );
 }
 
+// --- TVÉ PŮVODNÍ STYLY DO POSLEDNÍHO DETAILU ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -301,6 +357,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3, 
   },
+  // Přidaný styl pro fotku z Airtablu uvnitř tvé karty
+  cardImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 8,
+    marginBottom: 12,
+    resizeMode: 'cover'
+  },
   cardTime: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
@@ -377,3 +441,4 @@ const styles = StyleSheet.create({
     marginTop: Platform.OS === 'web' ? 2 : 4,
   }
 });
+
