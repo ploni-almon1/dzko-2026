@@ -90,7 +90,7 @@ export default function App() {
 
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   const [vybranyDen, setVybranyDen] = useState('VŠE');
-  const [aktivniTab, setAktivniTab] = useState('Další');
+  const [aktivniTab, setAktivniTab] = useState('Program');
   const [oblibeneIds, setOblibeneIds] = useState([]);
   const [vybranyTag, setVybranyTag] = useState(null);
   const [mapFocus, setMapFocus] = useState(null);
