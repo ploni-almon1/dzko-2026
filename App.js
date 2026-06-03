@@ -261,7 +261,7 @@ export default function App() {
         body: JSON.stringify({
           records: [{
             fields: {
-              "Akce ID": [detailAkce.id], 
+              "Akce ID": detailAkce.id, 
               "Jméno": rezervaceJmeno,
               "Email": rezervaceEmail
             }
