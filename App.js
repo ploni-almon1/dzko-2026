@@ -163,7 +163,7 @@ export default function App() {
               cas: slozenyCas,
               nazev: f['Název akce'],
               host: f['Host'] || '',
-              roleHosta: f['Role hosta'] || 'host', // NOVÝ SLOUPEČEK ROLE HOSTA
+              roleHosta: f['Role hosta'] || 'host',
               tag: f['Tagy'] || [],
               popis: f['Anotace'] || '',
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
@@ -262,7 +262,7 @@ export default function App() {
         body: JSON.stringify({
           records: [{
             fields: {
-              "Akce ID": detailAkce.id, // OPRAVA HRANATÝCH ZÁVOREK PRO AIRTABLE
+              "Akce ID": detailAkce.id,
               "Jméno": rezervaceJmeno,
               "Email": rezervaceEmail
             }
@@ -348,7 +348,6 @@ export default function App() {
           <Text style={styles.cardTitle}>{item.nazev}</Text>
         </TouchableOpacity>
         
-        {/* OPRAVA - ZOBRAZENÍ ROLE HOSTA */}
         {item.host !== '' && <Text style={styles.cardHost}>{item.roleHosta}: {item.host}</Text>}
         
         <View style={styles.cardBottomRow}>
@@ -406,7 +405,6 @@ export default function App() {
           </TouchableOpacity>
         </View>
 
-        {/* OPRAVA - ZOBRAZENÍ ROLE HOSTA V DETAILU */}
         {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
 
         <View style={styles.detailTimeLocationRow}>
@@ -437,7 +435,18 @@ export default function App() {
         {/* REZERVAČNÍ FORMULÁŘ */}
         {item.rezervace && (
           <View style={styles.formContainer}>
-            <Text style={styles.formTitle}>Rezervace</Text>
+            {/* Z NUDPISU JE NYNÍ TLAČÍTKO PRO OBNOVENÍ FORMULÁŘE */}
+            <TouchableOpacity 
+              activeOpacity={0.7} 
+              onPress={() => {
+                setRezervaceOdeslana(false);
+                setRezervaceJmeno('');
+                setRezervaceEmail('');
+                setRezervaceChyba(null);
+              }}
+            >
+              <Text style={styles.formTitle}>Rezervace</Text>
+            </TouchableOpacity>
             
             {rezervaceOdeslana ? (
               <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
