@@ -333,60 +333,63 @@ export default function App() {
     return (
       <View key={item.id} style={styles.card}>
         
-        {/* NOVÉ ZOBRAZENÍ OBRÁZKU NAD TEXTEM V KARTĚ PROGRAMU */}
+        {/* OBRÁZEK ROZTAŽENÝ AŽ DO KRAJŮ (HORNÍCH) */}
         {item.image && (
           <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
             <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
           </TouchableOpacity>
         )}
 
-        <View style={styles.timeLocationRow}>
-          <Text style={styles.cardTime}>{timeText}</Text>
-          {mistoText && (
-            <>
-              <Text style={styles.cardTime}> | </Text>
-              <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                <Text style={styles.locationLink}>{mistoText}</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-        
-        <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.6}>
-          <Text style={styles.cardTitle}>{item.nazev}</Text>
-        </TouchableOpacity>
-        
-        {item.host !== '' && <Text style={styles.cardHost}>{item.roleHosta}: {item.host}</Text>}
-        
-        <View style={styles.cardBottomRow}>
-          <View style={styles.tagsContainer}>
-            {item.tag && item.tag.map((t, index) => (
-              <TouchableOpacity key={index} style={styles.tagPill} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                <Text style={styles.tagText}>{t}</Text>
-              </TouchableOpacity>
-            ))}
-            
-            {item.odkaz && (
-              <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                <Text style={styles.tagTextOutline}>VSTUPENKY</Text>
-              </TouchableOpacity>
-            )}
-
-            {item.rezervace && (
-              <TouchableOpacity 
-                style={[styles.tagPillOutline, maRezervaci && styles.tagPillRezervovano]} 
-                onPress={() => otevriDetail(item)} 
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.tagTextOutline, maRezervaci && styles.tagTextRezervovano]}>
-                  {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
-                </Text>
-              </TouchableOpacity>
+        {/* OBSAHOVÁ ČÁST S PADDINGEM */}
+        <View style={styles.cardContent}>
+          <View style={styles.timeLocationRow}>
+            <Text style={styles.cardTime}>{timeText}</Text>
+            {mistoText && (
+              <>
+                <Text style={styles.cardTime}> | </Text>
+                <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                  <Text style={styles.locationLink}>{mistoText}</Text>
+                </TouchableOpacity>
+              </>
             )}
           </View>
-          <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
-            <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
+          
+          <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.6}>
+            <Text style={styles.cardTitle}>{item.nazev}</Text>
           </TouchableOpacity>
+          
+          {item.host !== '' && <Text style={styles.cardHost}>{item.roleHosta}: {item.host}</Text>}
+          
+          <View style={styles.cardBottomRow}>
+            <View style={styles.tagsContainer}>
+              {item.tag && item.tag.map((t, index) => (
+                <TouchableOpacity key={index} style={styles.tagPill} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                  <Text style={styles.tagText}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+              
+              {item.odkaz && (
+                <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                  <Text style={styles.tagTextOutline}>VSTUPENKY</Text>
+                </TouchableOpacity>
+              )}
+
+              {item.rezervace && (
+                <TouchableOpacity 
+                  style={[styles.tagPillOutline, maRezervaci && styles.tagPillRezervovano]} 
+                  onPress={() => otevriDetail(item)} 
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.tagTextOutline, maRezervaci && styles.tagTextRezervovano]}>
+                    {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
+              <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -666,10 +669,15 @@ const styles = StyleSheet.create({
   dayPillActive: { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' },
   dayText: { fontFamily: 'Inter_400Regular', color: '#374151', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
-  card: { backgroundColor: '#F3F4F6', padding: 15, borderRadius: 10, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
   
-  // NOVÝ STYL PRO OBRÁZEK V KARTĚ PROGRAMU
-  cardImage: { width: '100%', height: 160, borderRadius: 8, marginBottom: 12, backgroundColor: '#E5E7EB' },
+  // ODEBRÁN PADDING Z KARTY, ABY OBRÁZEK DOSÁHL KE KRAJŮM
+  card: { backgroundColor: '#F3F4F6', borderRadius: 10, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
+  
+  // NOVÝ KONTEJNER PRO TEXTOVÝ OBSAH KARTY S PADDINGEM
+  cardContent: { padding: 15 },
+  
+  // UPRAVENÝ STYL PRO OBRÁZEK V KARTĚ PROGRAMU - pouze horní zaoblení
+  cardImage: { width: '100%', height: 160, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: '#E5E7EB' },
   
   timeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' },
   cardTime: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563' },
