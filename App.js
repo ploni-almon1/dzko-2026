@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -106,6 +106,7 @@ export default function App() {
   const [rezervaceEmail, setRezervaceEmail] = useState('');
   const [odesilaRezervaci, setOdesilaRezervaci] = useState(false);
   const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
+  const [rezervaceChyba, setRezervaceChyba] = useState(null); // NOVÝ STAV PRO CHYBU
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -162,7 +163,7 @@ export default function App() {
               popis: f['Anotace'] || '',
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
               odkaz: f['Vstupenky'] || null, 
-              rezervace: !!f['Rezervace'] // Bezpečný převod na true/false
+              rezervace: !!f['Rezervace']
             };
           });
 
@@ -224,11 +225,14 @@ export default function App() {
     setRezervaceEmail('');
     setOdesilaRezervaci(false);
     setRezervaceOdeslana(false);
+    setRezervaceChyba(null); // Vymaže předchozí chyby
   };
 
   const handleOdeslatRezervaci = async () => {
+    setRezervaceChyba(null); // Reset chyby při novém pokusu
+    
     if (!rezervaceJmeno.trim() || !rezervaceEmail.trim()) {
-      Alert.alert('Chybí údaje', 'Prosím, vyplňte jméno i e-mail pro rezervaci.');
+      setRezervaceChyba('Prosím, vyplňte jméno i e-mail.');
       return;
     }
     
@@ -255,19 +259,19 @@ export default function App() {
       });
 
       if (!response.ok) {
+        // Pokud Airtable odpoví chybou (např. 403 Forbidden, 422 Unprocessable Entity)
         const errorData = await response.json();
-        console.log("Airtable Error Data:", errorData);
-        Alert.alert(
-          'Chyba z Airtable',
-          `Airtable odmítl data uložit. Důvod:\n${errorData?.error?.message || JSON.stringify(errorData)}`
-        );
+        console.log("Airtable chyba:", errorData);
+        setRezervaceChyba(`Airtable zamítl uložení: ${errorData?.error?.message || 'Neznámý problém'}`);
         setOdesilaRezervaci(false);
-        return; // Ukončíme funkci, aby se neukázalo "Úspěšně odesláno"
+        return;
       }
       
+      // Vše proběhlo v pořádku
       setRezervaceOdeslana(true);
     } catch (err) {
-      Alert.alert('Chyba sítě', `Nepodařilo se připojit. Zkontrolujte internet:\n${err.message}`);
+      // Pokud selže samotné připojení na internet (např. blokování prohlížečem)
+      setRezervaceChyba(`Chyba připojení: ${err.message}`);
     } finally {
       setOdesilaRezervaci(false);
     }
@@ -331,14 +335,12 @@ export default function App() {
               </TouchableOpacity>
             ))}
             
-            {/* GHOST BUTTON VSTUPENKY */}
             {item.odkaz && (
               <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
                 <Text style={styles.tagTextOutline}>VSTUPENKY</Text>
               </TouchableOpacity>
             )}
 
-            {/* GHOST BUTTON REZERVACE (Proklik na detail) */}
             {item.rezervace && (
               <TouchableOpacity style={styles.tagPillOutline} onPress={() => otevriDetail(item)} activeOpacity={0.7}>
                 <Text style={styles.tagTextOutline}>NUTNÁ REZERVACE</Text>
@@ -403,10 +405,17 @@ export default function App() {
         {item.rezervace && (
           <View style={styles.formContainer}>
             <Text style={styles.formTitle}>Rezervace místa</Text>
+            
+            {/* Zobrazení úspěchu */}
             {rezervaceOdeslana ? (
               <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
             ) : (
               <>
+                {/* Zobrazení chybové hlášky červeně */}
+                {rezervaceChyba && (
+                  <Text style={styles.errorText}>{rezervaceChyba}</Text>
+                )}
+                
                 <TextInput
                   style={styles.input}
                   placeholder="Jméno a příjmení"
@@ -443,7 +452,6 @@ export default function App() {
               </View>
             ))}
             
-            {/* GHOST BUTTONY V DETAILU */}
             {item.odkaz && (
               <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
                 <Text style={styles.tagTextOutline}>VSTUPENKY ↗</Text>
@@ -602,11 +610,8 @@ const styles = StyleSheet.create({
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
   tagPill: { backgroundColor: '#8B5CF6', alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 15, marginRight: 8, marginTop: 5 },
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 12, lineHeight: 16 },
-  
-  // GHOST BUTTONY
   tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5, borderWidth: 1, borderColor: '#8B5CF6' },
   tagTextOutline: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 11, fontWeight: '600' },
-
   heartIconBtn: { paddingBottom: 2, paddingLeft: 10 },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#6B7280', textAlign: 'center', marginTop: 30, lineHeight: 22 },
   
@@ -620,13 +625,14 @@ const styles = StyleSheet.create({
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
   detailBottomRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
   
-  // Styly pro rezervační formulář
+  /* Formular a zprava s chybou */
   formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
   formTitle: { fontFamily: 'Inter_400Regular', fontSize: 18, marginBottom: 15, color: '#111827', fontWeight: 'bold' },
   input: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, marginBottom: 12, fontFamily: 'Inter_400Regular', fontSize: 14, color: '#111827', backgroundColor: '#F9FAFB' },
   submitBtn: { backgroundColor: '#8B5CF6', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 5 },
   submitBtnText: { color: 'white', fontFamily: 'Inter_400Regular', fontSize: 14, fontWeight: 'bold' },
   successText: { color: '#10B981', fontFamily: 'Inter_400Regular', fontSize: 15, textAlign: 'center', marginVertical: 10, fontWeight: 'bold' },
+  errorText: { color: '#EF4444', fontFamily: 'Inter_400Regular', fontSize: 13, marginBottom: 12, lineHeight: 18 }, // NOVÉ STYLY PRO CHYBU
 
   dalsiContainer: { paddingTop: 20, paddingBottom: 40 },
   dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#000', marginBottom: 30, lineHeight: 34 },
