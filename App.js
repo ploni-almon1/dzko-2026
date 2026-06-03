@@ -1,257 +1,379 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity, 
-  Image, 
-  SafeAreaView, 
-  ActivityIndicator 
-} from 'react-native';
-// Přidáváme zpět profi ikony!
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
-  const [activeDay, setActiveDay] = useState('');
-  const [favorites, setFavorites] = useState([]);
-  const [activeTab, setActiveTab] = useState('program');
-  const [programData, setProgramData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  let [fontsLoaded] = useFonts({
+    Inter_400Regular,
+  });
 
-  // Načtení dat z Airtable
+  // --- STAVY ---
+  const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
+  const [vybranyDen, setVybranyDen] = useState('PO 12');
+  const [aktivniTab, setAktivniTab] = useState('Program');
+  const [oblibeneIds, setOblibeneIds] = useState([]);
+  const [vybranyTag, setVybranyTag] = useState(null);
+
+  // --- NAČTENÍ PAMĚTI PO ZAPNUTÍ APLIKACE ---
   useEffect(() => {
-    const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
-    const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
-
-    if (!baseId || !token) {
-      setError('Chybí propojení s Airtable klíči.');
-      setLoading(false);
-      return;
-    }
-
-    fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error('Nepodařilo se načíst data.');
-        return response.json();
-      })
-      .then((data) => {
-        // Zpracování dat a VYFILTROVÁNÍ prázdných řádků (aby nezavazely)
-        const upravenaData = data.records
-          .filter(record => record.fields['Název akce']) // Ignoruje prázdné řádky v Airtable
-          .map(record => {
-            const f = record.fields;
-            return {
-              id: record.id,
-              title: f['Název akce'],
-              day: f['Den'] || 'Neurčeno',
-              time: f['Čas'] || '--:--',
-              location: f['Místo'] || 'Neurčeno',
-              host: f['Host'] || '',
-              tags: f['Tagy'] || [],
-              description: f['Anotace'] || '',
-              image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : ''
-            };
-          });
-
-        upravenaData.sort((a, b) => a.time.localeCompare(b.time));
-        setProgramData(upravenaData);
-        
-        if (upravenaData.length > 0) {
-          setActiveDay(upravenaData[0].day);
+    const nactiOblibene = async () => {
+      try {
+        const ulozenaData = await AsyncStorage.getItem('@moje_srdicka');
+        if (ulozenaData !== null) {
+          setOblibeneIds(JSON.parse(ulozenaData));
         }
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
+      } catch (error) {
+        console.error('Chyba při načítání srdíček:', error);
+      }
+    };
+    nactiOblibene();
+  }, []); 
 
-  const dnyMenu = [...new Set(programData.map(item => item.day))].sort();
+  // --- DATABÁZE AKCÍ ---
+  const prednaskyVsechny = [
+    { id: 1, den: 'PO 12', cas: 'PO 12 | 16:45 | CJS', nazev: 'Mährisch Deutsch a geniza', host: 'Lenka Uličná', tag: ['PŘEDNÁŠKA'] },
+    { id: 2, den: 'PO 12', cas: 'PO 12 | 18:30 | Beseda', nazev: 'HLASY', host: '', tag: ['VERNISÁŽ', 'ZAHÁJENÍ'] },
+    { id: 3, den: 'PO 12', cas: 'PO 12 | 20:00', nazev: 'Kafka Band', host: '', tag: ['KONCERT'] },
+    { id: 4, den: 'ÚT 13', cas: 'ÚT 13 | 17:00 | Sladovna Holice', nazev: 'Olomoucké sladovny', host: 'Michael Viktořík', tag: ['PŘEDNÁŠKA'] },
+    { id: 5, den: 'ÚT 13', cas: 'ÚT 13 | 19:00 | Central', nazev: 'Happy Days in Brno...; Dopisy z Brna', host: '', tag: ['FILM'] },
+    { id: 6, den: 'ST 14', cas: 'ST 14 | 17:00 | Mozarteum', nazev: 'Brněnští německy píšící židovští autoři', host: 'Ingeborg Fialová', tag: ['PŘEDNÁŠKA'] },
+    { id: 7, den: 'ST 14', cas: 'ST 14 | 18:00 | Central', nazev: 'Mladé víno z moravských (a českých) obcí', host: 'Anna Štičková, Klára Goldstein, Tim Postovit', tag: ['AUTORSKÉ ČTENÍ'] },
+    { id: 8, den: 'ST 14', cas: 'ST 14 | 20:00 | Central', nazev: 'JAZZ', host: '', tag: ['KONCERT'] },
+    { id: 9, den: 'ČT 15', cas: 'ČT 15 | 17:00', nazev: 'Brněnští židovští podnikatelé v kontextu textilního průmyslu', host: 'Michal Doležel', tag: ['PŘEDNÁŠKA'] },
+    { id: 10, den: 'ČT 15', cas: 'ČT 15 | 19:00 | Central', nazev: 'Návrat do hořícího domu', host: '', tag: ['FILM'] },
+    { id: 11, den: 'SO 17', cas: 'SO 17 | 10:00 | Prostějov', nazev: 'Hanácký Jeruzalém: Komentovaná prohlídka', host: '', tag: ['PROHLÍDKA'] },
+    { id: 12, den: 'SO 17', cas: 'SO 17 | 15:30 | Mozarteum/Central?', nazev: 'Workshop pro rodiny s dětmi', host: '', tag: ['WORKSHOP'] },
+    { id: 13, den: 'SO 17', cas: 'SO 17 | 17:00', nazev: 'Komentovaná prohlídka Centralu - rodina Donathových', host: 'Jan Jeništa/Saša Jeništa', tag: ['PROHLÍDKA'] },
+    { id: 14, den: 'NE 18', cas: 'NE 18 | 10:00 | ŽOO, Komenského 9', nazev: 'Den otevřených dveří', host: '', tag: ['ŽOO - Den otevřených dveří'] },
+    { id: 15, den: 'NE 18', cas: 'NE 18 | 11:00', nazev: 'Komentovaná prohlídka nového a starého židovského hřbitova v Olomouci', host: 'Daniel Soukup', tag: ['PROHLÍDKA'] },
+    { id: 16, den: 'NE 18', cas: 'NE 18 | 20:00 | Kostel Panny Marie Sněžné?', nazev: 'Oratorium Josef', host: '', tag: ['KONCERT'] },
+  ];
 
-  const toggleFavorite = (id) => {
-    if (favorites.includes(id)) {
-      setFavorites(favorites.filter(favId => favId !== id));
+  // --- LOGIKA FILTROVÁNÍ ---
+  const zobrazenePrednasky = vybranyTag
+    ? prednaskyVsechny.filter(item => item.tag.includes(vybranyTag))
+    : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
+
+  const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
+
+  // --- UKLÁDÁNÍ DO PAMĚTI ---
+  const prepniOblibene = async (id) => {
+    let novySeznam;
+    if (oblibeneIds.includes(id)) {
+      novySeznam = oblibeneIds.filter(item => item !== id);
     } else {
-      setFavorites([...favorites, id]);
+      novySeznam = [...oblibeneIds, id]; 
+    }
+    
+    setOblibeneIds(novySeznam);
+    
+    try {
+      await AsyncStorage.setItem('@moje_srdicka', JSON.stringify(novySeznam));
+    } catch (error) {
+      console.error('Chyba při ukládání srdíčka:', error);
     }
   };
 
-  const zobrazovanyProgram = activeTab === 'program' 
-    ? programData.filter(item => item.day === activeDay)
-    : programData.filter(item => favorites.includes(item.id));
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
+  // --- VYKRESLENÍ KARTY ---
+  const vykresliKartu = (item) => (
+    <View key={item.id} style={styles.card}>
+      <Text style={styles.cardTime}>{item.cas}</Text>
+      <Text style={styles.cardTitle}>{item.nazev}</Text>
+      {item.host !== '' && (
+        <Text style={styles.cardHost}>host: {item.host}</Text>
+      )}
+      
+      <View style={styles.cardBottomRow}>
+        <View style={styles.tagsContainer}>
+          {item.tag.map((t, index) => (
+            <TouchableOpacity 
+              key={index} 
+              style={styles.tagPill} 
+              onPress={() => setVybranyTag(t)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.tagText}>{t}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        
+        <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
+          <Ionicons 
+            name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} 
+            size={26} 
+            color="black" 
+          />
+        </TouchableOpacity>
       </View>
-    );
-  }
+    </View>
+  );
 
-  if (error) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={{ color: '#ef4444' }}>{error}</Text>
-      </View>
-    );
+  if (!fontsLoaded) {
+    return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center'}} />;
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* HLAVIČKA */}
+      
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>DŽKO</Text>
+        <Text style={styles.headerText}>DŽKO</Text>
       </View>
 
-      {/* OBSAH PROGRAMU */}
-      {(activeTab === 'program' || activeTab === 'favorites') && (
-        <View style={{ flex: 1 }}>
+      {/* POKUD JE AKTIVNÍ MAPA, NEBALÍME JI DO SCROLLVIEW (ABY ŠLO MAPOU POSOUVAT) */}
+      {aktivniTab === 'Mapa' ? (
+        <View style={styles.mapTabContainer}>
+          <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
+          {Platform.OS === 'web' ? (
+            <iframe 
+              src="https://api.mapy.cz/frame?id=1711200&x=17.2514&y=49.5938&z=14&source=coor&title=Festival%20D%C5%BDKO" 
+              style={styles.webMap}
+              frameBorder="0"
+            />
+          ) : (
+            <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
+          )}
+        </View>
+      ) : (
+        <ScrollView style={styles.content}>
           
-          {/* MENU DNŮ */}
-          {activeTab === 'program' && dnyMenu.length > 0 && (
-            <View style={{ height: 60, justifyContent: 'center' }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.daysList}>
-                {dnyMenu.map((den) => (
+          {/* ZÁLOŽKA: PROGRAM */}
+          {aktivniTab === 'Program' && (
+            <>
+              <TouchableOpacity 
+                onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} 
+                activeOpacity={0.7}
+              >
+                <Text style={styles.pageTitle}>
+                  {vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}
+                </Text>
+              </TouchableOpacity>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
+                {dny.map((den, index) => (
                   <TouchableOpacity 
-                    key={den} 
-                    style={[styles.dayButton, activeDay === den && styles.activeDayButton]}
-                    onPress={() => setActiveDay(den)}
+                    key={index} 
+                    style={[styles.dayPill, (vybranyDen === den && !vybranyTag) && styles.dayPillActive]}
+                    onPress={() => { setVybranyDen(den); setVybranyTag(null); }} 
                   >
-                    <Text style={[styles.dayButtonText, activeDay === den && styles.activeDayButtonText]}>
-                      {den}
-                    </Text>
+                    <Text style={[styles.dayText, (vybranyDen === den && !vybranyTag) && styles.dayTextActive]}>{den}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-            </View>
+
+              {zobrazenePrednasky.length > 0 ? (
+                zobrazenePrednasky.map(vykresliKartu)
+              ) : (
+                <Text style={styles.emptyText}>Pro tento výběr zatím není naplánován žádný program.</Text>
+              )}
+            </>
           )}
 
-          {/* VÝPIS KARET */}
-          <ScrollView contentContainerStyle={styles.programList}>
-            {zobrazovanyProgram.length === 0 ? (
-              <Text style={styles.emptyText}>
-                {activeTab === 'favorites' ? 'Nemáš uložené žádné akce.' : 'Pro tento den není žádný program.'}
-              </Text>
-            ) : (
-              zobrazovanyProgram.map((akce) => (
-                <View key={akce.id} style={styles.card}>
-                  
-                  {akce.image ? (
-                    <Image source={{ uri: akce.image }} style={styles.cardImage} />
-                  ) : null}
-                  
-                  <View style={styles.cardContent}>
-                    <View style={styles.cardHeaderRow}>
-                      <Text style={styles.cardTime}>{akce.time}  |  {akce.location}</Text>
-                      {/* Profi ikona pro oblíbené */}
-                      <TouchableOpacity onPress={() => toggleFavorite(akce.id)} style={styles.favButton}>
-                        <Ionicons 
-                          name={favorites.includes(akce.id) ? "star" : "star-outline"} 
-                          size={24} 
-                          color="#8B5CF6" 
-                        />
-                      </TouchableOpacity>
-                    </View>
+          {/* ZÁLOŽKA: OBLÍBENÉ */}
+          {aktivniTab === 'Oblíbené' && (
+            <>
+              <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
+              
+              {oblibeneZobrazeni.length > 0 ? (
+                oblibeneZobrazeni.map(vykresliKartu)
+              ) : (
+                <Text style={styles.emptyText}>Zatím si sem můžete přidat oblíbené akce z programu kliknutím na srdíčko vpravo dole na kartě.</Text>
+              )}
+            </>
+          )}
 
-                    <Text style={styles.cardTitle}>{akce.title}</Text>
-                    {akce.host ? <Text style={styles.cardHost}>Host: {akce.host}</Text> : null}
-                    
-                    {akce.description ? (
-                      <Text style={styles.cardDescription} numberOfLines={4}>
-                        {akce.description}
-                      </Text>
-                    ) : null}
-
-                    {akce.tags && akce.tags.length > 0 ? (
-                      <View style={styles.tagsContainer}>
-                        {akce.tags.map((tag, index) => (
-                          <View key={index} style={styles.tagBadge}>
-                            <Text style={styles.tagText}>{tag}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    ) : null}
-                  </View>
-                </View>
-              ))
-            )}
-          </ScrollView>
-        </View>
+          {/* ZÁLOŽKA: REZERVACE */}
+          {aktivniTab === 'Rezervace' && (
+            <>
+              <Text style={styles.pageTitle}>REZERVACE</Text>
+              <Text style={styles.emptyText}>Tato sekce se zatím připravuje.</Text>
+            </>
+          )}
+          
+        </ScrollView>
       )}
 
-      {/* OSTATNÍ ZÁLOŽKY */}
-      {activeTab === 'map' && <View style={styles.center}><Text style={styles.emptyText}>Interaktivní mapa</Text></View>}
-      {activeTab === 'more' && <View style={styles.center}><Text style={styles.emptyText}>Praktické informace</Text></View>}
+      {/* SPODNÍ NAVIGACE */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Program')}>
+          <Ionicons name={aktivniTab === 'Program' ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' ? '#8B5CF6' : 'black'} />
+          <Text style={[styles.navText, { color: aktivniTab === 'Program' ? '#8B5CF6' : 'black' }]}>Program</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Oblíbené')}>
+          <Ionicons name={aktivniTab === 'Oblíbené' ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' ? '#8B5CF6' : 'black'} />
+          <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' ? '#8B5CF6' : 'black' }]}>Oblíbené</Text>
+        </TouchableOpacity>
 
-      {/* SPODNÍ NAVIGACE S PROFI IKONAMI */}
-      <View style={styles.bottomNavigation}>
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('program')}>
-          <Ionicons name={activeTab === 'program' ? "calendar" : "calendar-outline"} size={24} color={activeTab === 'program' ? '#8B5CF6' : '#71717a'} />
-          <Text style={[styles.navLabel, activeTab === 'program' && styles.activeNavLabel]}>Program</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Mapa')}>
+          <Ionicons name={aktivniTab === 'Mapa' ? "map" : "map-outline"} size={24} color={aktivniTab === 'Mapa' ? '#8B5CF6' : 'black'} />
+          <Text style={[styles.navText, { color: aktivniTab === 'Mapa' ? '#8B5CF6' : 'black' }]}>Mapa</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('favorites')}>
-          <Ionicons name={activeTab === 'favorites' ? "star" : "star-outline"} size={24} color={activeTab === 'favorites' ? '#8B5CF6' : '#71717a'} />
-          <Text style={[styles.navLabel, activeTab === 'favorites' && styles.activeNavLabel]}>Moje</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('map')}>
-          <Ionicons name={activeTab === 'map' ? "map" : "map-outline"} size={24} color={activeTab === 'map' ? '#8B5CF6' : '#71717a'} />
-          <Text style={[styles.navLabel, activeTab === 'map' && styles.activeNavLabel]}>Mapa</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('more')}>
-          <Ionicons name={activeTab === 'more' ? "menu" : "menu-outline"} size={24} color={activeTab === 'more' ? '#8B5CF6' : '#71717a'} />
-          <Text style={[styles.navLabel, activeTab === 'more' && styles.activeNavLabel]}>Další</Text>
+
+        <TouchableOpacity style={styles.navItem} onPress={() => setAktivniTab('Rezervace')}>
+          <Ionicons name={aktivniTab === 'Rezervace' ? "ticket" : "ticket-outline"} size={24} color={aktivniTab === 'Rezervace' ? '#8B5CF6' : 'black'} />
+          <Text style={[styles.navText, { color: aktivniTab === 'Rezervace' ? '#8B5CF6' : 'black' }]}>Rezervace</Text>
         </TouchableOpacity>
       </View>
+
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#09090b' }, // Ještě temnější elegantní pozadí
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { 
-    height: 60, 
-    backgroundColor: '#8B5CF6', 
-    justifyContent: 'center', 
+  container: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+  },
+  header: {
+    backgroundColor: '#8B5CF6',
+    padding: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
+  },
+  headerText: {
+    fontFamily: 'Inter_400Regular',
+    color: 'white',
+    fontSize: 24,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 15,
+  },
+  mapTabContainer: {
+    flex: 1,
+    paddingHorizontal: 15,
+  },
+  pageTitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 28,
+    marginTop: 20,
+    marginBottom: 15,
+  },
+  pageTitleInternal: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 28,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  webMap: {
+    flex: 1,
+    width: '100%',
+    borderRadius: 15,
+    marginBottom: 15,
+    borderWidth: 0,
+    minHeight: 350,
+  },
+  daysContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  dayPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    marginRight: 6,
+    backgroundColor: 'transparent',
+  },
+  dayPillActive: {
+    backgroundColor: '#8B5CF6',
+    borderColor: '#8B5CF6',
+  },
+  dayText: {
+    fontFamily: 'Inter_400Regular',
+    color: '#374151',
+    fontSize: 13,
+  },
+  dayTextActive: {
+    fontFamily: 'Inter_400Regular',
+    color: 'white',
+  },
+  card: {
+    backgroundColor: '#F3F4F6',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3, 
+  },
+  cardTime: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: '#4B5563',
+    marginBottom: 5,
+  },
+  cardTitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  cardHost: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#374151',
+    marginBottom: 10,
+  },
+  cardBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end', 
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    flex: 1,
+    paddingRight: 10,
+  },
+  tagPill: {
+    backgroundColor: '#8B5CF6',
+    alignSelf: 'flex-start',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+    marginRight: 8,
+    marginTop: 5, 
+  },
+  tagText: {
+    fontFamily: 'Inter_400Regular',
+    color: 'white',
+    fontSize: 12,
+    lineHeight: 16, 
+  },
+  heartIconBtn: {
+    paddingBottom: 2, 
+    paddingLeft: 10,
+  },
+  emptyText: {
+    fontFamily: 'Inter_400Regular',
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 30,
+    lineHeight: 22,
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderColor: '#E5E7EB',
+    height: Platform.OS === 'web' ? 60 : 'auto',
+    alignItems: Platform.OS === 'web' ? 'center' : 'stretch',
+    paddingTop: Platform.OS === 'web' ? 0 : 10,
+    paddingBottom: Platform.OS === 'web' ? 0 : (Platform.OS === 'android' ? 50 : 40), 
+  },
+  navItem: {
+    flex: 1,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#27272a'
+    justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start',
   },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', letterSpacing: 1 },
-  daysList: { paddingHorizontal: 15, alignItems: 'center', gap: 10 },
-  dayButton: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, backgroundColor: '#18181b', borderWidth: 1, borderColor: '#27272a' },
-  activeDayButton: { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' },
-  dayButtonText: { color: '#a1a1aa', fontWeight: '600', fontSize: 14 },
-  activeDayButtonText: { color: '#fff' },
-  programList: { padding: 15, gap: 20, paddingBottom: 100 }, // Větší mezery mezi kartami
-  card: { backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#27272a' },
-  cardImage: { width: '100%', height: 200, resizeMode: 'cover' },
-  cardContent: { padding: 18 },
-  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  cardTime: { color: '#a1a1aa', fontSize: 13, fontWeight: '600', textTransform: 'uppercase' },
-  favButton: { padding: 4 },
-  cardTitle: { color: '#f4f4f5', fontSize: 22, fontWeight: 'bold', marginBottom: 6 },
-  cardHost: { color: '#a78bfa', fontSize: 15, fontWeight: '600', marginBottom: 10 },
-  cardDescription: { color: '#d4d4d8', fontSize: 15, lineHeight: 22, marginBottom: 16 },
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tagBadge: { backgroundColor: '#27272a', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  tagText: { color: '#e4e4e7', fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5 },
-  emptyText: { color: '#71717a', textAlign: 'center', marginTop: 40, fontSize: 16 },
-  bottomNavigation: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    height: 80, backgroundColor: '#18181b', flexDirection: 'row',
-    borderTopWidth: 1, borderTopColor: '#27272a', paddingBottom: 20
-  },
-  navItem: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 10 },
-  navLabel: { color: '#71717a', fontSize: 10, marginTop: 4, fontWeight: '500' },
-  activeNavLabel: { color: '#8B5CF6', fontWeight: 'bold' }
+  navText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 10,
+    marginTop: Platform.OS === 'web' ? 2 : 4,
+  }
 });
-
