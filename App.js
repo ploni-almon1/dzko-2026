@@ -155,7 +155,7 @@ export default function App() {
               tag: f['Tagy'] || [],
               popis: f['Anotace'] || '',
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
-              odkaz: f['Odkaz'] || null // Nové pole z Airtable
+              odkaz: f['Vstupenky'] || null // Nové pole z Airtable
             };
           });
 
