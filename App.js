@@ -9,6 +9,8 @@ import {
   SafeAreaView, 
   ActivityIndicator 
 } from 'react-native';
+// Přidáváme zpět profi ikony!
+import { Ionicons } from '@expo/vector-icons';
 
 export default function App() {
   const [activeDay, setActiveDay] = useState('');
@@ -18,66 +20,57 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Načtení dat z Airtable po spuštění aplikace
+  // Načtení dat z Airtable
   useEffect(() => {
-    // Vercel nám bezpečně podstrčí tyto klíče z trezoru
     const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
     const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
 
     if (!baseId || !token) {
-      setError('Chybí propojení s Airtable (nenalezeny tajné klíče).');
+      setError('Chybí propojení s Airtable klíči.');
       setLoading(false);
       return;
     }
 
     fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error('Nepodařilo se načíst data z Airtable. Zkontroluj klíče.');
-        }
+        if (!response.ok) throw new Error('Nepodařilo se načíst data.');
         return response.json();
       })
       .then((data) => {
-        // Převod formátu Airtable na čistá data pro aplikaci
-        const upravenaData = data.records.map(record => {
-          const f = record.fields;
-          return {
-            id: record.id,
-            title: f['Název akce'] || 'Bez názvu',
-            day: f['Den'] || 'PO 12',
-            time: f['Čas'] || '--:--',
-            location: f['Místo'] || 'Místo neurčeno',
-            host: f['Host'] || '',
-            tags: f['Tagy'] || [],
-            description: f['Anotace'] || '',
-            // Získání URL adresy nahraného obrázku
-            image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : ''
-          };
-        });
+        // Zpracování dat a VYFILTROVÁNÍ prázdných řádků (aby nezavazely)
+        const upravenaData = data.records
+          .filter(record => record.fields['Název akce']) // Ignoruje prázdné řádky v Airtable
+          .map(record => {
+            const f = record.fields;
+            return {
+              id: record.id,
+              title: f['Název akce'],
+              day: f['Den'] || 'Neurčeno',
+              time: f['Čas'] || '--:--',
+              location: f['Místo'] || 'Neurčeno',
+              host: f['Host'] || '',
+              tags: f['Tagy'] || [],
+              description: f['Anotace'] || '',
+              image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : ''
+            };
+          });
 
-        // Seřazení programu podle času (od nejčasnějšího)
         upravenaData.sort((a, b) => a.time.localeCompare(b.time));
-
         setProgramData(upravenaData);
         
-        // Nastavíme první dostupný den z programu jako aktivní
         if (upravenaData.length > 0) {
           setActiveDay(upravenaData[0].day);
         }
         setLoading(false);
       })
       .catch((err) => {
-        console.error(err);
         setError(err.message);
         setLoading(false);
       });
   }, []);
 
-  // Získání unikátních dnů pro navigační menu (vyfilruje duplicity a seřadí)
   const dnyMenu = [...new Set(programData.map(item => item.day))].sort();
 
   const toggleFavorite = (id) => {
@@ -92,21 +85,18 @@ export default function App() {
     ? programData.filter(item => item.day === activeDay)
     : programData.filter(item => favorites.includes(item.id));
 
-  // Pokud stahujeme data z netu, ukaž fialové kolečko
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color="#8B5CF6" />
-        <Text style={{ color: '#a1a1aa', marginTop: 15 }}>Načítám aktuální program...</Text>
       </View>
     );
   }
 
-  // Pokud nastala chyba při stahování dat
   if (error) {
     return (
       <View style={[styles.container, styles.center]}>
-        <Text style={{ color: '#ef4444', textAlign: 'center', padding: 20 }}>{error}</Text>
+        <Text style={{ color: '#ef4444' }}>{error}</Text>
       </View>
     );
   }
@@ -118,13 +108,13 @@ export default function App() {
         <Text style={styles.headerTitle}>DŽKO</Text>
       </View>
 
-      {/* ZÁLOŽKA: PROGRAM / OBLÍBENÉ */}
+      {/* OBSAH PROGRAMU */}
       {(activeTab === 'program' || activeTab === 'favorites') && (
         <View style={{ flex: 1 }}>
           
-          {/* HORZNÍ MENU DNŮ (pouze pro Program) */}
-          {activeTab === 'program' && (
-            <View style={{ height: 60 }}>
+          {/* MENU DNŮ */}
+          {activeTab === 'program' && dnyMenu.length > 0 && (
+            <View style={{ height: 60, justifyContent: 'center' }}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.daysList}>
                 {dnyMenu.map((den) => (
                   <TouchableOpacity 
@@ -141,17 +131,16 @@ export default function App() {
             </View>
           )}
 
-          {/* VÝPIS PROGRAMU */}
+          {/* VÝPIS KARET */}
           <ScrollView contentContainerStyle={styles.programList}>
             {zobrazovanyProgram.length === 0 ? (
               <Text style={styles.emptyText}>
-                {activeTab === 'favorites' ? 'Zatím tu nemáš uložené žádné akce.' : 'Pro tento den zatím není žádný program.'}
+                {activeTab === 'favorites' ? 'Nemáš uložené žádné akce.' : 'Pro tento den není žádný program.'}
               </Text>
             ) : (
               zobrazovanyProgram.map((akce) => (
                 <View key={akce.id} style={styles.card}>
                   
-                  {/* OBRÁZEK Z AIRTABLE */}
                   {akce.image ? (
                     <Image source={{ uri: akce.image }} style={styles.cardImage} />
                   ) : null}
@@ -159,31 +148,34 @@ export default function App() {
                   <View style={styles.cardContent}>
                     <View style={styles.cardHeaderRow}>
                       <Text style={styles.cardTime}>{akce.time}  |  {akce.location}</Text>
+                      {/* Profi ikona pro oblíbené */}
                       <TouchableOpacity onPress={() => toggleFavorite(akce.id)} style={styles.favButton}>
-                        <Text style={{ fontSize: 20 }}>
-                          {favorites.includes(akce.id) ? '⭐' : '☆'}
-                        </Text>
+                        <Ionicons 
+                          name={favorites.includes(akce.id) ? "star" : "star-outline"} 
+                          size={24} 
+                          color="#8B5CF6" 
+                        />
                       </TouchableOpacity>
                     </View>
 
                     <Text style={styles.cardTitle}>{akce.title}</Text>
                     {akce.host ? <Text style={styles.cardHost}>Host: {akce.host}</Text> : null}
                     
-                    {/* ANOTACE */}
                     {akce.description ? (
-                      <Text style={styles.cardDescription} numberOfLines={3}>
+                      <Text style={styles.cardDescription} numberOfLines={4}>
                         {akce.description}
                       </Text>
                     ) : null}
 
-                    {/* TAGY */}
-                    <View style={styles.tagsContainer}>
-                      {akce.tags.map((tag, index) => (
-                        <View key={index} style={styles.tagBadge}>
-                          <Text style={styles.tagText}>{tag}</Text>
-                        </View>
-                      ))}
-                    </View>
+                    {akce.tags && akce.tags.length > 0 ? (
+                      <View style={styles.tagsContainer}>
+                        {akce.tags.map((tag, index) => (
+                          <View key={index} style={styles.tagBadge}>
+                            <Text style={styles.tagText}>{tag}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
                   </View>
                 </View>
               ))
@@ -192,39 +184,29 @@ export default function App() {
         </View>
       )}
 
-      {/* ZÁLOŽKA: MAPA */}
-      {activeTab === 'map' && (
-        <View style={styles.center}>
-          <Text style={styles.emptyText}>Zde bude interaktivní mapa festivalu.</Text>
-        </View>
-      )}
+      {/* OSTATNÍ ZÁLOŽKY */}
+      {activeTab === 'map' && <View style={styles.center}><Text style={styles.emptyText}>Interaktivní mapa</Text></View>}
+      {activeTab === 'more' && <View style={styles.center}><Text style={styles.emptyText}>Praktické informace</Text></View>}
 
-      {/* ZÁLOŽKA: DALŠÍ */}
-      {activeTab === 'more' && (
-        <View style={styles.center}>
-          <Text style={styles.emptyText}>Praktické informace, kontakty a partneři.</Text>
-        </View>
-      )}
-
-      {/* SPODNÍ NAVIGACE */}
+      {/* SPODNÍ NAVIGACE S PROFI IKONAMI */}
       <View style={styles.bottomNavigation}>
         <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('program')}>
-          <Text style={{ fontSize: 20 }}>📅</Text>
+          <Ionicons name={activeTab === 'program' ? "calendar" : "calendar-outline"} size={24} color={activeTab === 'program' ? '#8B5CF6' : '#71717a'} />
           <Text style={[styles.navLabel, activeTab === 'program' && styles.activeNavLabel]}>Program</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('favorites')}>
-          <Text style={{ fontSize: 20 }}>⭐</Text>
+          <Ionicons name={activeTab === 'favorites' ? "star" : "star-outline"} size={24} color={activeTab === 'favorites' ? '#8B5CF6' : '#71717a'} />
           <Text style={[styles.navLabel, activeTab === 'favorites' && styles.activeNavLabel]}>Moje</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('map')}>
-          <Text style={{ fontSize: 20 }}>📍</Text>
+          <Ionicons name={activeTab === 'map' ? "map" : "map-outline"} size={24} color={activeTab === 'map' ? '#8B5CF6' : '#71717a'} />
           <Text style={[styles.navLabel, activeTab === 'map' && styles.activeNavLabel]}>Mapa</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('more')}>
-          <Text style={{ fontSize: 20 }}>⚙️</Text>
+          <Ionicons name={activeTab === 'more' ? "menu" : "menu-outline"} size={24} color={activeTab === 'more' ? '#8B5CF6' : '#71717a'} />
           <Text style={[styles.navLabel, activeTab === 'more' && styles.activeNavLabel]}>Další</Text>
         </TouchableOpacity>
       </View>
@@ -233,7 +215,7 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: '#09090b' }, // Ještě temnější elegantní pozadí
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { 
     height: 60, 
@@ -244,31 +226,32 @@ const styles = StyleSheet.create({
     borderBottomColor: '#27272a'
   },
   headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', letterSpacing: 1 },
-  daysList: { paddingHorizontal: 10, alignItems: 'center', gap: 10 },
-  dayButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#18181b' },
-  activeDayButton: { backgroundColor: '#8B5CF6' },
-  dayButtonText: { color: '#a1a1aa', fontWeight: '600' },
+  daysList: { paddingHorizontal: 15, alignItems: 'center', gap: 10 },
+  dayButton: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, backgroundColor: '#18181b', borderWidth: 1, borderColor: '#27272a' },
+  activeDayButton: { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' },
+  dayButtonText: { color: '#a1a1aa', fontWeight: '600', fontSize: 14 },
   activeDayButtonText: { color: '#fff' },
-  programList: { padding: 15, gap: 15, paddingBottom: 100 },
-  card: { backgroundColor: '#18181b', borderRadius: 12, overflow: 'hidden', borderHighlight: 1, borderColor: '#27272a' },
-  cardImage: { width: '100%', height: 180, resizeMode: 'cover' },
-  cardContent: { padding: 15 },
-  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
-  cardTime: { color: '#a1a1aa', fontSize: 13, fontWeight: '500' },
-  favButton: { padding: 5 },
-  cardTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
-  cardHost: { color: '#8B5CF6', fontSize: 14, fontWeight: '500', marginBottom: 5 },
-  cardDescription: { color: '#d4d4d8', fontSize: 14, lineHeight: 20, marginBottom: 10 },
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tagBadge: { backgroundColor: '#27272a', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  tagText: { color: '#fff', fontSize: 11, fontWeight: '600' },
-  emptyText: { color: '#71717a', textAlign: 'center', marginTop: 40, fontSize: 15 },
+  programList: { padding: 15, gap: 20, paddingBottom: 100 }, // Větší mezery mezi kartami
+  card: { backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#27272a' },
+  cardImage: { width: '100%', height: 200, resizeMode: 'cover' },
+  cardContent: { padding: 18 },
+  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  cardTime: { color: '#a1a1aa', fontSize: 13, fontWeight: '600', textTransform: 'uppercase' },
+  favButton: { padding: 4 },
+  cardTitle: { color: '#f4f4f5', fontSize: 22, fontWeight: 'bold', marginBottom: 6 },
+  cardHost: { color: '#a78bfa', fontSize: 15, fontWeight: '600', marginBottom: 10 },
+  cardDescription: { color: '#d4d4d8', fontSize: 15, lineHeight: 22, marginBottom: 16 },
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tagBadge: { backgroundColor: '#27272a', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  tagText: { color: '#e4e4e7', fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5 },
+  emptyText: { color: '#71717a', textAlign: 'center', marginTop: 40, fontSize: 16 },
   bottomNavigation: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    height: 70, backgroundColor: '#18181b', flexDirection: 'row',
-    borderTopWidth: 1, borderTopColor: '#27272a', paddingBottom: 10
+    height: 80, backgroundColor: '#18181b', flexDirection: 'row',
+    borderTopWidth: 1, borderTopColor: '#27272a', paddingBottom: 20
   },
-  navItem: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  navLabel: { color: '#71717a', fontSize: 11, marginTop: 4 },
+  navItem: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 10 },
+  navLabel: { color: '#71717a', fontSize: 10, marginTop: 4, fontWeight: '500' },
   activeNavLabel: { color: '#8B5CF6', fontWeight: 'bold' }
 });
+
