@@ -6,7 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 
 // --- GENERÁTOR MAPY ---
-const generateMapHtml = (focusLat, focusLng, focusTitle) => `
+// Generátor nyní přijímá i barvu motivu
+const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -23,7 +24,7 @@ const generateMapHtml = (focusLat, focusLng, focusTitle) => `
         
         .dzko-pin {
             width: 32px; height: 32px;
-            background-color: #8B5CF6; border: 2px solid white;
+            background-color: ${themeColor || '#8B5CF6'}; border: 2px solid white;
             border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
             box-shadow: -2px 2px 5px rgba(0,0,0,0.3); 
             display: flex; align-items: center; justify-content: center;
@@ -92,11 +93,16 @@ export default function App() {
   const [vybranyDen, setVybranyDen] = useState('VŠE');
   const [aktivniTab, setAktivniTab] = useState('Program');
   const [oblibeneIds, setOblibeneIds] = useState([]);
-  const [mojeRezervace, setMojeRezervace] = useState([]); // STAV PRO ULOZENÉ REZERVACE
+  const [mojeRezervace, setMojeRezervace] = useState([]);
   const [vybranyTag, setVybranyTag] = useState(null);
   const [mapFocus, setMapFocus] = useState(null);
   const [rozbaleno, setRozbaleno] = useState(null);
   const [detailAkce, setDetailAkce] = useState(null);
+
+  // Stavy pro dynamický motiv
+  const [themeColor, setThemeColor] = useState('#8B5CF6');
+  const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
+  const [novaBarvaInput, setNovaBarvaInput] = useState('');
 
   const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +115,7 @@ export default function App() {
   const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
   const [rezervaceChyba, setRezervaceChyba] = useState(null); 
 
+  // Správa ThemeColor hlavičky na webu (změní barvu panelu prohlížeče)
   useEffect(() => {
     if (Platform.OS === 'web') {
       let meta = document.querySelector('meta[name="theme-color"]');
@@ -117,9 +124,11 @@ export default function App() {
         meta.name = 'theme-color';
         document.head.appendChild(meta);
       }
-      meta.content = '#8B5CF6';
+      meta.content = themeColor;
     }
+  }, [themeColor]);
 
+  useEffect(() => {
     const nactiData = async () => {
       try {
         const ulozenaData = await AsyncStorage.getItem('@moje_srdicka');
@@ -127,6 +136,9 @@ export default function App() {
         
         const ulozeneRezervace = await AsyncStorage.getItem('@moje_rezervace');
         if (ulozeneRezervace !== null) setMojeRezervace(JSON.parse(ulozeneRezervace));
+
+        const ulozenaBarva = await AsyncStorage.getItem('@theme_color');
+        if (ulozenaBarva !== null) setThemeColor(ulozenaBarva);
       } catch (error) { console.error('Chyba při načítání lokálních dat:', error); }
     };
     nactiData();
@@ -135,7 +147,7 @@ export default function App() {
     const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
 
     if (!baseId || !token) {
-      setError('Chybí konfigurace API klíčů ve Vercelen.');
+      setError('Chybí konfigurace API klíčů.');
       setLoading(false);
       return;
     }
@@ -240,6 +252,21 @@ export default function App() {
     setDetailAkce(null);
   };
 
+  // Uložení a validace vlastní barvy motivu
+  const ulozNovyMotiv = async () => {
+    const hexPattern = /^#([0-9A-F]{3}){1,2}$/i;
+    if (hexPattern.test(novaBarvaInput.trim())) {
+      const novaBarva = novaBarvaInput.trim();
+      setThemeColor(novaBarva);
+      try { await AsyncStorage.setItem('@theme_color', novaBarva); } 
+      catch (error) { console.error('Chyba při ukládání barvy:', error); }
+      setZobrazitNastaveniBarvy(false);
+      setNovaBarvaInput('');
+    } else {
+      Alert.alert("Neplatný kód", "Zadejte správný HEX formát barvy (např. #666666 nebo #000)");
+    }
+  };
+
   const handleOdeslatRezervaci = async () => {
     setRezervaceChyba(null); 
     
@@ -272,7 +299,6 @@ export default function App() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log("Airtable chyba:", errorData);
         setRezervaceChyba(`Airtable zamítl uložení: ${errorData?.error?.message || 'Neznámý problém'}`);
         setOdesilaRezervaci(false);
         return;
@@ -280,12 +306,10 @@ export default function App() {
       
       setRezervaceOdeslana(true);
       
-      // Uložení infa, že máme rezervaci
       const noveRezervace = [...new Set([...mojeRezervace, detailAkce.id])];
       setMojeRezervace(noveRezervace);
       await AsyncStorage.setItem('@moje_rezervace', JSON.stringify(noveRezervace));
 
-      // Automatické přidání do oblíbených, pokud to tam není
       if (!oblibeneIds.includes(detailAkce.id)) {
         const noveOblibene = [...oblibeneIds, detailAkce.id];
         setOblibeneIds(noveOblibene);
@@ -309,7 +333,7 @@ export default function App() {
       </TouchableOpacity>
       
       {type === 'expand' && rozbaleno === title && (
-        <View style={styles.menuExpandedContent}>
+        <View style={[styles.menuExpandedContent, { borderLeftColor: themeColor }]}>
           {typeof content === 'string' ? (
             <Text style={styles.menuExpandedText}>{content}</Text>
           ) : (
@@ -332,15 +356,12 @@ export default function App() {
 
     return (
       <View key={item.id} style={styles.card}>
-        
-        {/* OBRÁZEK ROZTAŽENÝ AŽ DO KRAJŮ (HORNÍCH) */}
         {item.image && (
           <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
             <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
           </TouchableOpacity>
         )}
 
-        {/* OBSAHOVÁ ČÁST S PADDINGEM */}
         <View style={styles.cardContent}>
           <View style={styles.timeLocationRow}>
             <Text style={styles.cardTime}>{timeText}</Text>
@@ -363,24 +384,24 @@ export default function App() {
           <View style={styles.cardBottomRow}>
             <View style={styles.tagsContainer}>
               {item.tag && item.tag.map((t, index) => (
-                <TouchableOpacity key={index} style={styles.tagPill} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
                   <Text style={styles.tagText}>{t}</Text>
                 </TouchableOpacity>
               ))}
               
               {item.odkaz && (
-                <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                  <Text style={styles.tagTextOutline}>VSTUPENKY</Text>
+                <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                  <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
                 </TouchableOpacity>
               )}
 
               {item.rezervace && (
                 <TouchableOpacity 
-                  style={[styles.tagPillOutline, maRezervaci && styles.tagPillRezervovano]} 
+                  style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]} 
                   onPress={() => otevriDetail(item)} 
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.tagTextOutline, maRezervaci && styles.tagTextRezervovano]}>
+                  <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
                     {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
                   </Text>
                 </TouchableOpacity>
@@ -405,8 +426,8 @@ export default function App() {
     return (
       <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
         <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
-          <Ionicons name="arrow-back" size={20} color="#8B5CF6" />
-          <Text style={styles.backBtnText}>Zpět</Text>
+          <Ionicons name="arrow-back" size={20} color={themeColor} />
+          <Text style={[styles.backBtnText, { color: themeColor }]}>Zpět</Text>
         </TouchableOpacity>
 
         <View style={styles.detailTitleRow}>
@@ -438,7 +459,6 @@ export default function App() {
           {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
         </Text>
 
-        {/* REZERVAČNÍ FORMULÁŘ */}
         {item.rezervace && (
           <View style={styles.formContainer}>
             <TouchableOpacity 
@@ -477,7 +497,7 @@ export default function App() {
                   onChangeText={setRezervaceEmail}
                   placeholderTextColor="#9CA3AF"
                 />
-                <TouchableOpacity style={styles.submitBtn} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
+                <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
                   {odesilaRezervaci ? (
                     <ActivityIndicator color="white" />
                   ) : (
@@ -492,19 +512,19 @@ export default function App() {
         <View style={styles.detailBottomRow}>
           <View style={styles.tagsContainer}>
             {item.tag && item.tag.map((t, index) => (
-              <TouchableOpacity key={index} style={styles.tagPill} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+              <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
                 <Text style={styles.tagText}>{t}</Text>
               </TouchableOpacity>
             ))}
             
             {item.odkaz && (
-              <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                <Text style={styles.tagTextOutline}>VSTUPENKY</Text>
+              <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
               </TouchableOpacity>
             )}
             {item.rezervace && (
-              <View style={[styles.tagPillOutline, maRezervaci && styles.tagPillRezervovano]}>
-                <Text style={[styles.tagTextOutline, maRezervaci && styles.tagTextRezervovano]}>
+              <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
+                <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
                   {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
                 </Text>
               </View>
@@ -515,15 +535,15 @@ export default function App() {
     );
   };
 
-  if (!fontsLoaded || loading) return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
+  if (!fontsLoaded || loading) return <ActivityIndicator size="large" color={themeColor} style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
   if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#8B5CF6' }}>
-      <StatusBar style="light" backgroundColor="#8B5CF6" translucent={false} />
-      <SafeAreaView style={styles.mainContainer}>
+    <View style={{ flex: 1, backgroundColor: themeColor }}>
+      <StatusBar style="light" backgroundColor={themeColor} translucent={false} />
+      <SafeAreaView style={[styles.mainContainer, { backgroundColor: themeColor }]}>
         
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: themeColor }]}>
           <Text style={styles.headerText}>DŽKO</Text>
         </View>
 
@@ -533,7 +553,7 @@ export default function App() {
             <View style={styles.mapTabContainer}>
               <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
               {Platform.OS === 'web' ? (
-                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title)} style={styles.webMap} frameBorder="0" />
+                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder="0" />
               ) : (
                 <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
               )}
@@ -548,12 +568,15 @@ export default function App() {
                     <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                   </TouchableOpacity>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
-                    {dny.map((den, index) => (
-                      <TouchableOpacity key={index} style={[styles.dayPill, (vybranyDen === den && !vybranyTag) && styles.dayPillActive]}
-                        onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
-                        <Text style={[styles.dayText, (vybranyDen === den && !vybranyTag) && styles.dayTextActive]}>{den}</Text>
-                      </TouchableOpacity>
-                    ))}
+                    {dny.map((den, index) => {
+                      const isActive = (vybranyDen === den && !vybranyTag);
+                      return (
+                        <TouchableOpacity key={index} style={[styles.dayPill, isActive && { backgroundColor: themeColor, borderColor: themeColor }]}
+                          onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
+                          <Text style={[styles.dayText, isActive && styles.dayTextActive]}>{den}</Text>
+                        </TouchableOpacity>
+                      )
+                    })}
                   </ScrollView>
                   {zobrazenePrednasky.length > 0 ? zobrazenePrednasky.map(vykresliKartu) : <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>}
                 </>
@@ -607,7 +630,29 @@ export default function App() {
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                       <Ionicons name="logo-instagram" size={20} color="white" />
                     </TouchableOpacity>
+                    {/* Nové černé kolečko pro změnu motivu */}
+                    <TouchableOpacity style={styles.socialCircleBtn} onPress={() => setZobrazitNastaveniBarvy(!zobrazitNastaveniBarvy)}>
+                      {/* Prázdné */}
+                    </TouchableOpacity>
                   </View>
+
+                  {/* Formulář pro změnu barvy se zobrazí jen když je tlačítko rozkliknuté */}
+                  {zobrazitNastaveniBarvy && (
+                    <View style={styles.colorPickerContainer}>
+                      <Text style={styles.colorPickerTitle}>Nastavení motivu</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Zadejte HEX kód (např. #666666)"
+                        value={novaBarvaInput}
+                        onChangeText={setNovaBarvaInput}
+                        placeholderTextColor="#9CA3AF"
+                      />
+                      <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={ulozNovyMotiv}>
+                        <Text style={styles.submitBtnText}>Uložit barvu</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
                 </View>
               )}
             </ScrollView>
@@ -617,23 +662,23 @@ export default function App() {
 
           <View style={styles.bottomNav}>
             <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
-              <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? '#8B5CF6' : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? '#8B5CF6' : 'black' }]}>Program</Text>
+              <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? themeColor : 'black'} />
+              <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? themeColor : 'black' }]}>Program</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Oblíbené'); setDetailAkce(null); }}>
-              <Ionicons name={aktivniTab === 'Oblíbené' && !detailAkce ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' && !detailAkce ? '#8B5CF6' : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' && !detailAkce ? '#8B5CF6' : 'black' }]}>Oblíbené</Text>
+              <Ionicons name={aktivniTab === 'Oblíbené' && !detailAkce ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : 'black'} />
+              <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : 'black' }]}>Oblíbené</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Mapa'); setMapFocus(null); setDetailAkce(null); }}>
-              <Ionicons name={aktivniTab === 'Mapa' ? "map" : "map-outline"} size={24} color={aktivniTab === 'Mapa' ? '#8B5CF6' : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Mapa' ? '#8B5CF6' : 'black' }]}>Mapa</Text>
+              <Ionicons name={aktivniTab === 'Mapa' ? "map" : "map-outline"} size={24} color={aktivniTab === 'Mapa' ? themeColor : 'black'} />
+              <Text style={[styles.navText, { color: aktivniTab === 'Mapa' ? themeColor : 'black' }]}>Mapa</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Další'); setDetailAkce(null); }}>
-              <Ionicons name={aktivniTab === 'Další' ? "grid" : "grid-outline"} size={24} color={aktivniTab === 'Další' ? '#8B5CF6' : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Další' ? '#8B5CF6' : 'black' }]}>Další</Text>
+              <Ionicons name={aktivniTab === 'Další' ? "grid" : "grid-outline"} size={24} color={aktivniTab === 'Další' ? themeColor : 'black'} />
+              <Text style={[styles.navText, { color: aktivniTab === 'Další' ? themeColor : 'black' }]}>Další</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -644,10 +689,10 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: '#8B5CF6' },
+  mainContainer: { flex: 1 }, 
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   header: { 
-    backgroundColor: '#8B5CF6', paddingHorizontal: 20, paddingBottom: 15,
+    paddingHorizontal: 20, paddingBottom: 15,
     paddingTop: Platform.OS === 'ios' ? 10 : 20, borderTopWidth: 0, marginTop: -1 
   },
   headerText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20 },
@@ -661,17 +706,11 @@ const styles = StyleSheet.create({
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
   daysContainer: { flexDirection: 'row', marginBottom: 20 },
   dayPill: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: '#D1D5DB', marginRight: 6, backgroundColor: 'transparent' },
-  dayPillActive: { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' },
   dayText: { fontFamily: 'Inter_400Regular', color: '#374151', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   
-  // ODEBRÁN PADDING Z KARTY, ABY OBRÁZEK DOSÁHL KE KRAJŮM
   card: { backgroundColor: '#F3F4F6', borderRadius: 10, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
-  
-  // NOVÝ KONTEJNER PRO TEXTOVÝ OBSAH KARTY S PADDINGEM
   cardContent: { padding: 15 },
-  
-  // UPRAVENÝ STYL PRO OBRÁZEK V KARTĚ PROGRAMU - pouze horní zaoblení
   cardImage: { width: '100%', height: 160, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: '#E5E7EB' },
   
   timeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' },
@@ -682,20 +721,20 @@ const styles = StyleSheet.create({
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
   
-  tagPill: { backgroundColor: '#8B5CF6', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5, borderWidth: 1, borderColor: '#8B5CF6' },
+  /* Upravené mezery (horizontální i vertikální jsou teď 8px) */
+  tagPill: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 8, borderWidth: 1 },
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 11, fontWeight: '600' },
   
-  tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5, borderWidth: 1, borderColor: '#8B5CF6' },
-  tagTextOutline: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 11, fontWeight: '600' },
+  tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 8, borderWidth: 1 },
+  tagTextOutline: { fontFamily: 'Inter_400Regular', fontSize: 11, fontWeight: '600' },
   tagPillRezervovano: { backgroundColor: '#00ff7f', borderColor: '#00ff7f' },
   tagTextRezervovano: { color: '#000' },
 
   heartIconBtn: { paddingBottom: 2, paddingLeft: 10 },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#6B7280', textAlign: 'center', marginTop: 30, lineHeight: 22 },
   
-  /* Styly pro detail akce */
   backBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, alignSelf: 'flex-start' },
-  backBtnText: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 16, marginLeft: 5 },
+  backBtnText: { fontFamily: 'Inter_400Regular', fontSize: 16, marginLeft: 5 },
   
   detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', lineHeight: 32 },
@@ -708,11 +747,10 @@ const styles = StyleSheet.create({
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
   detailBottomRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
   
-  /* Formular a zprava s chybou */
   formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
   formTitle: { fontFamily: 'Inter_400Regular', fontSize: 18, marginBottom: 15, color: '#111827', fontWeight: 'bold' },
   input: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, marginBottom: 12, fontFamily: 'Inter_400Regular', fontSize: 14, color: '#111827', backgroundColor: '#F9FAFB' },
-  submitBtn: { backgroundColor: '#8B5CF6', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 5 },
+  submitBtn: { padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 5 },
   submitBtnText: { color: 'white', fontFamily: 'Inter_400Regular', fontSize: 14, fontWeight: 'bold' },
   successText: { color: '#10B981', fontFamily: 'Inter_400Regular', fontSize: 15, textAlign: 'center', marginVertical: 10, fontWeight: 'bold' },
   errorText: { color: '#EF4444', fontFamily: 'Inter_400Regular', fontSize: 13, marginBottom: 12, lineHeight: 18 }, 
@@ -723,14 +761,18 @@ const styles = StyleSheet.create({
   menuItemWrapper: { marginBottom: 15 },
   menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
   menuItemText: { fontFamily: 'Inter_400Regular', fontSize: 20, color: '#000' },
-  menuExpandedContent: { marginTop: 10, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: '#8B5CF6' },
+  menuExpandedContent: { marginTop: 10, paddingLeft: 10, borderLeftWidth: 2 },
   menuExpandedText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563', lineHeight: 22 },
   contentLinkRow: { paddingVertical: 6, paddingLeft: 5 },
   contentInlineLink: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563' },
+  
   socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
   customSocialIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover' },
   
+  colorPickerContainer: { marginTop: 25, padding: 15, backgroundColor: 'white', borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB' },
+  colorPickerTitle: { fontFamily: 'Inter_400Regular', fontSize: 16, marginBottom: 10, color: '#111827', fontWeight: 'bold' },
+
   bottomNav: { flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: 'white', borderTopWidth: 1, borderColor: '#E5E7EB', height: Platform.OS === 'web' ? 60 : 'auto', alignItems: Platform.OS === 'web' ? 'center' : 'stretch', paddingTop: Platform.OS === 'web' ? 0 : 10, paddingBottom: Platform.OS === 'web' ? 0 : (Platform.OS === 'android' ? 50 : 40) },
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
   navText: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: Platform.OS === 'web' ? 2 : 4 }
