@@ -332,6 +332,14 @@ export default function App() {
 
     return (
       <View key={item.id} style={styles.card}>
+        
+        {/* NOVÉ ZOBRAZENÍ OBRÁZKU NAD TEXTEM V KARTĚ PROGRAMU */}
+        {item.image && (
+          <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
+            <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
+          </TouchableOpacity>
+        )}
+
         <View style={styles.timeLocationRow}>
           <Text style={styles.cardTime}>{timeText}</Text>
           {mistoText && (
@@ -435,7 +443,6 @@ export default function App() {
         {/* REZERVAČNÍ FORMULÁŘ */}
         {item.rezervace && (
           <View style={styles.formContainer}>
-            {/* Z NUDPISU JE NYNÍ TLAČÍTKO PRO OBNOVENÍ FORMULÁŘE */}
             <TouchableOpacity 
               activeOpacity={0.7} 
               onPress={() => {
@@ -660,6 +667,10 @@ const styles = StyleSheet.create({
   dayText: { fontFamily: 'Inter_400Regular', color: '#374151', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   card: { backgroundColor: '#F3F4F6', padding: 15, borderRadius: 10, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
+  
+  // NOVÝ STYL PRO OBRÁZEK V KARTĚ PROGRAMU
+  cardImage: { width: '100%', height: 160, borderRadius: 8, marginBottom: 12, backgroundColor: '#E5E7EB' },
+  
   timeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' },
   cardTime: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563' },
   locationLink: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563' },
