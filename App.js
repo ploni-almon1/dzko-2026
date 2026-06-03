@@ -97,6 +97,11 @@ export default function App() {
   const [rozbaleno, setRozbaleno] = useState(null);
   const [detailAkce, setDetailAkce] = useState(null);
 
+  // --- NOVÉ STAVY PRO AIRTABLE ---
+  const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
     if (Platform.OS === 'web') {
       let meta = document.querySelector('meta[name="theme-color"]');
@@ -108,6 +113,7 @@ export default function App() {
       meta.content = '#8B5CF6';
     }
 
+    // NAČTENÍ OBLÍBENÝCH Z PAMĚTI
     const nactiOblibene = async () => {
       try {
         const ulozenaData = await AsyncStorage.getItem('@moje_srdicka');
@@ -115,26 +121,56 @@ export default function App() {
       } catch (error) { console.error('Chyba při načítání srdíček:', error); }
     };
     nactiOblibene();
-  }, []); 
 
-  const prednaskyVsechny = [
-    { id: 1, den: 'PO 12', cas: 'PO 12 | 16:45 | CJS', nazev: 'Mährisch Deutsch a geniza', host: 'Lenka Uličná', tag: ['PŘEDNÁŠKA'], popis: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec nisi felis, fringilla ac facilisis a, gravida ut enim. Nam venenatis pretium justo, id ultrices ex euismod at. Praesent a lectus sem. Vivamus libero ligula, dapibus vel consequat eget, dignissim quis eros. Praesent tempor accumsan mi quis sodales. Donec ac nisi interdum, tristique nunc sit amet, egestas orci. Phasellus efficitur metus et elit molestie consectetur. Cras eu finibus tortor, at tincidunt diam. Nunc placerat nisl ut eleifend egestas. Nam nec ligula lorem.' },
-    { id: 2, den: 'PO 12', cas: 'PO 12 | 18:30 | Beseda', nazev: 'HLASY', host: '', tag: ['VERNISÁŽ', 'ZAHÁJENÍ'] },
-    { id: 3, den: 'PO 12', cas: 'PO 12 | 20:00', nazev: 'Kafka Band', host: '', tag: ['KONCERT'] },
-    { id: 4, den: 'ÚT 13', cas: 'ÚT 13 | 17:00 | Sladovna Holice', nazev: 'Olomoucké sladovny', host: 'Michael Viktořík', tag: ['PŘEDNÁŠKA'] },
-    { id: 5, den: 'ÚT 13', cas: 'ÚT 13 | 19:00 | Central', nazev: 'Happy Days in Brno...; Dopisy z Brna', host: '', tag: ['FILM'] },
-    { id: 6, den: 'ST 14', cas: 'ST 14 | 17:00 | Mozarteum', nazev: 'Brněnští německy píšící židovští autoři', host: 'Ingeborg Fialová', tag: ['PŘEDNÁŠKA'] },
-    { id: 7, den: 'ST 14', cas: 'ST 14 | 18:00 | Central', nazev: 'Mladé víno z moravských (a českých) obcí', host: 'Anna Štičková, Klára Goldstein, Tim Postovit', tag: ['AUTORSKÉ ČTENÍ'] },
-    { id: 8, den: 'ST 14', cas: 'ST 14 | 20:00 | Central', nazev: 'JAZZ', host: '', tag: ['KONCERT'] },
-    { id: 9, den: 'ČT 15', cas: 'ČT 15 | 17:00', nazev: 'Brněnští židovští podnikatelé v kontextu textilního průmyslu', host: 'Michal Doležel', tag: ['PŘEDNÁŠKA'] },
-    { id: 10, den: 'ČT 15', cas: 'ČT 15 | 19:00 | Central', nazev: 'Návrat do hořícího domu', host: '', tag: ['FILM'] },
-    { id: 11, den: 'SO 17', cas: 'SO 17 | 10:00 | Prostějov', nazev: 'Hanácký Jeruzalém: Komentovaná prohlídka', host: '', tag: ['PROHLÍDKA'] },
-    { id: 12, den: 'SO 17', cas: 'SO 17 | 15:30 | Mozarteum/Central?', nazev: 'Workshop pro rodiny s dětmi', host: '', tag: ['WORKSHOP'] },
-    { id: 13, den: 'SO 17', cas: 'SO 17 | 17:00', nazev: 'Komentovaná prohlídka Centralu - rodina Donathových', host: 'Jan Jeništa/Saša Jeništa', tag: ['PROHLÍDKA'] },
-    { id: 14, den: 'NE 18', cas: 'NE 18 | 10:00 | ŽOO, Komenského 9', nazev: 'Den otevřených dveří', host: '', tag: ['Den otevřených dveří'] },
-    { id: 15, den: 'NE 18', cas: 'NE 18 | 11:00', nazev: 'Komentovaná prohlídka nového a starého židovského hřbitova v Olomouci', host: 'Daniel Soukup', tag: ['PROHLÍDKA'] },
-    { id: 16, den: 'NE 18', cas: 'NE 18 | 20:00 | Kostel Panny Marie Sněžné?', nazev: 'Oratorium Josef', host: '', tag: ['KONCERT'] },
-  ];
+    // NAČTENÍ DAT Z AIRTABLE
+    const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
+    const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
+
+    if (!baseId || !token) {
+      setError('Chybí konfigurace API klíčů ve Vercelu.');
+      setLoading(false);
+      return;
+    }
+
+    fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Nepodařilo se připojit k Airtable.');
+        return response.json();
+      })
+      .then((data) => {
+        const upravenaData = data.records
+          .filter(record => record.fields['Název akce']) // Skryje prázdné řádky
+          .map(record => {
+            const f = record.fields;
+            const denText = f['Den'] || 'PO 12';
+            const casText = f['Čas'] || '--:--';
+            const mistoText = f['Místo'] || '';
+            const slozenyCas = [denText, casText, mistoText].filter(Boolean).join(' | ');
+
+            return {
+              id: record.id,
+              den: denText,
+              cas: slozenyCas,
+              nazev: f['Název akce'],
+              host: f['Host'] || '',
+              tag: f['Tagy'] || [],
+              popis: f['Anotace'] || '',
+              image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null
+            };
+          });
+
+        upravenaData.sort((a, b) => a.cas.localeCompare(b.cas));
+        setPrednaskyVsechny(upravenaData);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []); 
 
   const mapaLokace = {
     'CJS': { lat: 49.5904358, lng: 17.2513681, title: 'Centrum judaistických studií' },
@@ -146,7 +182,7 @@ export default function App() {
   };
 
   const zobrazenePrednasky = vybranyTag
-    ? prednaskyVsechny.filter(item => item.tag.includes(vybranyTag))
+    ? prednaskyVsechny.filter(item => item.tag && item.tag.includes(vybranyTag))
     : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
 
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
@@ -226,7 +262,7 @@ export default function App() {
         
         <View style={styles.cardBottomRow}>
           <View style={styles.tagsContainer}>
-            {item.tag.map((t, index) => (
+            {item.tag && item.tag.map((t, index) => (
               <TouchableOpacity key={index} style={styles.tagPill} onPress={() => setVybranyTag(t)} activeOpacity={0.7}>
                 <Text style={styles.tagText}>{t}</Text>
               </TouchableOpacity>
@@ -263,7 +299,6 @@ export default function App() {
           {mistoText && (
             <>
               <Text style={styles.cardTime}>  |  </Text>
-              {/* Ikona a text změněny na neutrální šedou, bez podtržení */}
               <Ionicons name="location-outline" size={16} color="#4B5563" style={{ marginRight: 5 }} />
               <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
                 <Text style={styles.locationLink}>{mistoText}</Text>
@@ -272,10 +307,15 @@ export default function App() {
           )}
         </View>
 
-        <View style={styles.wireframeImage}>
-          <Ionicons name="image-outline" size={40} color="#9CA3AF" />
-          <Text style={styles.wireframeText}>Místo pro fotografii</Text>
-        </View>
+        {/* Pokud je v Airtable fotka, zobrazí se, jinak zůstane wireframe */}
+        {item.image ? (
+          <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.wireframeImage}>
+            <Ionicons name="image-outline" size={40} color="#9CA3AF" />
+            <Text style={styles.wireframeText}>Místo pro fotografii</Text>
+          </View>
+        )}
 
         <Text style={styles.detailDescription}>
           {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
@@ -283,19 +323,20 @@ export default function App() {
 
         <View style={styles.detailBottomRow}>
           <View style={styles.tagsContainer}>
-            {item.tag.map((t, index) => (
+            {item.tag && item.tag.map((t, index) => (
               <View key={index} style={styles.tagPill}>
                 <Text style={styles.tagText}>{t}</Text>
               </View>
             ))}
           </View>
-          {/* Srdíčko odstraněno podle zadání */}
         </View>
       </ScrollView>
     );
   };
 
-  if (!fontsLoaded) return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center'}} />;
+  if (!fontsLoaded || loading) return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
+
+  if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
 
   return (
     <View style={{ flex: 1, backgroundColor: '#8B5CF6' }}>
@@ -350,7 +391,7 @@ export default function App() {
                   <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
                   
                   <View style={styles.menuList}>
-                    {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.')}
+                    {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin.')}
                     {vykresliPolozkuMenu('Archiv', 'link', 'https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}
                     {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
                     {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
@@ -444,7 +485,7 @@ const styles = StyleSheet.create({
   backBtnText: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 16, marginLeft: 5 },
   detailMainTitle: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', marginBottom: 15, lineHeight: 32 },
   detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
-  wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
   wireframeText: { fontFamily: 'Inter_400Regular', color: '#9CA3AF', marginTop: 10 },
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
   detailBottomRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
