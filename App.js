@@ -405,12 +405,15 @@ export default function App() {
           </TouchableOpacity>
         </View>
 
+        {/* PŘIDANÝ HOST POD NADPISEM STEJNĚ JAKO NA SCREENU PROGRAMU */}
+        {item.host !== '' && <Text style={styles.detailHost}>host: {item.host}</Text>}
+
         <View style={styles.detailTimeLocationRow}>
-          {/* IKONKY ČASU A PINU ODEBRÁNY */}
           <Text style={styles.cardTime}>{timeText}</Text>
           {mistoText && (
             <>
-              <Text style={styles.cardTime}>  |  </Text>
+              {/* MEZERA OPRAVENA - odstraněny extra mezery */}
+              <Text style={styles.cardTime}> | </Text>
               <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
                 <Text style={styles.locationLink}>{mistoText}</Text>
               </TouchableOpacity>
@@ -483,7 +486,7 @@ export default function App() {
             
             {item.odkaz && (
               <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                <Text style={styles.tagTextOutline}>VSTUPENKY ↗</Text>
+                <Text style={styles.tagTextOutline}>VSTUPENKY</Text>
               </TouchableOpacity>
             )}
             {item.rezervace && (
@@ -641,7 +644,7 @@ const styles = StyleSheet.create({
   pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28, marginTop: 20, marginBottom: 15 },
   pageTitleInternal: { fontFamily: 'Inter_400Regular', fontSize: 28, marginTop: 20, marginBottom: 10 },
   
-  favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, // Nápisy dnů v oblíbených
+  favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, 
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
   daysContainer: { flexDirection: 'row', marginBottom: 20 },
@@ -658,8 +661,8 @@ const styles = StyleSheet.create({
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
   
-  // ZMENŠENÉ KLASICKÉ TAGY
-  tagPill: { backgroundColor: '#8B5CF6', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5 },
+  // ZMENŠENÉ KLASICKÉ TAGY (upraveno zarovnání výšky s outline tagy pomocí borderu)
+  tagPill: { backgroundColor: '#8B5CF6', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5, borderWidth: 1, borderColor: '#8B5CF6' },
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 11, fontWeight: '600' },
   
   // GHOST A REZERVAČNÍ TAGY
@@ -678,6 +681,7 @@ const styles = StyleSheet.create({
   detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', lineHeight: 32 },
   detailHeartBtn: { marginLeft: 10, paddingTop: 2 },
+  detailHost: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#374151', marginBottom: 15, marginTop: -5 },
   
   detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
   wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
