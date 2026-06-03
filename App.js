@@ -6,7 +6,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 
 // --- GENERÁTOR MAPY ---
-// Generátor nyní přijímá i barvu motivu
 const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
 <!DOCTYPE html>
 <html>
@@ -115,7 +114,6 @@ export default function App() {
   const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
   const [rezervaceChyba, setRezervaceChyba] = useState(null); 
 
-  // Správa ThemeColor hlavičky na webu (změní barvu panelu prohlížeče)
   useEffect(() => {
     if (Platform.OS === 'web') {
       let meta = document.querySelector('meta[name="theme-color"]');
@@ -252,7 +250,6 @@ export default function App() {
     setDetailAkce(null);
   };
 
-  // Uložení a validace vlastní barvy motivu
   const ulozNovyMotiv = async () => {
     const hexPattern = /^#([0-9A-F]{3}){1,2}$/i;
     if (hexPattern.test(novaBarvaInput.trim())) {
@@ -630,13 +627,11 @@ export default function App() {
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                       <Ionicons name="logo-instagram" size={20} color="white" />
                     </TouchableOpacity>
-                    {/* Nové černé kolečko pro změnu motivu */}
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => setZobrazitNastaveniBarvy(!zobrazitNastaveniBarvy)}>
-                      {/* Prázdné */}
+                      {/* Prázdné kolečko */}
                     </TouchableOpacity>
                   </View>
 
-                  {/* Formulář pro změnu barvy se zobrazí jen když je tlačítko rozkliknuté */}
                   {zobrazitNastaveniBarvy && (
                     <View style={styles.colorPickerContainer}>
                       <Text style={styles.colorPickerTitle}>Nastavení motivu</Text>
@@ -692,8 +687,9 @@ const styles = StyleSheet.create({
   mainContainer: { flex: 1 }, 
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   header: { 
-    paddingHorizontal: 20, paddingBottom: 15,
-    paddingTop: Platform.OS === 'ios' ? 10 : 20, borderTopWidth: 0, marginTop: -1 
+    paddingHorizontal: 20, 
+    paddingBottom: 15,
+    paddingTop: Platform.OS === 'ios' ? 10 : 20 
   },
   headerText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20 },
   content: { flex: 1, paddingHorizontal: 15 },
@@ -721,7 +717,6 @@ const styles = StyleSheet.create({
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
   
-  /* Upravené mezery (horizontální i vertikální jsou teď 8px) */
   tagPill: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 8, borderWidth: 1 },
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 11, fontWeight: '600' },
   
