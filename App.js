@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -101,6 +101,12 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Stavy pro rezervační formulář
+  const [rezervaceJmeno, setRezervaceJmeno] = useState('');
+  const [rezervaceEmail, setRezervaceEmail] = useState('');
+  const [odesilaRezervaci, setOdesilaRezervaci] = useState(false);
+  const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
+
   useEffect(() => {
     if (Platform.OS === 'web') {
       let meta = document.querySelector('meta[name="theme-color"]');
@@ -155,7 +161,8 @@ export default function App() {
               tag: f['Tagy'] || [],
               popis: f['Anotace'] || '',
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
-              odkaz: f['Vstupenky'] || null // Nové pole z Airtable
+              odkaz: f['Vstupenky'] || null, 
+              rezervace: f['Rezervace'] ? true : false // Nové pole pro checkbox
             };
           });
 
@@ -211,6 +218,52 @@ export default function App() {
     else setRozbaleno(rozbaleno === nazev ? null : nazev);
   };
 
+  const otevriDetail = (item) => {
+    setDetailAkce(item);
+    setRezervaceJmeno('');
+    setRezervaceEmail('');
+    setOdesilaRezervaci(false);
+    setRezervaceOdeslana(false);
+  };
+
+  const handleOdeslatRezervaci = async () => {
+    if (!rezervaceJmeno.trim() || !rezervaceEmail.trim()) {
+      alert('Prosím, vyplňte jméno i e-mail pro rezervaci.');
+      return;
+    }
+    
+    setOdesilaRezervaci(true);
+    const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
+    const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
+
+    try {
+      const response = await fetch(`https://api.airtable.com/v0/${baseId}/Rezervace`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          records: [{
+            fields: {
+              "Akce": detailAkce.nazev,
+              "Jméno": rezervaceJmeno,
+              "Email": rezervaceEmail
+            }
+          }]
+        })
+      });
+
+      if (!response.ok) throw new Error('Nepodařilo se odeslat rezervaci. Zkuste to prosím později.');
+      
+      setRezervaceOdeslana(true);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setOdesilaRezervaci(false);
+    }
+  };
+
   const vykresliPolozkuMenu = (title, type, content) => (
     <View key={title} style={styles.menuItemWrapper}>
       <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress(title, type, content)} activeOpacity={0.6}>
@@ -255,7 +308,7 @@ export default function App() {
           )}
         </View>
         
-        <TouchableOpacity onPress={() => setDetailAkce(item)} activeOpacity={0.6}>
+        <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.6}>
           <Text style={styles.cardTitle}>{item.nazev}</Text>
         </TouchableOpacity>
         
@@ -269,11 +322,18 @@ export default function App() {
               </TouchableOpacity>
             ))}
             
-            {/* GHOST BUTTON PRO REZERVACE (Zobrazení přímo v seznamu) */}
+            {/* GHOST BUTTON VSTUPENKY */}
             {item.odkaz && (
               <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                <Text style={styles.tagTextOutline}>REZERVACE / VSTUPENKY</Text>
+                <Text style={styles.tagTextOutline}>VSTUPENKY</Text>
               </TouchableOpacity>
+            )}
+
+            {/* GHOST BUTTON REZERVACE */}
+            {item.rezervace && (
+              <View style={styles.tagPillOutline}>
+                <Text style={styles.tagTextOutline}>NUTNÁ REZERVACE</Text>
+              </View>
             )}
           </View>
           <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
@@ -290,13 +350,12 @@ export default function App() {
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
     const mistoText = casParts.length > 2 ? casParts[2] : null;
 
-    // OPRAVA DUPLICITY: Pokud název akce už začíná jménem hosta, nespojujeme je znovu přes dvojtečku
     const zobrazenyTitulek = (item.host !== '' && !item.nazev.startsWith(item.host)) 
       ? `${item.host}: ${item.nazev}` 
       : item.nazev;
 
     return (
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
         <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
           <Ionicons name="arrow-back" size={20} color="#8B5CF6" />
           <Text style={styles.backBtnText}>Zpět</Text>
@@ -331,6 +390,42 @@ export default function App() {
           {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
         </Text>
 
+        {/* REZERVAČNÍ FORMULÁŘ */}
+        {item.rezervace && (
+          <View style={styles.formContainer}>
+            <Text style={styles.formTitle}>Rezervace místa</Text>
+            {rezervaceOdeslana ? (
+              <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
+            ) : (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Jméno a příjmení"
+                  value={rezervaceJmeno}
+                  onChangeText={setRezervaceJmeno}
+                  placeholderTextColor="#9CA3AF"
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="E-mail"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={rezervaceEmail}
+                  onChangeText={setRezervaceEmail}
+                  placeholderTextColor="#9CA3AF"
+                />
+                <TouchableOpacity style={styles.submitBtn} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
+                  {odesilaRezervaci ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
+
         <View style={styles.detailBottomRow}>
           <View style={styles.tagsContainer}>
             {item.tag && item.tag.map((t, index) => (
@@ -339,11 +434,16 @@ export default function App() {
               </View>
             ))}
             
-            {/* GHOST BUTTON PRO REZERVACE V DETAILU */}
+            {/* GHOST BUTTONY V DETAILU */}
             {item.odkaz && (
               <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                <Text style={styles.tagTextOutline}>REZERVACE / VSTUPENKY ↗</Text>
+                <Text style={styles.tagTextOutline}>VSTUPENKY ↗</Text>
               </TouchableOpacity>
+            )}
+            {item.rezervace && (
+              <View style={styles.tagPillOutline}>
+                <Text style={styles.tagTextOutline}>NUTNÁ REZERVACE</Text>
+              </View>
             )}
           </View>
         </View>
@@ -494,7 +594,7 @@ const styles = StyleSheet.create({
   tagPill: { backgroundColor: '#8B5CF6', alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 15, marginRight: 8, marginTop: 5 },
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 12, lineHeight: 16 },
   
-  // NOVÉ STYLY PRO GHOST BUTTONS (ODKAZY NA REZERVACE A VSTUPENKY)
+  // GHOST BUTTONY
   tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5, borderWidth: 1, borderColor: '#8B5CF6' },
   tagTextOutline: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 11, fontWeight: '600' },
 
@@ -511,6 +611,14 @@ const styles = StyleSheet.create({
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
   detailBottomRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
   
+  // NOVÉ: Styly pro rezervační formulář
+  formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  formTitle: { fontFamily: 'Inter_400Regular', fontSize: 18, marginBottom: 15, color: '#111827', fontWeight: 'bold' },
+  input: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, marginBottom: 12, fontFamily: 'Inter_400Regular', fontSize: 14, color: '#111827', backgroundColor: '#F9FAFB' },
+  submitBtn: { backgroundColor: '#8B5CF6', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 5 },
+  submitBtnText: { color: 'white', fontFamily: 'Inter_400Regular', fontSize: 14, fontWeight: 'bold' },
+  successText: { color: '#10B981', fontFamily: 'Inter_400Regular', fontSize: 15, textAlign: 'center', marginVertical: 10, fontWeight: 'bold' },
+
   dalsiContainer: { paddingTop: 20, paddingBottom: 40 },
   dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#000', marginBottom: 30, lineHeight: 34 },
   menuList: { marginBottom: 30 },
@@ -529,4 +637,3 @@ const styles = StyleSheet.create({
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
   navText: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: Platform.OS === 'web' ? 2 : 4 }
 });
-
