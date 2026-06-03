@@ -162,7 +162,7 @@ export default function App() {
               popis: f['Anotace'] || '',
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
               odkaz: f['Vstupenky'] || null, 
-              rezervace: f['Rezervace'] ? true : false // Nové pole pro checkbox
+              rezervace: !!f['Rezervace'] // Bezpečný převod na true/false
             };
           });
 
@@ -329,11 +329,11 @@ export default function App() {
               </TouchableOpacity>
             )}
 
-            {/* GHOST BUTTON REZERVACE */}
+            {/* GHOST BUTTON REZERVACE (Proklik na detail) */}
             {item.rezervace && (
-              <View style={styles.tagPillOutline}>
+              <TouchableOpacity style={styles.tagPillOutline} onPress={() => otevriDetail(item)} activeOpacity={0.7}>
                 <Text style={styles.tagTextOutline}>NUTNÁ REZERVACE</Text>
-              </View>
+              </TouchableOpacity>
             )}
           </View>
           <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
   detailBottomRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
   
-  // NOVÉ: Styly pro rezervační formulář
+  // Styly pro rezervační formulář
   formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
   formTitle: { fontFamily: 'Inter_400Regular', fontSize: 18, marginBottom: 15, color: '#111827', fontWeight: 'bold' },
   input: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, marginBottom: 12, fontFamily: 'Inter_400Regular', fontSize: 14, color: '#111827', backgroundColor: '#F9FAFB' },
