@@ -163,6 +163,7 @@ export default function App() {
               cas: slozenyCas,
               nazev: f['Název akce'],
               host: f['Host'] || '',
+              roleHosta: f['Role hosta'] || 'host', // NOVÝ SLOUPEČEK ROLE HOSTA
               tag: f['Tagy'] || [],
               popis: f['Anotace'] || '',
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
@@ -261,7 +262,7 @@ export default function App() {
         body: JSON.stringify({
           records: [{
             fields: {
-              "Akce ID": detailAkce.id, 
+              "Akce ID": detailAkce.id, // OPRAVA HRANATÝCH ZÁVOREK PRO AIRTABLE
               "Jméno": rezervaceJmeno,
               "Email": rezervaceEmail
             }
@@ -347,7 +348,8 @@ export default function App() {
           <Text style={styles.cardTitle}>{item.nazev}</Text>
         </TouchableOpacity>
         
-        {item.host !== '' && <Text style={styles.cardHost}>host: {item.host}</Text>}
+        {/* OPRAVA - ZOBRAZENÍ ROLE HOSTA */}
+        {item.host !== '' && <Text style={styles.cardHost}>{item.roleHosta}: {item.host}</Text>}
         
         <View style={styles.cardBottomRow}>
           <View style={styles.tagsContainer}>
@@ -397,7 +399,6 @@ export default function App() {
           <Text style={styles.backBtnText}>Zpět</Text>
         </TouchableOpacity>
 
-        {/* SRDÍČKO PŘIDÁNO K NÁZVU */}
         <View style={styles.detailTitleRow}>
           <Text style={styles.detailMainTitle}>{item.nazev}</Text>
           <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartBtn}>
@@ -405,14 +406,13 @@ export default function App() {
           </TouchableOpacity>
         </View>
 
-        {/* PŘIDANÝ HOST POD NADPISEM STEJNĚ JAKO NA SCREENU PROGRAMU */}
-        {item.host !== '' && <Text style={styles.detailHost}>host: {item.host}</Text>}
+        {/* OPRAVA - ZOBRAZENÍ ROLE HOSTA V DETAILU */}
+        {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
 
         <View style={styles.detailTimeLocationRow}>
           <Text style={styles.cardTime}>{timeText}</Text>
           {mistoText && (
             <>
-              {/* MEZERA OPRAVENA - odstraněny extra mezery */}
               <Text style={styles.cardTime}> | </Text>
               <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
                 <Text style={styles.locationLink}>{mistoText}</Text>
@@ -477,7 +477,6 @@ export default function App() {
 
         <View style={styles.detailBottomRow}>
           <View style={styles.tagsContainer}>
-            {/* TAGY JSOU KLIKACÍ I V DETAILU */}
             {item.tag && item.tag.map((t, index) => (
               <TouchableOpacity key={index} style={styles.tagPill} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
                 <Text style={styles.tagText}>{t}</Text>
@@ -546,7 +545,6 @@ export default function App() {
                 </>
               )}
               
-              {/* ROZDĚLENÍ OBLÍBENÝCH PO DNECH */}
               {aktivniTab === 'Oblíbené' && (
                 <View style={{ paddingBottom: 20 }}>
                   <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
@@ -661,11 +659,9 @@ const styles = StyleSheet.create({
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
   
-  // ZMENŠENÉ KLASICKÉ TAGY (upraveno zarovnání výšky s outline tagy pomocí borderu)
   tagPill: { backgroundColor: '#8B5CF6', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5, borderWidth: 1, borderColor: '#8B5CF6' },
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 11, fontWeight: '600' },
   
-  // GHOST A REZERVAČNÍ TAGY
   tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5, borderWidth: 1, borderColor: '#8B5CF6' },
   tagTextOutline: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 11, fontWeight: '600' },
   tagPillRezervovano: { backgroundColor: '#00ff7f', borderColor: '#00ff7f' },
