@@ -430,13 +430,8 @@ export default function App() {
           )}
         </View>
 
-        {item.image ? (
+        {item.image && (
           <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
-        ) : (
-          <View style={styles.wireframeImage}>
-            <Ionicons name="image-outline" size={40} color="#9CA3AF" />
-            <Text style={styles.wireframeText}>Místo pro fotografii</Text>
-          </View>
         )}
 
         <Text style={styles.detailDescription}>
