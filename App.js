@@ -540,7 +540,8 @@ export default function App() {
       <StatusBar style="light" backgroundColor={themeColor} translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: themeColor }]}>
         
-        <View style={[styles.header, { backgroundColor: themeColor }]}>
+        {/* ZDE SE APLIKOVALA OPRAVA - Hranice má dynamickou barvu */}
+        <View style={[styles.header, { backgroundColor: themeColor, borderColor: themeColor }]}>
           <Text style={styles.headerText}>DŽKO</Text>
         </View>
 
@@ -686,11 +687,16 @@ export default function App() {
 const styles = StyleSheet.create({
   mainContainer: { flex: 1 }, 
   container: { flex: 1, backgroundColor: '#F3F4F6' },
+  
+  /* ZDE SE APLIKOVALA OPRAVA - Posun nahoru a zpevnění okraje */
   header: { 
     paddingHorizontal: 20, 
     paddingBottom: 15,
-    paddingTop: Platform.OS === 'ios' ? 10 : 20 
+    paddingTop: Platform.OS === 'ios' ? 10 : 22,
+    marginTop: -2,
+    borderTopWidth: 2
   },
+  
   headerText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 20 },
   content: { flex: 1, paddingHorizontal: 15 },
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
