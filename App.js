@@ -97,7 +97,6 @@ export default function App() {
   const [rozbaleno, setRozbaleno] = useState(null);
   const [detailAkce, setDetailAkce] = useState(null);
 
-  // --- STAVY PRO AIRTABLE ---
   const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -113,7 +112,6 @@ export default function App() {
       meta.content = '#8B5CF6';
     }
 
-    // NAČTENÍ OBLÍBENÝCH Z PAMĚTI
     const nactiOblibene = async () => {
       try {
         const ulozenaData = await AsyncStorage.getItem('@moje_srdicka');
@@ -122,12 +120,11 @@ export default function App() {
     };
     nactiOblibene();
 
-    // NAČTENÍ DAT Z AIRTABLE
     const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
     const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
 
     if (!baseId || !token) {
-      setError('Chybí konfigurace API klíčů ve Vercelu.');
+      setError('Chybí konfigurace API klíčů ve Vercelen.');
       setLoading(false);
       return;
     }
@@ -141,7 +138,7 @@ export default function App() {
       })
       .then((data) => {
         const upravenaData = data.records
-          .filter(record => record.fields['Název akce']) // Skryje prázdné řádky
+          .filter(record => record.fields['Název akce'])
           .map(record => {
             const f = record.fields;
             const denText = f['Den'] || 'PO 12';
@@ -157,27 +154,23 @@ export default function App() {
               host: f['Host'] || '',
               tag: f['Tagy'] || [],
               popis: f['Anotace'] || '',
-              image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null
+              image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
+              odkaz: f['Odkaz'] || null // Nové pole z Airtable
             };
           });
 
-        // CHYTRÉ CHRONOLOGICKÉ SEŘAZENÍ (DNY PODLE KALENDÁŘE + ČAS VZESTUPNĚ)
         const spravnePoradiDnu = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
         upravenaData.sort((a, b) => {
           const indexA = spravnePoradiDnu.indexOf(a.den);
           const indexB = spravnePoradiDnu.indexOf(b.den);
-          
-          if (indexA !== indexB) {
-            return indexA - indexB; // Seřazení podle dnů v týdnu
-          }
-          return a.cas.localeCompare(b.cas); // Seřazení podle času uvnitř stejného dne
+          if (indexA !== indexB) return indexA - indexB;
+          return a.cas.localeCompare(b.cas);
         });
 
         setPrednaskyVsechny(upravenaData);
         setLoading(false);
       })
       .catch((err) => {
-        console.error(err);
         setError(err.message);
         setLoading(false);
       });
@@ -214,11 +207,8 @@ export default function App() {
   };
 
   const handleMenuPress = (nazev, type, content) => {
-    if (type === 'link') {
-      Linking.openURL(content);
-    } else {
-      setRozbaleno(rozbaleno === nazev ? null : nazev);
-    }
+    if (type === 'link') Linking.openURL(content);
+    else setRozbaleno(rozbaleno === nazev ? null : nazev);
   };
 
   const vykresliPolozkuMenu = (title, type, content) => (
@@ -278,6 +268,13 @@ export default function App() {
                 <Text style={styles.tagText}>{t}</Text>
               </TouchableOpacity>
             ))}
+            
+            {/* GHOST BUTTON PRO REZERVACE (Zobrazení přímo v seznamu) */}
+            {item.odkaz && (
+              <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                <Text style={styles.tagTextOutline}>REZERVACE / VSTUPENKY</Text>
+              </TouchableOpacity>
+            )}
           </View>
           <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
             <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
@@ -293,6 +290,11 @@ export default function App() {
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
     const mistoText = casParts.length > 2 ? casParts[2] : null;
 
+    // OPRAVA DUPLICITY: Pokud název akce už začíná jménem hosta, nespojujeme je znovu přes dvojtečku
+    const zobrazenyTitulek = (item.host !== '' && !item.nazev.startsWith(item.host)) 
+      ? `${item.host}: ${item.nazev}` 
+      : item.nazev;
+
     return (
       <ScrollView style={styles.content}>
         <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
@@ -300,9 +302,7 @@ export default function App() {
           <Text style={styles.backBtnText}>Zpět</Text>
         </TouchableOpacity>
 
-        <Text style={styles.detailMainTitle}>
-          {item.host !== '' ? `${item.host}: ${item.nazev}` : item.nazev}
-        </Text>
+        <Text style={styles.detailMainTitle}>{zobrazenyTitulek}</Text>
 
         <View style={styles.detailTimeLocationRow}>
           <Ionicons name="time-outline" size={16} color="#4B5563" style={{ marginRight: 5 }} />
@@ -338,6 +338,13 @@ export default function App() {
                 <Text style={styles.tagText}>{t}</Text>
               </View>
             ))}
+            
+            {/* GHOST BUTTON PRO REZERVACE V DETAILU */}
+            {item.odkaz && (
+              <TouchableOpacity style={styles.tagPillOutline} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                <Text style={styles.tagTextOutline}>REZERVACE / VSTUPENKY ↗</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -345,7 +352,6 @@ export default function App() {
   };
 
   if (!fontsLoaded || loading) return <ActivityIndicator size="large" color="#8B5CF6" style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
-
   if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
 
   return (
@@ -487,6 +493,11 @@ const styles = StyleSheet.create({
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
   tagPill: { backgroundColor: '#8B5CF6', alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 15, marginRight: 8, marginTop: 5 },
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 12, lineHeight: 16 },
+  
+  // NOVÉ STYLY PRO GHOST BUTTONS (ODKAZY NA REZERVACE A VSTUPENKY)
+  tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 5, borderWidth: 1, borderColor: '#8B5CF6' },
+  tagTextOutline: { fontFamily: 'Inter_400Regular', color: '#8B5CF6', fontSize: 11, fontWeight: '600' },
+
   heartIconBtn: { paddingBottom: 2, paddingLeft: 10 },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#6B7280', textAlign: 'center', marginTop: 30, lineHeight: 22 },
   
@@ -518,3 +529,4 @@ const styles = StyleSheet.create({
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
   navText: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: Platform.OS === 'web' ? 2 : 4 }
 });
+
