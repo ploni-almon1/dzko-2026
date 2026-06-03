@@ -97,7 +97,7 @@ export default function App() {
   const [rozbaleno, setRozbaleno] = useState(null);
   const [detailAkce, setDetailAkce] = useState(null);
 
-  // --- NOVÉ STAVY PRO AIRTABLE ---
+  // --- STAVY PRO AIRTABLE ---
   const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -161,7 +161,18 @@ export default function App() {
             };
           });
 
-        upravenaData.sort((a, b) => a.cas.localeCompare(b.cas));
+        // CHYTRÉ CHRONOLOGICKÉ SEŘAZENÍ (DNY PODLE KALENDÁŘE + ČAS VZESTUPNĚ)
+        const spravnePoradiDnu = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
+        upravenaData.sort((a, b) => {
+          const indexA = spravnePoradiDnu.indexOf(a.den);
+          const indexB = spravnePoradiDnu.indexOf(b.den);
+          
+          if (indexA !== indexB) {
+            return indexA - indexB; // Seřazení podle dnů v týdnu
+          }
+          return a.cas.localeCompare(b.cas); // Seřazení podle času uvnitř stejného dne
+        });
+
         setPrednaskyVsechny(upravenaData);
         setLoading(false);
       })
@@ -307,7 +318,6 @@ export default function App() {
           )}
         </View>
 
-        {/* Pokud je v Airtable fotka, zobrazí se, jinak zůstane wireframe */}
         {item.image ? (
           <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
         ) : (
