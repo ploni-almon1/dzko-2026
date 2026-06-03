@@ -8,8 +8,9 @@
     "assetBundlePatterns": ["**/*"],
     "web": {
       "favicon": "./assets/icon.png",
-     
-    
+      "display": "standalone",
+      "backgroundColor": "#8B5CF6",
+      "themeColor": "#000000",
       "name": "DŽKO",
       "shortName": "DŽKO"
     }
