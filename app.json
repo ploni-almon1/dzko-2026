@@ -9,7 +9,7 @@
     "web": {
       "favicon": "./assets/icon.png",
       "display": "standalone",
-      "backgroundColor": "#8B5CF6",
+      "backgroundColor": "#000000",
       "themeColor": "#000000",
       "name": "DŽKO",
       "shortName": "DŽKO"
