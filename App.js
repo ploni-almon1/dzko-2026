@@ -181,7 +181,8 @@ export default function App() {
               popis: f['Anotace'] || '',
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
               odkaz: f['Vstupenky'] || null, 
-              rezervace: !!f['Rezervace']
+              rezervace: !!f['Rezervace'],
+              pocetOblibenych: f['Počet oblíbených'] || 0 // Zde se načítá počet z Airtable
             };
           });
 
@@ -218,10 +219,58 @@ export default function App() {
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
 
   const prepniOblibene = async (id) => {
-    let novySeznam = oblibeneIds.includes(id) ? oblibeneIds.filter(item => item !== id) : [...oblibeneIds, id]; 
+    const jeOblibene = oblibeneIds.includes(id);
+    const novySeznam = jeOblibene ? oblibeneIds.filter(item => item !== id) : [...oblibeneIds, id]; 
+    
+    // Uložíme si lajk lokálně do zařízení
     setOblibeneIds(novySeznam);
     try { await AsyncStorage.setItem('@moje_srdicka', JSON.stringify(novySeznam)); } 
     catch (error) { console.error('Chyba při ukládání srdíčka:', error); }
+
+    // Změna počítadla (+1 nebo -1)
+    const zmena = jeOblibene ? -1 : 1;
+    
+    // Okamžitá aktualizace čísla v seznamu všech přednášek
+    setPrednaskyVsechny(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, pocetOblibenych: Math.max(0, item.pocetOblibenych + zmena) };
+      }
+      return item;
+    }));
+
+    // Pokud jsme v detailu této konkrétní akce, musíme číslo aktualizovat i tam
+    if (detailAkce && detailAkce.id === id) {
+      setDetailAkce(prev => ({ ...prev, pocetOblibenych: Math.max(0, prev.pocetOblibenych + zmena) }));
+    }
+
+    // Odeslání nového čísla zpět do Airtable
+    const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
+    const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
+    
+    const aktualniAkce = prednaskyVsechny.find(i => i.id === id);
+    const novyPocetVAirtable = Math.max(0, (aktualniAkce?.pocetOblibenych || 0) + zmena);
+
+    if (baseId && token) {
+      try {
+        await fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            records: [{
+              id: id,
+              fields: {
+                "Počet oblíbených": novyPocetVAirtable
+              }
+            }]
+          })
+        });
+      } catch (err) {
+        console.error('Nepodařilo se aktualizovat počet srdíček v Airtable:', err);
+      }
+    }
   };
 
   const handleLocationClick = (mistoText) => {
@@ -309,10 +358,9 @@ export default function App() {
       setMojeRezervace(noveRezervace);
       await AsyncStorage.setItem('@moje_rezervace', JSON.stringify(noveRezervace));
 
+      // Pokud člověk rezervuje, automaticky přidáme srdíčko
       if (!oblibeneIds.includes(detailAkce.id)) {
-        const noveOblibene = [...oblibeneIds, detailAkce.id];
-        setOblibeneIds(noveOblibene);
-        await AsyncStorage.setItem('@moje_srdicka', JSON.stringify(noveOblibene));
+        prepniOblibene(detailAkce.id);
       }
 
     } catch (err) {
@@ -431,9 +479,16 @@ export default function App() {
 
         <View style={styles.detailTitleRow}>
           <Text style={styles.detailMainTitle}>{item.nazev}</Text>
-          <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartBtn}>
-            <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
-          </TouchableOpacity>
+          
+          {/* Nový box pro srdíčko a číslo vedle nadpisu */}
+          <View style={styles.detailHeartContainer}>
+            <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartBtn}>
+              <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
+            </TouchableOpacity>
+            {item.pocetOblibenych > 0 && (
+              <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
+            )}
+          </View>
         </View>
 
         {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
@@ -542,7 +597,6 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        {/* HLAVIČKA s přebarvitelným logem podle zvoleného tématu */}
         <View style={styles.header}>
           <Image 
             source={require('./assets/star.png')} 
@@ -634,8 +688,6 @@ export default function App() {
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                       <Ionicons name="logo-instagram" size={20} color="white" />
                     </TouchableOpacity>
-                    
-                    {/* Zde se po kliknutí předvyplní aktuální barva do state */}
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => {
                         if (!zobrazitNastaveniBarvy) setNovaBarvaInput(themeColor);
                         setZobrazitNastaveniBarvy(!zobrazitNastaveniBarvy);
@@ -708,18 +760,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  headerLogo: {
-    width: 36, // Zvětšená šířka pro logo
-    height: 36, // Zvětšená výška pro logo
-    marginRight: 10,
-    resizeMode: 'contain',
-  },
-  headerText: { 
-    fontFamily: 'Inter_400Regular', 
-    color: '#000000', 
-    fontSize: 22,
-    includeFontPadding: false,
-  },
+  headerLogo: { width: 36, height: 36, marginRight: 10, resizeMode: 'contain' },
+  headerText: { fontFamily: 'Inter_400Regular', color: '#000000', fontSize: 22, includeFontPadding: false },
   
   content: { flex: 1, paddingHorizontal: 15 },
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
@@ -746,7 +788,6 @@ const styles = StyleSheet.create({
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
   
-  /* Upravené bubliny tagů – symetrické horizontální i vertikální mezery na řádcích */
   tagPill: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 6, marginTop: 6, borderWidth: 1 },
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 11, fontWeight: '600' },
   
@@ -761,9 +802,12 @@ const styles = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, alignSelf: 'flex-start' },
   backBtnText: { fontFamily: 'Inter_400Regular', fontSize: 16, marginLeft: 5 },
   
+  /* Upravené styly detailu pro srdíčko a počítadlo */
   detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', lineHeight: 32 },
-  detailHeartBtn: { marginLeft: 10, paddingTop: 2 },
+  detailHeartContainer: { alignItems: 'center', marginLeft: 10 },
+  detailHeartBtn: { paddingTop: 2 },
+  detailHeartCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
   detailHost: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#374151', marginBottom: 15, marginTop: -5 },
   
   detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
