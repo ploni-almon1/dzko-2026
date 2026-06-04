@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -113,6 +113,7 @@ export default function App() {
   const [odesilaRezervaci, setOdesilaRezervaci] = useState(false);
   const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
   const [rezervaceChyba, setRezervaceChyba] = useState(null); 
+  const [infoRezervaceVisible, setInfoRezervaceVisible] = useState(false); // Nový stav pro zobrazení Modalu
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -502,147 +503,164 @@ export default function App() {
     const maRezervaci = mojeRezervace.includes(item.id);
 
     return (
-      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
-          <Ionicons name="arrow-back" size={20} color={themeColor} />
-          <Text style={[styles.backBtnText, { color: themeColor }]}>Zpět</Text>
-        </TouchableOpacity>
+      <>
+        <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+          <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
+            <Ionicons name="arrow-back" size={20} color={themeColor} />
+            <Text style={[styles.backBtnText, { color: themeColor }]}>Zpět</Text>
+          </TouchableOpacity>
 
-        <View style={styles.detailTitleRow}>
-          <Text style={styles.detailMainTitle}>{item.nazev}</Text>
-          
-          <View style={styles.detailStatsContainer}>
-            <View style={styles.statItem}>
-              <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
-              </TouchableOpacity>
-              {item.pocetOblibenych > 0 && (
-                <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
-              )}
-            </View>
+          <View style={styles.detailTitleRow}>
+            <Text style={styles.detailMainTitle}>{item.nazev}</Text>
             
-            {item.rezervace && (
-              <View style={[styles.statItem, { marginTop: 15 }]}>
-                <TouchableOpacity 
-                  style={styles.detailIconBtn}
-                  onPress={() => {
-                    const alertTitle = "Rezervace";
-                    const alertMessage = "Toto číslo ukazuje počet aktuálních rezervací na tuto akci.";
-                    if (Platform.OS === 'web') {
-                      window.alert(`${alertTitle}\n\n${alertMessage}`);
-                    } else {
-                      Alert.alert(alertTitle, alertMessage);
-                    }
-                  }}
-                >
-                  {/* Zde je upravený tvar bubliny - teď je to dokonalé kolečko lícující se srdíčkem */}
-                  <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                    <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
-                  </View>
+            <View style={styles.detailStatsContainer}>
+              <View style={styles.statItem}>
+                <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
+                  <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
                 </TouchableOpacity>
-                {item.pocetRezervaci > 0 && (
-                  <Text style={styles.detailStatCount}>{item.pocetRezervaci}</Text>
+                {item.pocetOblibenych > 0 && (
+                  <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
                 )}
               </View>
-            )}
-          </View>
-        </View>
-
-        {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
-
-        <View style={styles.detailTimeLocationRow}>
-          <Text style={styles.cardTime}>{timeText}</Text>
-          {mistoText && (
-            <>
-              <Text style={styles.cardTime}> | </Text>
-              <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                <Text style={styles.locationLink}>{mistoText}</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-
-        {item.image && (
-          <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
-        )}
-
-        <Text style={styles.detailDescription}>
-          {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
-        </Text>
-
-        {item.rezervace && (
-          <View style={styles.formContainer}>
-            <TouchableOpacity 
-              activeOpacity={0.7} 
-              onPress={() => {
-                setRezervaceOdeslana(false);
-                setRezervaceJmeno('');
-                setRezervaceEmail('');
-                setRezervaceChyba(null);
-              }}
-            >
-              <Text style={styles.formTitle}>Rezervace</Text>
-            </TouchableOpacity>
-            
-            {rezervaceOdeslana ? (
-              <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
-            ) : (
-              <>
-                {rezervaceChyba && (
-                  <Text style={styles.errorText}>{rezervaceChyba}</Text>
-                )}
-                
-                <TextInput
-                  style={styles.input}
-                  placeholder="Jméno a příjmení"
-                  value={rezervaceJmeno}
-                  onChangeText={setRezervaceJmeno}
-                  placeholderTextColor="#9CA3AF"
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="E-mail"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={rezervaceEmail}
-                  onChangeText={setRezervaceEmail}
-                  placeholderTextColor="#9CA3AF"
-                />
-                <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
-                  {odesilaRezervaci ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>
+              
+              {item.rezervace && (
+                <View style={[styles.statItem, { marginTop: 15 }]}>
+                  <TouchableOpacity 
+                    style={styles.detailIconBtn}
+                    onPress={() => setInfoRezervaceVisible(true)}
+                  >
+                    <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
+                      <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
+                    </View>
+                  </TouchableOpacity>
+                  {item.pocetRezervaci > 0 && (
+                    // Tady je přidán marginTop: 6, aby to srovnalo tu vizuální mezeru naproti srdíčku
+                    <Text style={[styles.detailStatCount, { marginTop: 6 }]}>{item.pocetRezervaci}</Text>
                   )}
+                </View>
+              )}
+            </View>
+          </View>
+
+          {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
+
+          <View style={styles.detailTimeLocationRow}>
+            <Text style={styles.cardTime}>{timeText}</Text>
+            {mistoText && (
+              <>
+                <Text style={styles.cardTime}> | </Text>
+                <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                  <Text style={styles.locationLink}>{mistoText}</Text>
                 </TouchableOpacity>
               </>
             )}
           </View>
-        )}
 
-        <View style={styles.detailBottomRow}>
-          <View style={styles.tagsContainer}>
-            {item.tag && item.tag.map((t, index) => (
-              <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                <Text style={styles.tagText}>{t}</Text>
+          {item.image && (
+            <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
+          )}
+
+          <Text style={styles.detailDescription}>
+            {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
+          </Text>
+
+          {item.rezervace && (
+            <View style={styles.formContainer}>
+              <TouchableOpacity 
+                activeOpacity={0.7} 
+                onPress={() => {
+                  setRezervaceOdeslana(false);
+                  setRezervaceJmeno('');
+                  setRezervaceEmail('');
+                  setRezervaceChyba(null);
+                }}
+              >
+                <Text style={styles.formTitle}>Rezervace</Text>
               </TouchableOpacity>
-            ))}
-            
-            {item.odkaz && (
-              <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
-              </TouchableOpacity>
-            )}
-            {item.rezervace && (
-              <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
-                <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
-                  {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
-                </Text>
-              </View>
-            )}
+              
+              {rezervaceOdeslana ? (
+                <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
+              ) : (
+                <>
+                  {rezervaceChyba && (
+                    <Text style={styles.errorText}>{rezervaceChyba}</Text>
+                  )}
+                  
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Jméno a příjmení"
+                    value={rezervaceJmeno}
+                    onChangeText={setRezervaceJmeno}
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="E-mail"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={rezervaceEmail}
+                    onChangeText={setRezervaceEmail}
+                    placeholderTextColor="#9CA3AF"
+                  />
+                  <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
+                    {odesilaRezervaci ? (
+                      <ActivityIndicator color="white" />
+                    ) : (
+                      <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
+
+          <View style={styles.detailBottomRow}>
+            <View style={styles.tagsContainer}>
+              {item.tag && item.tag.map((t, index) => (
+                <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                  <Text style={styles.tagText}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+              
+              {item.odkaz && (
+                <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                  <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                </TouchableOpacity>
+              )}
+              {item.rezervace && (
+                <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
+                  <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
+                    {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+
+        {/* Nový elegantní Modal pro vysvětlení počtu rezervací */}
+        <Modal
+          visible={infoRezervaceVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setInfoRezervaceVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity 
+              style={StyleSheet.absoluteFill} 
+              activeOpacity={1} 
+              onPress={() => setInfoRezervaceVisible(false)} 
+            />
+            <View style={styles.modalContent}>
+              <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setInfoRezervaceVisible(false)}>
+                <Ionicons name="close" size={24} color="#4B5563" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Rezervace</Text>
+              <Text style={styles.modalText}>Toto číslo ukazuje počet aktuálních rezervací na tuto akci.</Text>
+            </View>
+          </View>
+        </Modal>
+      </>
     );
   };
 
@@ -876,7 +894,6 @@ const styles = StyleSheet.create({
   detailIconBtn: { paddingTop: 2 },
   detailStatCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
   
-  /* Upravený styl pro kolečko s fajfkou (z 30 na 28 aby seděl se srdíčkem) */
   detailRezervaceKolecko: { 
     width: 28, 
     height: 28, 
@@ -924,5 +941,49 @@ const styles = StyleSheet.create({
 
   bottomNav: { flexDirection: 'row', justifyContent: 'space-evenly', backgroundColor: 'white', borderTopWidth: 1, borderColor: '#E5E7EB', height: Platform.OS === 'web' ? 60 : 'auto', alignItems: Platform.OS === 'web' ? 'center' : 'stretch', paddingTop: Platform.OS === 'web' ? 0 : 10, paddingBottom: Platform.OS === 'web' ? 0 : (Platform.OS === 'android' ? 50 : 40) },
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
-  navText: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: Platform.OS === 'web' ? 2 : 4 }
+  navText: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: Platform.OS === 'web' ? 2 : 4 },
+
+  /* -- Styly pro nový info Modal -- */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 25,
+    width: '85%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8
+  },
+  modalCloseBtn: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    padding: 5,
+    zIndex: 10
+  },
+  modalTitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#111827',
+    textAlign: 'center'
+  },
+  modalText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#4B5563',
+    textAlign: 'center',
+    lineHeight: 22
+  }
 });
