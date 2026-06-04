@@ -945,8 +945,8 @@ const styles = StyleSheet.create({
   },
   
   detailRezervaceKolecko: { 
-    width: 21,
-    height: 21, 
+    width: 22,
+    height: 22, 
     borderRadius: 11, 
     alignItems: 'center', 
     justifyContent: 'center', 
