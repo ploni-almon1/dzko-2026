@@ -319,7 +319,7 @@ export default function App() {
     if (hexPattern.test(novaBarvaInput.trim())) {
       const novaBarva = novaBarvaInput.trim();
       setThemeColor(novaBarva);
-      try { await AsyncStorage.setItem('@theme_color_v2', novaBarva); } 
+      try { await AsyncStorage.setItem('@theme_color_v2', novaBarva); } // Aktualizovaný klíč
       catch (error) { console.error('Chyba při ukládání barvy:', error); }
       setZobrazitNastaveniBarvy(false);
     } else {
@@ -512,8 +512,34 @@ export default function App() {
           </TouchableOpacity>
 
           <View style={styles.detailTitleRow}>
-            {/* 👇 POČÍTADLA ODTUD ZMIZELA 👇 */}
             <Text style={styles.detailMainTitle}>{item.nazev}</Text>
+            
+            <View style={styles.detailStatsContainer}>
+              <View style={styles.statItem}>
+                <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
+                  <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
+                </TouchableOpacity>
+                {item.pocetOblibenych > 0 && (
+                  <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
+                )}
+              </View>
+              
+              {item.rezervace && (
+                <View style={[styles.statItem, { marginTop: 15 }]}>
+                  <TouchableOpacity 
+                    style={styles.detailIconBtn}
+                    onPress={() => setInfoRezervaceVisible(true)}
+                  >
+                    <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
+                      <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
+                    </View>
+                  </TouchableOpacity>
+                  {item.pocetRezervaci > 0 && (
+                    <Text style={[styles.detailStatCount, { marginTop: 6 }]}>{item.pocetRezervaci}</Text>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
 
           {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
@@ -537,35 +563,6 @@ export default function App() {
           <Text style={styles.detailDescription}>
             {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
           </Text>
-
-          {/* 👇 PŘESUNUTÁ POČÍTADLA JEDOU SEM 👇 */}
-          <View style={styles.detailStatsBottomContainer}>
-            <View style={styles.statItem}>
-              <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={32} color="black" />
-              </TouchableOpacity>
-              {item.pocetOblibenych > 0 && (
-                <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
-              )}
-            </View>
-            
-            {item.rezervace && (
-              <View style={[styles.statItem, { marginLeft: 25 }]}>
-                <TouchableOpacity 
-                  style={styles.detailIconBtn}
-                  onPress={() => setInfoRezervaceVisible(true)}
-                >
-                  <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                    <Ionicons name="checkmark-sharp" size={22} color={styles.tagTextRezervovano.color} />
-                  </View>
-                </TouchableOpacity>
-                {item.pocetRezervaci > 0 && (
-                  <Text style={styles.detailStatCount}>{item.pocetRezervaci}</Text>
-                )}
-              </View>
-            )}
-          </View>
-          {/* 👆 KONEC PŘESUNUTÝCH POČÍTADEL 👆 */}
 
           {item.rezervace && (
             <View style={styles.formContainer}>
@@ -750,7 +747,7 @@ export default function App() {
                       );
                     })
                   ) : (
-                    <Text style={styles.emptyText}>Zatím si sem můžete přidat akce kliknutím na srdíčko.</Text>
+                    <Text style={styles.emptyText}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
                   )}
                 </View>
               )}
@@ -908,39 +905,17 @@ const styles = StyleSheet.create({
   detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', lineHeight: 32 },
   detailStatsContainer: { alignItems: 'center', marginLeft: 15, paddingTop: 2 },
-  
-  /* 👇 NOVÝ STYL PRO PŘESUNUTÁ POČÍTADLA 👇 */
-  detailStatsBottomContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-start',
-    marginBottom: 30,
-  },
-  
-  statItem: { 
-    alignItems: 'center',
-    minWidth: 44,
-  },
-  detailIconBtn: { 
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  detailStatCount: { 
-    fontFamily: 'Inter_400Regular', 
-    fontSize: 18,
-    color: '#4B5563', 
-    fontWeight: 'bold' 
-  },
+  statItem: { alignItems: 'center' },
+  detailIconBtn: { paddingTop: 2 },
+  detailStatCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
   
   detailRezervaceKolecko: { 
-    width: 32,
-    height: 32, 
-    borderRadius: 16, 
+    width: 28, 
+    height: 28, 
+    borderRadius: 14, 
     alignItems: 'center', 
     justifyContent: 'center', 
-    borderWidth: 0,
+    borderWidth: 1,
     paddingHorizontal: 0,
     paddingVertical: 0
   },
@@ -950,9 +925,7 @@ const styles = StyleSheet.create({
   detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
   wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
   wireframeText: { fontFamily: 'Inter_400Regular', color: '#9CA3AF', marginTop: 10 },
-  
-  // Upravený okraj pod popiskem z 30 na 15, zbytek mezery dělá nový kontejner detailStatsBottomContainer
-  detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 15 },
+  detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
   detailBottomRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
   
   formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
@@ -1028,3 +1001,4 @@ const styles = StyleSheet.create({
     lineHeight: 22
   }
 });
+
