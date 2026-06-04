@@ -98,6 +98,9 @@ export default function App() {
   const [rozbaleno, setRozbaleno] = useState(null);
   const [detailAkce, setDetailAkce] = useState(null);
 
+  // Zobrazení obrázků (přepínač zobrazení karet)
+  const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
+
   // Stavy pro dynamický motiv
   const [themeColor, setThemeColor] = useState('#8B5CF6');
   const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
@@ -140,6 +143,9 @@ export default function App() {
 
         const ulozenaBarva = await AsyncStorage.getItem('@theme_color');
         if (ulozenaBarva !== null) setThemeColor(ulozenaBarva);
+
+        const ulozeneZobrazeni = await AsyncStorage.getItem('@zobrazit_obrazky');
+        if (ulozeneZobrazeni !== null) setZobrazitObrazky(JSON.parse(ulozeneZobrazeni));
       } catch (error) { console.error('Chyba při načítání lokálních dat:', error); }
     };
     nactiData();
@@ -182,7 +188,7 @@ export default function App() {
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
               odkaz: f['Vstupenky'] || null, 
               rezervace: !!f['Rezervace'],
-              pocetOblibenych: f['Počet oblíbených'] || 0 // Zde se načítá počet z Airtable
+              pocetOblibenych: f['Počet oblíbených'] || 0
             };
           });
 
@@ -203,34 +209,23 @@ export default function App() {
       });
   }, []); 
 
-  const mapaLokace = {
-    'CJS': { lat: 49.5904358, lng: 17.2513681, title: 'Centrum judaistických studií' },
-    'Central': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' },
-    'Mozarteum': { lat: 49.5980481, lng: 17.2610522, title: 'Mozarteum' },
-    'Mozarteum/Central?': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' }, 
-    'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
-    'Sladovna Holice': { lat: 49.5695, lng: 17.2912, title: 'Sladovna Holice' }
+  const prepniObrazky = async () => {
+    const novyStav = !zobrazitObrazky;
+    setZobrazitObrazky(novyStav);
+    try { await AsyncStorage.setItem('@zobrazit_obrazky', JSON.stringify(novyStav)); }
+    catch (error) { console.error('Chyba při ukládání nastavení zobrazení:', error); }
   };
-
-  const zobrazenePrednasky = vybranyTag
-    ? prednaskyVsechny.filter(item => item.tag && item.tag.includes(vybranyTag))
-    : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
-
-  const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
 
   const prepniOblibene = async (id) => {
     const jeOblibene = oblibeneIds.includes(id);
     const novySeznam = jeOblibene ? oblibeneIds.filter(item => item !== id) : [...oblibeneIds, id]; 
     
-    // Uložíme si lajk lokálně do zařízení
     setOblibeneIds(novySeznam);
     try { await AsyncStorage.setItem('@moje_srdicka', JSON.stringify(novySeznam)); } 
     catch (error) { console.error('Chyba při ukládání srdíčka:', error); }
 
-    // Změna počítadla (+1 nebo -1)
     const zmena = jeOblibene ? -1 : 1;
     
-    // Okamžitá aktualizace čísla v seznamu všech přednášek
     setPrednaskyVsechny(prev => prev.map(item => {
       if (item.id === id) {
         return { ...item, pocetOblibenych: Math.max(0, item.pocetOblibenych + zmena) };
@@ -238,12 +233,10 @@ export default function App() {
       return item;
     }));
 
-    // Pokud jsme v detailu této konkrétní akce, musíme číslo aktualizovat i tam
     if (detailAkce && detailAkce.id === id) {
       setDetailAkce(prev => ({ ...prev, pocetOblibenych: Math.max(0, prev.pocetOblibenych + zmena) }));
     }
 
-    // Odeslání nového čísla zpět do Airtable
     const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
     const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
     
@@ -272,6 +265,21 @@ export default function App() {
       }
     }
   };
+
+  const mapaLokace = {
+    'CJS': { lat: 49.5904358, lng: 17.2513681, title: 'Centrum judaistických studií' },
+    'Central': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' },
+    'Mozarteum': { lat: 49.5980481, lng: 17.2610522, title: 'Mozarteum' },
+    'Mozarteum/Central?': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' }, 
+    'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
+    'Sladovna Holice': { lat: 49.5695, lng: 17.2912, title: 'Sladovna Holice' }
+  };
+
+  const zobrazenePrednasky = vybranyTag
+    ? prednaskyVsechny.filter(item => item.tag && item.tag.includes(vybranyTag))
+    : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
+
+  const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
 
   const handleLocationClick = (mistoText) => {
     const coords = mapaLokace[mistoText];
@@ -317,7 +325,6 @@ export default function App() {
 
   const handleOdeslatRezervaci = async () => {
     setRezervaceChyba(null); 
-    
     if (!rezervaceJmeno.trim() || !rezervaceEmail.trim()) {
       setRezervaceChyba('Prosím, vyplňte jméno i e-mail.');
       return;
@@ -358,7 +365,6 @@ export default function App() {
       setMojeRezervace(noveRezervace);
       await AsyncStorage.setItem('@moje_rezervace', JSON.stringify(noveRezervace));
 
-      // Pokud člověk rezervuje, automaticky přidáme srdíčko
       if (!oblibeneIds.includes(detailAkce.id)) {
         prepniOblibene(detailAkce.id);
       }
@@ -403,7 +409,8 @@ export default function App() {
 
     return (
       <View key={item.id} style={styles.card}>
-        {item.image && (
+        {/* Zde probíhá kontrola, zda má uživatel zapnuté obrázky */}
+        {item.image && zobrazitObrazky && (
           <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
             <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
           </TouchableOpacity>
@@ -480,7 +487,6 @@ export default function App() {
         <View style={styles.detailTitleRow}>
           <Text style={styles.detailMainTitle}>{item.nazev}</Text>
           
-          {/* Nový box pro srdíčko a číslo vedle nadpisu */}
           <View style={styles.detailHeartContainer}>
             <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartBtn}>
               <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
@@ -609,7 +615,9 @@ export default function App() {
           
           {aktivniTab === 'Mapa' && (
             <View style={styles.mapTabContainer}>
-              <Text style={styles.pageTitleInternal}>MAPA FESTIVALU</Text>
+              <View style={styles.pageTitleContainer}>
+                <Text style={styles.pageTitle}>MAPA FESTIVALU</Text>
+              </View>
               {Platform.OS === 'web' ? (
                 <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder="0" />
               ) : (
@@ -622,9 +630,15 @@ export default function App() {
             <ScrollView style={styles.content}>
               {aktivniTab === 'Program' && (
                 <>
-                  <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7}>
-                    <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
-                  </TouchableOpacity>
+                  <View style={styles.pageTitleContainer}>
+                    <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
+                      <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
+                    </TouchableOpacity>
+                    {/* Ikona přepínající zobrazení obrázků */}
+                    <TouchableOpacity onPress={prepniObrazky} style={{ paddingLeft: 10 }}>
+                      <Ionicons name={zobrazitObrazky ? "list-outline" : "grid-outline"} size={28} color="black" />
+                    </TouchableOpacity>
+                  </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
                     {dny.map((den, index) => {
                       const isActive = (vybranyDen === den && !vybranyTag);
@@ -642,7 +656,9 @@ export default function App() {
               
               {aktivniTab === 'Oblíbené' && (
                 <View style={{ paddingBottom: 20 }}>
-                  <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
+                  <View style={styles.pageTitleContainer}>
+                    <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
+                  </View>
                   {oblibeneZobrazeni.length > 0 ? (
                     dny.map((den, index) => {
                       const akceDne = oblibeneZobrazeni.filter(item => item.den === den);
@@ -765,8 +781,10 @@ const styles = StyleSheet.create({
   
   content: { flex: 1, paddingHorizontal: 15 },
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
-  pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28, marginTop: 20, marginBottom: 15 },
-  pageTitleInternal: { fontFamily: 'Inter_400Regular', fontSize: 28, marginTop: 20, marginBottom: 10 },
+
+  // Kontejner obalující nadpis stránky a volitelně další prvky jako ikony přepínání (odsazení přesunuto sem)
+  pageTitleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 15 },
+  pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28 },
   
   favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, 
   
@@ -802,7 +820,6 @@ const styles = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, alignSelf: 'flex-start' },
   backBtnText: { fontFamily: 'Inter_400Regular', fontSize: 16, marginLeft: 5 },
   
-  /* Upravené styly detailu pro srdíčko a počítadlo */
   detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', lineHeight: 32 },
   detailHeartContainer: { alignItems: 'center', marginLeft: 10 },
