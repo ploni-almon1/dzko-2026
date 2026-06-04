@@ -710,9 +710,9 @@ export default function App() {
                     <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
-                    {/* ZDE JE UPRAVENÉ TLAČÍTKO PRO ZMĚNU ZOBRAZENÍ S NOVOU IKONKOU A STYLEM */}
+                    {/* ZDE JE UPRAVENÉ TLAČÍTKO PRO ZMĚNU ZOBRAZENÍ - IKONA "menu-outline" (3 čisté čárky) */}
                     <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
-                      <Ionicons name={zobrazitObrazky ? "list-outline" : "grid-outline"} size={26} color="black" />
+                      <Ionicons name={zobrazitObrazky ? "menu-outline" : "grid-outline"} size={26} color="black" />
                     </TouchableOpacity>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
@@ -861,14 +861,13 @@ const styles = StyleSheet.create({
   pageTitleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 15 },
   pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28 },
 
-  /* -- NOVÝ STYL PRO TLAČÍTKO PŘEPÍNÁNÍ ZOBRAZENÍ -- */
+  /* -- OPRAVENÝ STYL PRO TLAČÍTKO PŘEPÍNÁNÍ ZOBRAZENÍ - TVOŘÍ DOKONALÝ ČTVEREC -- */
   toggleViewBtn: {
-    padding: 10,
+    width: 44,
+    height: 44,
     marginLeft: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    minWidth: 46,
-    minHeight: 46
   },
   
   favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, 
