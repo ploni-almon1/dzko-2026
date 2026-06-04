@@ -98,10 +98,8 @@ export default function App() {
   const [rozbaleno, setRozbaleno] = useState(null);
   const [detailAkce, setDetailAkce] = useState(null);
 
-  // Zobrazení obrázků (přepínač zobrazení karet)
   const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
 
-  // Stavy pro dynamický motiv
   const [themeColor, setThemeColor] = useState('#8B5CF6');
   const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
   const [novaBarvaInput, setNovaBarvaInput] = useState('');
@@ -110,7 +108,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Stavy pro rezervační formulář
   const [rezervaceJmeno, setRezervaceJmeno] = useState('');
   const [rezervaceEmail, setRezervaceEmail] = useState('');
   const [odesilaRezervaci, setOdesilaRezervaci] = useState(false);
@@ -189,7 +186,7 @@ export default function App() {
               odkaz: f['Vstupenky'] || null, 
               rezervace: !!f['Rezervace'],
               pocetOblibenych: f['Počet oblíbených'] || 0,
-              pocetRezervaci: f['Počet rezervací'] || 0 // Zde se načítá počet rezervací
+              pocetRezervaci: f['Počet rezervací'] || 0
             };
           });
 
@@ -336,6 +333,7 @@ export default function App() {
     const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
 
     try {
+      // 1. Odeslání dat do tabulky Rezervace
       const response = await fetch(`https://api.airtable.com/v0/${baseId}/Rezervace`, {
         method: 'POST',
         headers: {
@@ -366,9 +364,35 @@ export default function App() {
       setMojeRezervace(noveRezervace);
       await AsyncStorage.setItem('@moje_rezervace', JSON.stringify(noveRezervace));
 
+      // 2. Přidání srdíčka (pokud ho ještě nemá)
       if (!oblibeneIds.includes(detailAkce.id)) {
         prepniOblibene(detailAkce.id);
       }
+
+      // 3. Okamžitá vizuální úprava počtu rezervací a odeslání PATCH updatu do tabulky Program
+      const novyPocetRezervaci = (detailAkce.pocetRezervaci || 0) + 1;
+      
+      setDetailAkce(prev => ({ ...prev, pocetRezervaci: novyPocetRezervaci }));
+      setPrednaskyVsechny(prev => prev.map(item => 
+        item.id === detailAkce.id ? { ...item, pocetRezervaci: novyPocetRezervaci } : item
+      ));
+
+      // PATCH request na aktualizaci čísla v Airtable tabulce Program
+      await fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          records: [{
+            id: detailAkce.id,
+            fields: {
+              "Počet rezervací": novyPocetRezervaci
+            }
+          }]
+        })
+      });
 
     } catch (err) {
       setRezervaceChyba(`Chyba připojení: ${err.message}`);
@@ -487,7 +511,6 @@ export default function App() {
         <View style={styles.detailTitleRow}>
           <Text style={styles.detailMainTitle}>{item.nazev}</Text>
           
-          {/* Box pro všechny statistiky napravo od nadpisu */}
           <View style={styles.detailStatsContainer}>
             <View style={styles.statItem}>
               <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
@@ -498,13 +521,12 @@ export default function App() {
               )}
             </View>
             
-            {/* Zobrazí bublinu s rezervacemi jen pokud je u akce možnost rezervace */}
             {item.rezervace && (
               <View style={[styles.statItem, { marginTop: 15 }]}>
                 <TouchableOpacity onPress={() => Alert.alert("Rezervace", "Počet aktuálních rezervací na tuto akci.")}>
-                  {/* Použití dynamických stylů z tagPillRezervovano */}
-                  <View style={[styles.tagPillRezervovano, styles.rezervaceBadge]}>
-                    <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
+                  {/* Zde je upravený tvar bubliny - teď je to dokonalé kolečko čerpající barvu z rezervací */}
+                  <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
+                    <Ionicons name="checkmark-sharp" size={18} color={styles.tagTextRezervovano.color} />
                   </View>
                 </TouchableOpacity>
                 {item.pocetRezervaci > 0 && (
@@ -652,7 +674,6 @@ export default function App() {
                     <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
-                    {/* Změněná ikona na reorder-three-outline (3 vzdušnější čárky v bloku) */}
                     <TouchableOpacity onPress={prepniObrazky} style={{ paddingLeft: 10 }}>
                       <Ionicons name={zobrazitObrazky ? "reorder-three-outline" : "grid-outline"} size={24} color="black" />
                     </TouchableOpacity>
@@ -837,14 +858,25 @@ const styles = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, alignSelf: 'flex-start' },
   backBtnText: { fontFamily: 'Inter_400Regular', fontSize: 16, marginLeft: 5 },
   
-  /* Styly detailu doplněny o kontejner statistik */
   detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', lineHeight: 32 },
   detailStatsContainer: { alignItems: 'center', marginLeft: 15, paddingTop: 2 },
   statItem: { alignItems: 'center' },
   detailIconBtn: { paddingTop: 2 },
   detailStatCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
-  rezervaceBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 15, alignSelf: 'center', borderWidth: 1 },
+  
+  /* Upravený styl pro kolečko s fajfkou */
+  detailRezervaceKolecko: { 
+    width: 30, 
+    height: 30, 
+    borderRadius: 15, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    borderWidth: 1,
+    paddingHorizontal: 0,
+    paddingVertical: 0
+  },
+  
   detailHost: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#374151', marginBottom: 15, marginTop: -5 },
   
   detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
