@@ -560,7 +560,7 @@ export default function App() {
                   </View>
                 </TouchableOpacity>
                 {item.pocetRezervaci > 0 && (
-                  <Text style={[styles.detailStatCount, { marginTop: 6 }]}>{item.pocetRezervaci}</Text>
+                  <Text style={styles.detailStatCount}>{item.pocetRezervaci}</Text>
                 )}
               </View>
             )}
@@ -921,12 +921,12 @@ const styles = StyleSheet.create({
   detailStatCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
   
   detailRezervaceKolecko: { 
-    width: 28, 
-    height: 28, 
-    borderRadius: 14, 
+    width: 26, 
+    height: 26, 
+    borderRadius: 13, 
     alignItems: 'center', 
     justifyContent: 'center', 
-    borderWidth: 1,
+    borderWidth: 0,
     paddingHorizontal: 0,
     paddingVertical: 0
   },
