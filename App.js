@@ -482,7 +482,7 @@ export default function App() {
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
-                    {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
+                    {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -554,7 +554,7 @@ export default function App() {
               {item.rezervace && (
                 <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
                   <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
-                    {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
+                    {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
                   </Text>
                 </View>
               )}
