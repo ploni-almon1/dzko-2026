@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 
 // 👇👇👇 ZDE JE TVOJE CENTRÁLNÍ BARVA PRO CELOU APLIKACI 👇👇👇
-const DEFAULT_THEME_COLOR = '#8B5CF6'; 
+const DEFAULT_THEME_COLOR = '#3A24DC'; 
 
 // --- GENERÁTOR MAPY ---
 const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
