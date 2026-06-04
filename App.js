@@ -873,7 +873,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, 
+  favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, 
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
   daysContainer: { flexDirection: 'row', marginBottom: 20 },
