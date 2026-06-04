@@ -570,7 +570,7 @@ export default function App() {
                   onPress={() => setInfoRezervaceVisible(true)}
                 >
                   <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                    <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
+                    <Ionicons name="checkmark-sharp" size={15} color={styles.tagTextRezervovano.color} />
                   </View>
                 </TouchableOpacity>
                 {item.pocetRezervaci > 0 && (
