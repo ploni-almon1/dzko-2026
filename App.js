@@ -113,7 +113,7 @@ export default function App() {
   const [odesilaRezervaci, setOdesilaRezervaci] = useState(false);
   const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
   const [rezervaceChyba, setRezervaceChyba] = useState(null); 
-  const [infoRezervaceVisible, setInfoRezervaceVisible] = useState(false); // Nový stav pro zobrazení Modalu
+  const [infoRezervaceVisible, setInfoRezervaceVisible] = useState(false);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -671,7 +671,6 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        {/* ZDE JE ZMĚNĚNÁ HLAVIČKA NA KLIKATELNOU */}
         <TouchableOpacity 
           style={styles.header} 
           activeOpacity={0.7}
@@ -711,8 +710,9 @@ export default function App() {
                     <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={prepniObrazky} style={{ paddingLeft: 10 }}>
-                      <Ionicons name={zobrazitObrazky ? "reorder-three-outline" : "grid-outline"} size={24} color="black" />
+                    {/* ZDE JE UPRAVENÉ TLAČÍTKO PRO ZMĚNU ZOBRAZENÍ S NOVOU IKONKOU A STYLEM */}
+                    <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
+                      <Ionicons name={zobrazitObrazky ? "list-outline" : "grid-outline"} size={26} color="black" />
                     </TouchableOpacity>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
@@ -860,6 +860,16 @@ const styles = StyleSheet.create({
 
   pageTitleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 15 },
   pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28 },
+
+  /* -- NOVÝ STYL PRO TLAČÍTKO PŘEPÍNÁNÍ ZOBRAZENÍ -- */
+  toggleViewBtn: {
+    padding: 10,
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 46,
+    minHeight: 46
+  },
   
   favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, 
   
