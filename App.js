@@ -695,25 +695,26 @@ const styles = StyleSheet.create({
   
   /* OPRAVENÁ HLAVIČKA */
   header: { 
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     backgroundColor: '#FFFFFF', 
     paddingHorizontal: 20, 
-    paddingBottom: 15,
-    paddingTop: Platform.OS === 'ios' ? 10 : 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
   headerLogo: {
-    width: 32,
-    height: 32,
-    marginRight: 12,
+    width: 26,
+    height: 26,
+    marginRight: 10,
     resizeMode: 'contain',
   },
   headerText: { 
     fontFamily: 'Inter_400Regular', 
     color: '#000000', 
-    fontSize: 26 
+    fontSize: 22,
+    includeFontPadding: false,
   },
   
   content: { flex: 1, paddingHorizontal: 15 },
