@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
   tagPillRezervovano: { backgroundColor: '#00ff7f', borderColor: '#00ff7f' },
   tagTextRezervovano: { color: '#000' },
 
-  heartIconBtn: { paddingBottom: 0, paddingLeft: 10, marginBottom: -5 },
+  heartIconBtn: { paddingBottom: 0, paddingLeft: 10, marginBottom: -4 },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#6B7280', textAlign: 'center', marginTop: 30, lineHeight: 22 },
   
   backBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, alignSelf: 'flex-start' },
