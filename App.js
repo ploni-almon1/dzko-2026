@@ -88,8 +88,6 @@ export default function App() {
     Inter_400Regular,
   });
 
-  const appBackgroundColor = '#F3F4F6'; // Definujeme barvu pozadí centrálně
-
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   const [vybranyDen, setVybranyDen] = useState('VŠE');
   const [aktivniTab, setAktivniTab] = useState('Program');
@@ -100,7 +98,7 @@ export default function App() {
   const [rozbaleno, setRozbaleno] = useState(null);
   const [detailAkce, setDetailAkce] = useState(null);
 
-  // Stavy pro dynamický motiv (bude se aplikovat na ikony, tlačítka a tagy)
+  // Stavy pro dynamický motiv
   const [themeColor, setThemeColor] = useState('#8B5CF6');
   const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
   const [novaBarvaInput, setNovaBarvaInput] = useState('');
@@ -124,12 +122,13 @@ export default function App() {
         meta.name = 'theme-color';
         document.head.appendChild(meta);
       }
-      // Pro web nastavíme barvu hlavičky prohlížeče také na světlou
-      meta.content = appBackgroundColor;
-      document.body.style.backgroundColor = appBackgroundColor;
-      document.documentElement.style.backgroundColor = appBackgroundColor;
+      meta.content = '#F3F4F6'; // Web theme color now matches the light grey app background
+      
+      // Pozadí webu je nyní trvale světle šedé
+      document.body.style.backgroundColor = '#F3F4F6';
+      document.documentElement.style.backgroundColor = '#F3F4F6';
     }
-  }, []); // Běží jen při načtení, protože barva pozadí webu se už nemění
+  }, []);
 
   useEffect(() => {
     const nactiData = async () => {
@@ -537,24 +536,21 @@ export default function App() {
     );
   };
 
-  if (!fontsLoaded || loading) return <ActivityIndicator size="large" color={themeColor} style={{flex: 1, justifyContent: 'center', backgroundColor: appBackgroundColor}} />;
+  if (!fontsLoaded || loading) return <ActivityIndicator size="large" color={themeColor} style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
   if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
 
   return (
-    // ZMĚNA: Hlavní View má teď světlé pozadí appky
-    <View style={{ flex: 1, backgroundColor: appBackgroundColor }}>
-      {/* ZMĚNA: StatusBar je "dark" (černé ikony) a světlé pozadí */}
-      <StatusBar style="dark" backgroundColor={appBackgroundColor} translucent={false} />
-      
-      {/* ZMĚNA: SafeAreaView má také světlé pozadí */}
-      <SafeAreaView style={[styles.mainContainer, { backgroundColor: appBackgroundColor }]}>
+    <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+      <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
+      <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        {/* ZMĚNA: Header používá defaultní styl ze styles (světlý se stínem), neobarvuje se dynamicky */}
+        {/* OPRAVENÁ HLAVIČKA s logem a bílým pozadím */}
         <View style={styles.header}>
+          <Image source={require('./assets/star.png')} style={styles.headerLogo} />
           <Text style={styles.headerText}>DŽKO</Text>
         </View>
 
-        <View style={{ flex: 1, backgroundColor: appBackgroundColor }}>
+        <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
           {aktivniTab === 'Mapa' && (
             <View style={styles.mapTabContainer}>
@@ -697,23 +693,28 @@ const styles = StyleSheet.create({
   mainContainer: { flex: 1 }, 
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   
-  /* ZMĚNA: Přidán shadow na hlavičku, zIndex a pozadí na svtle šedou */
+  /* OPRAVENÁ HLAVIČKA */
   header: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF', 
     paddingHorizontal: 20, 
     paddingBottom: 15,
-    paddingTop: Platform.OS === 'ios' ? 10 : 22,
-    backgroundColor: '#F3F4F6',
-    // Stín stejný jako u karet
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.08, 
-    shadowRadius: 4, 
-    elevation: 3,
-    zIndex: 10, // NUTNÉ, aby stín padal PŘES scrollovací oblast pod ním
+    paddingTop: Platform.OS === 'ios' ? 10 : 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  
-  // ZMĚNA: Barva textu z 'white' na tmavou
-  headerText: { fontFamily: 'Inter_400Regular', color: '#111827', fontSize: 20, fontWeight: 'bold' },
+  headerLogo: {
+    width: 32,
+    height: 32,
+    marginRight: 12,
+    resizeMode: 'contain',
+  },
+  headerText: { 
+    fontFamily: 'Inter_400Regular', 
+    color: '#000000', 
+    fontSize: 26 
+  },
   
   content: { flex: 1, paddingHorizontal: 15 },
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
