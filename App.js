@@ -564,7 +564,7 @@ export default function App() {
           {/* 👇 STATISTIKY Z PŘEDCHOZÍ ÚPRAVY JSOU TEĎ TADY 👇 */}
           <View style={styles.detailStatsBottomContainer}>
             {item.rezervace && (
-              <View style={[styles.statItem, { marginRight: 23 }]}>
+              <View style={[styles.statItem, { marginRight: 0 }]}>
                 <TouchableOpacity 
                   style={styles.detailIconBtn}
                   onPress={() => setInfoRezervaceVisible(true)}
@@ -945,9 +945,9 @@ const styles = StyleSheet.create({
   },
   
   detailRezervaceKolecko: { 
-    width: 24,
-    height: 24, 
-    borderRadius: 12, 
+    width: 22,
+    height: 22, 
+    borderRadius: 11, 
     alignItems: 'center', 
     justifyContent: 'center', 
     borderWidth: 0,
