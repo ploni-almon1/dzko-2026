@@ -122,9 +122,8 @@ export default function App() {
         meta.name = 'theme-color';
         document.head.appendChild(meta);
       }
-      meta.content = '#F3F4F6'; // Web theme color now matches the light grey app background
+      meta.content = '#F3F4F6'; 
       
-      // Pozadí webu je nyní trvale světle šedé
       document.body.style.backgroundColor = '#F3F4F6';
       document.documentElement.style.backgroundColor = '#F3F4F6';
     }
@@ -262,7 +261,6 @@ export default function App() {
       try { await AsyncStorage.setItem('@theme_color', novaBarva); } 
       catch (error) { console.error('Chyba při ukládání barvy:', error); }
       setZobrazitNastaveniBarvy(false);
-      setNovaBarvaInput('');
     } else {
       Alert.alert("Neplatný kód", "Zadejte správný HEX formát barvy (např. #666666 nebo #000)");
     }
@@ -544,9 +542,12 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        {/* OPRAVENÁ HLAVIČKA s logem a bílým pozadím */}
+        {/* HLAVIČKA s přebarvitelným logem podle zvoleného tématu */}
         <View style={styles.header}>
-          <Image source={require('./assets/star.png')} style={styles.headerLogo} />
+          <Image 
+            source={require('./assets/star.png')} 
+            style={[styles.headerLogo, { tintColor: themeColor }]} 
+          />
           <Text style={styles.headerText}>DŽKO</Text>
         </View>
 
@@ -633,8 +634,12 @@ export default function App() {
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                       <Ionicons name="logo-instagram" size={20} color="white" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialCircleBtn} onPress={() => setZobrazitNastaveniBarvy(!zobrazitNastaveniBarvy)}>
-                      {/* Prázdné kolečko */}
+                    
+                    {/* Zde se po kliknutí předvyplní aktuální barva do state */}
+                    <TouchableOpacity style={styles.socialCircleBtn} onPress={() => {
+                        if (!zobrazitNastaveniBarvy) setNovaBarvaInput(themeColor);
+                        setZobrazitNastaveniBarvy(!zobrazitNastaveniBarvy);
+                    }}>
                     </TouchableOpacity>
                   </View>
 
@@ -693,7 +698,6 @@ const styles = StyleSheet.create({
   mainContainer: { flex: 1 }, 
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   
-  /* OPRAVENÁ HLAVIČKA */
   header: { 
     height: 60,
     flexDirection: 'row',
@@ -705,8 +709,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
   },
   headerLogo: {
-    width: 26,
-    height: 26,
+    width: 36, // Zvětšená šířka pro logo
+    height: 36, // Zvětšená výška pro logo
     marginRight: 10,
     resizeMode: 'contain',
   },
@@ -742,10 +746,11 @@ const styles = StyleSheet.create({
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', flex: 1, paddingRight: 10 },
   
-  tagPill: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 8, borderWidth: 1 },
+  /* Upravené bubliny tagů – symetrické horizontální i vertikální mezery na řádcích */
+  tagPill: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 6, marginTop: 6, borderWidth: 1 },
   tagText: { fontFamily: 'Inter_400Regular', color: 'white', fontSize: 11, fontWeight: '600' },
   
-  tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 8, marginTop: 8, borderWidth: 1 },
+  tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 6, marginTop: 6, borderWidth: 1 },
   tagTextOutline: { fontFamily: 'Inter_400Regular', fontSize: 11, fontWeight: '600' },
   tagPillRezervovano: { backgroundColor: '#00ff7f', borderColor: '#00ff7f' },
   tagTextRezervovano: { color: '#000' },
