@@ -747,7 +747,7 @@ export default function App() {
                       );
                     })
                   ) : (
-                    <Text style={styles.emptyText}>Zatím si sem můžete přidat akce kliknutím na srdíčko.</Text>
+                    <Text style={styles.emptyText}>Sem si můžete přidat oblíbené akce z programu kliknutím na srdíčko.</Text>
                   )}
                 </View>
               )}
