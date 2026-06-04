@@ -564,7 +564,7 @@ export default function App() {
           {/* 👇 STATISTIKY Z PŘEDCHOZÍ ÚPRAVY JSOU TEĎ TADY 👇 */}
           <View style={styles.detailStatsBottomContainer}>
             {item.rezervace && (
-              <View style={[styles.statItem, { marginRight: 15 }]}>
+              <View style={[styles.statItem, { marginRight: 10 }]}>
                 <TouchableOpacity 
                   style={styles.detailIconBtn}
                   onPress={() => setInfoRezervaceVisible(true)}
