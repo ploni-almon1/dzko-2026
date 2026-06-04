@@ -5,16 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "primaryColor": "#3A24DC",
     "assetBundlePatterns": ["**/*"],
     "web": {
       "favicon": "./assets/icon.png",
       "display": "standalone",
-      "backgroundColor": "#000000",
-      "themeColor": "#000000",
+      "backgroundColor": "#TVŮJ_NOVÝ_KÓD",
+      "themeColor": "#TVŮJ_NOVÝ_KÓD",
       "name": "DŽKO",
       "shortName": "DŽKO"
     }
   }
 }
-
-
