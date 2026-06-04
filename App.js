@@ -534,7 +534,6 @@ export default function App() {
                     </View>
                   </TouchableOpacity>
                   {item.pocetRezervaci > 0 && (
-                    // Tady je přidán marginTop: 6, aby to srovnalo tu vizuální mezeru naproti srdíčku
                     <Text style={[styles.detailStatCount, { marginTop: 6 }]}>{item.pocetRezervaci}</Text>
                   )}
                 </View>
@@ -672,13 +671,22 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        <View style={styles.header}>
+        {/* ZDE JE ZMĚNĚNÁ HLAVIČKA NA KLIKATELNOU */}
+        <TouchableOpacity 
+          style={styles.header} 
+          activeOpacity={0.7}
+          onPress={() => {
+            setDetailAkce(null);
+            setAktivniTab('Další');
+            setRozbaleno('O festivalu');
+          }}
+        >
           <Image 
             source={require('./assets/star.png')} 
             style={[styles.headerLogo, { tintColor: themeColor }]} 
           />
           <Text style={styles.headerText}>DŽKO</Text>
-        </View>
+        </TouchableOpacity>
 
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
