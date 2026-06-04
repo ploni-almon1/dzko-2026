@@ -564,13 +564,13 @@ export default function App() {
           {/* 👇 STATISTIKY Z PŘEDCHOZÍ ÚPRAVY JSOU TEĎ TADY 👇 */}
           <View style={styles.detailStatsBottomContainer}>
             {item.rezervace && (
-              <View style={[styles.statItem, { marginRight: 0 }]}>
+              <View style={[styles.statItem, { marginRight: 23 }]}>
                 <TouchableOpacity 
                   style={styles.detailIconBtn}
                   onPress={() => setInfoRezervaceVisible(true)}
                 >
                   <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                    <Ionicons name="checkmark-sharp" size={15} color={styles.tagTextRezervovano.color} />
+                    <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
                   </View>
                 </TouchableOpacity>
                 {item.pocetRezervaci > 0 && (
@@ -581,7 +581,7 @@ export default function App() {
 
             <View style={styles.statItem}>
               <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
+                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={24} color="black" />
               </TouchableOpacity>
               {item.pocetOblibenych > 0 && (
                 <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
   tagPillRezervovano: { backgroundColor: '#00ff7f', borderColor: '#00ff7f' },
   tagTextRezervovano: { color: '#000' },
 
-  heartIconBtn: { paddingBottom: 2, paddingLeft: 10 },
+  heartIconBtn: { paddingBottom: 0, paddingLeft: 10, marginBottom: -2 },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#6B7280', textAlign: 'center', marginTop: 30, lineHeight: 22 },
   
   backBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, alignSelf: 'flex-start' },
@@ -924,7 +924,7 @@ const styles = StyleSheet.create({
   detailStatsBottomContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 30,
   },
   
@@ -945,9 +945,9 @@ const styles = StyleSheet.create({
   },
   
   detailRezervaceKolecko: { 
-    width: 22,
-    height: 22, 
-    borderRadius: 11, 
+    width: 24,
+    height: 24, 
+    borderRadius: 12, 
     alignItems: 'center', 
     justifyContent: 'center', 
     borderWidth: 0,
