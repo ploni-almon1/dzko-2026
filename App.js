@@ -319,7 +319,7 @@ export default function App() {
     if (hexPattern.test(novaBarvaInput.trim())) {
       const novaBarva = novaBarvaInput.trim();
       setThemeColor(novaBarva);
-      try { await AsyncStorage.setItem('@theme_color_v2', novaBarva); } // Aktualizovaný klíč
+      try { await AsyncStorage.setItem('@theme_color_v2', novaBarva); } 
       catch (error) { console.error('Chyba při ukládání barvy:', error); }
       setZobrazitNastaveniBarvy(false);
     } else {
@@ -513,33 +513,6 @@ export default function App() {
 
           <View style={styles.detailTitleRow}>
             <Text style={styles.detailMainTitle}>{item.nazev}</Text>
-            
-            <View style={styles.detailStatsContainer}>
-              <View style={styles.statItem}>
-                <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                  <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
-                </TouchableOpacity>
-                {item.pocetOblibenych > 0 && (
-                  <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
-                )}
-              </View>
-              
-              {item.rezervace && (
-                <View style={[styles.statItem, { marginTop: 15 }]}>
-                  <TouchableOpacity 
-                    style={styles.detailIconBtn}
-                    onPress={() => setInfoRezervaceVisible(true)}
-                  >
-                    <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                      <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
-                    </View>
-                  </TouchableOpacity>
-                  {item.pocetRezervaci > 0 && (
-                    <Text style={[styles.detailStatCount, { marginTop: 6 }]}>{item.pocetRezervaci}</Text>
-                  )}
-                </View>
-              )}
-            </View>
           </View>
 
           {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
@@ -563,6 +536,58 @@ export default function App() {
           <Text style={styles.detailDescription}>
             {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
           </Text>
+
+          {/* 👇 PŘESUNUTÉ TAGY JSOU TEĎ TADY 👇 */}
+          <View style={styles.detailTagsWrapper}>
+            <View style={styles.tagsContainer}>
+              {item.tag && item.tag.map((t, index) => (
+                <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                  <Text style={styles.tagText}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+              
+              {item.odkaz && (
+                <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                  <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                </TouchableOpacity>
+              )}
+              {item.rezervace && (
+                <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
+                  <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
+                    {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* 👇 STATISTIKY Z PŘEDCHOZÍ ÚPRAVY JSOU TEĎ TADY 👇 */}
+          <View style={styles.detailStatsBottomContainer}>
+            <View style={styles.statItem}>
+              <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
+                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={32} color="black" />
+              </TouchableOpacity>
+              {item.pocetOblibenych > 0 && (
+                <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
+              )}
+            </View>
+            
+            {item.rezervace && (
+              <View style={[styles.statItem, { marginLeft: 25 }]}>
+                <TouchableOpacity 
+                  style={styles.detailIconBtn}
+                  onPress={() => setInfoRezervaceVisible(true)}
+                >
+                  <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
+                    <Ionicons name="checkmark-sharp" size={22} color={styles.tagTextRezervovano.color} />
+                  </View>
+                </TouchableOpacity>
+                {item.pocetRezervaci > 0 && (
+                  <Text style={styles.detailStatCount}>{item.pocetRezervaci}</Text>
+                )}
+              </View>
+            )}
+          </View>
 
           {item.rezervace && (
             <View style={styles.formContainer}>
@@ -614,28 +639,8 @@ export default function App() {
             </View>
           )}
 
-          <View style={styles.detailBottomRow}>
-            <View style={styles.tagsContainer}>
-              {item.tag && item.tag.map((t, index) => (
-                <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                  <Text style={styles.tagText}>{t}</Text>
-                </TouchableOpacity>
-              ))}
-              
-              {item.odkaz && (
-                <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                  <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
-                </TouchableOpacity>
-              )}
-              {item.rezervace && (
-                <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
-                  <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
-                    {maRezervaci ? 'REZERVÁNO' : 'NUTNÁ REZERVACE'}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
+          {/* Přidáno volné místo pro scrollování */}
+          <View style={{ height: 40 }} />
         </ScrollView>
 
         <Modal
@@ -904,29 +909,52 @@ const styles = StyleSheet.create({
   
   detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', lineHeight: 32 },
-  detailStatsContainer: { alignItems: 'center', marginLeft: 15, paddingTop: 2 },
-  statItem: { alignItems: 'center' },
-  detailIconBtn: { paddingTop: 2 },
-  detailStatCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
-  
-  detailRezervaceKolecko: { 
-    width: 28, 
-    height: 28, 
-    borderRadius: 14, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    borderWidth: 1,
-    paddingHorizontal: 0,
-    paddingVertical: 0
-  },
   
   detailHost: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#374151', marginBottom: 15, marginTop: -5 },
   
   detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
   wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
   wireframeText: { fontFamily: 'Inter_400Regular', color: '#9CA3AF', marginTop: 10 },
-  detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 30 },
-  detailBottomRow: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', borderTopWidth: 1, borderColor: '#E5E7EB', paddingTop: 20, paddingBottom: 40 },
+  detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 15 },
+  
+  /* Nový obal pro tagy pod popiskem */
+  detailTagsWrapper: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 25 },
+  
+  /* Upravený kontejner pro ikonky srdíčka a rezervace */
+  detailStatsBottomContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
+    marginBottom: 30,
+  },
+  
+  statItem: { 
+    alignItems: 'center',
+    minWidth: 44,
+  },
+  detailIconBtn: { 
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailStatCount: { 
+    fontFamily: 'Inter_400Regular', 
+    fontSize: 18,
+    color: '#4B5563', 
+    fontWeight: 'bold' 
+  },
+  
+  detailRezervaceKolecko: { 
+    width: 32,
+    height: 32, 
+    borderRadius: 16, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    borderWidth: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0
+  },
   
   formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
   formTitle: { fontFamily: 'Inter_400Regular', fontSize: 18, marginBottom: 15, color: '#111827', fontWeight: 'bold' },
@@ -1001,4 +1029,3 @@ const styles = StyleSheet.create({
     lineHeight: 22
   }
 });
-
