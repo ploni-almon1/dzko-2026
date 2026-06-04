@@ -137,80 +137,102 @@ export default function App() {
   useEffect(() => {
     const nactiData = async () => {
       try {
+        // --- 1. NAČTENÍ UŽIVATELSKÉHO NASTAVENÍ ---
         const ulozenaData = await AsyncStorage.getItem('@moje_srdicka');
         if (ulozenaData !== null) setOblibeneIds(JSON.parse(ulozenaData));
         
         const ulozeneRezervace = await AsyncStorage.getItem('@moje_rezervace');
         if (ulozeneRezervace !== null) setMojeRezervace(JSON.parse(ulozeneRezervace));
 
-        // Změněn klíč na v2, aby aplikace zapomněla případnou starou uloženou barvu
         const ulozenaBarva = await AsyncStorage.getItem('@theme_color_v2');
         if (ulozenaBarva !== null) setThemeColor(ulozenaBarva);
 
         const ulozeneZobrazeni = await AsyncStorage.getItem('@zobrazit_obrazky');
         if (ulozeneZobrazeni !== null) setZobrazitObrazky(JSON.parse(ulozeneZobrazeni));
-      } catch (error) { console.error('Chyba při načítání lokálních dat:', error); }
-    };
-    nactiData();
 
-    const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
-    const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
+        // --- 2. NAČTENÍ OFFLINE ZÁLOHY PROGRAMU ---
+        const ulozenyProgram = await AsyncStorage.getItem('@cached_program');
+        let maUlozenaData = false;
+        
+        if (ulozenyProgram !== null) {
+          setPrednaskyVsechny(JSON.parse(ulozenyProgram));
+          setLoading(false);
+          maUlozenaData = true;
+        }
 
-    if (!baseId || !token) {
-      setError('Chybí konfigurace API klíčů.');
-      setLoading(false);
-      return;
-    }
+        // --- 3. POKUS O STAŽENÍ ČERSTVÝCH DAT NA POZADÍ ---
+        const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
+        const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
 
-    fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error('Nepodařilo se připojit k Airtable.');
-        return response.json();
-      })
-      .then((data) => {
-        const upravenaData = data.records
-          .filter(record => record.fields['Název akce'])
-          .map(record => {
-            const f = record.fields;
-            const denText = f['Den'] || 'PO 12';
-            const casText = f['Čas'] || '--:--';
-            const mistoText = f['Místo'] || '';
-            const slozenyCas = [denText, casText, mistoText].filter(Boolean).join(' | ');
+        if (!baseId || !token) {
+          if (!maUlozenaData) setError('Chybí konfigurace API klíčů.');
+          setLoading(false);
+          return;
+        }
 
-            return {
-              id: record.id,
-              den: denText,
-              cas: slozenyCas,
-              nazev: f['Název akce'],
-              host: f['Host'] || '',
-              roleHosta: f['Role hosta'] || 'host',
-              tag: f['Tagy'] || [],
-              popis: f['Anotace'] || '',
-              image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
-              odkaz: f['Vstupenky'] || null, 
-              rezervace: !!f['Rezervace'],
-              pocetOblibenych: f['Počet oblíbených'] || 0,
-              pocetRezervaci: f['Počet rezervací'] || 0
-            };
+        fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error('Nepodařilo se připojit k Airtable.');
+            return response.json();
+          })
+          .then(async (data) => {
+            const upravenaData = data.records
+              .filter(record => record.fields['Název akce'])
+              .map(record => {
+                const f = record.fields;
+                const denText = f['Den'] || 'PO 12';
+                const casText = f['Čas'] || '--:--';
+                const mistoText = f['Místo'] || '';
+                const slozenyCas = [denText, casText, mistoText].filter(Boolean).join(' | ');
+
+                return {
+                  id: record.id,
+                  den: denText,
+                  cas: slozenyCas,
+                  nazev: f['Název akce'],
+                  host: f['Host'] || '',
+                  roleHosta: f['Role hosta'] || 'host',
+                  tag: f['Tagy'] || [],
+                  popis: f['Anotace'] || '',
+                  image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
+                  odkaz: f['Vstupenky'] || null, 
+                  rezervace: !!f['Rezervace'],
+                  pocetOblibenych: f['Počet oblíbených'] || 0,
+                  pocetRezervaci: f['Počet rezervací'] || 0
+                };
+              });
+
+            const spravnePoradiDnu = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
+            upravenaData.sort((a, b) => {
+              const indexA = spravnePoradiDnu.indexOf(a.den);
+              const indexB = spravnePoradiDnu.indexOf(b.den);
+              if (indexA !== indexB) return indexA - indexB;
+              return a.cas.localeCompare(b.cas);
+            });
+
+            // --- 4. ULOŽENÍ NOVÝCH DAT PRO PŘÍŠTÍ OFFLINE POUŽITÍ ---
+            await AsyncStorage.setItem('@cached_program', JSON.stringify(upravenaData));
+            
+            setPrednaskyVsechny(upravenaData);
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.warn('Jsme offline, stahování selhalo. Necháváme data z paměti.', err.message);
+            if (!maUlozenaData) {
+              setError('Pro první načtení programu potřebujete připojení k internetu.');
+            }
+            setLoading(false);
           });
-
-        const spravnePoradiDnu = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
-        upravenaData.sort((a, b) => {
-          const indexA = spravnePoradiDnu.indexOf(a.den);
-          const indexB = spravnePoradiDnu.indexOf(b.den);
-          if (indexA !== indexB) return indexA - indexB;
-          return a.cas.localeCompare(b.cas);
-        });
-
-        setPrednaskyVsechny(upravenaData);
+          
+      } catch (error) { 
+        console.error('Kritická chyba při načítání:', error); 
         setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      }
+    };
+
+    nactiData();
   }, []); 
 
   const prepniObrazky = async () => {
