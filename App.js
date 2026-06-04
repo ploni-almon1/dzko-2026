@@ -581,7 +581,7 @@ export default function App() {
 
             <View style={styles.statItem}>
               <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={24} color="black" />
+                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
               </TouchableOpacity>
               {item.pocetOblibenych > 0 && (
                 <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
