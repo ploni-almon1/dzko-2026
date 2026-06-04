@@ -523,10 +523,21 @@ export default function App() {
             
             {item.rezervace && (
               <View style={[styles.statItem, { marginTop: 15 }]}>
-                <TouchableOpacity onPress={() => Alert.alert("Rezervace", "Počet aktuálních rezervací na tuto akci.")}>
-                  {/* Zde je upravený tvar bubliny - teď je to dokonalé kolečko čerpající barvu z rezervací */}
+                <TouchableOpacity 
+                  style={styles.detailIconBtn}
+                  onPress={() => {
+                    const alertTitle = "Rezervace";
+                    const alertMessage = "Toto číslo ukazuje počet aktuálních rezervací na tuto akci.";
+                    if (Platform.OS === 'web') {
+                      window.alert(`${alertTitle}\n\n${alertMessage}`);
+                    } else {
+                      Alert.alert(alertTitle, alertMessage);
+                    }
+                  }}
+                >
+                  {/* Zde je upravený tvar bubliny - teď je to dokonalé kolečko lícující se srdíčkem */}
                   <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                    <Ionicons name="checkmark-sharp" size={18} color={styles.tagTextRezervovano.color} />
+                    <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
                   </View>
                 </TouchableOpacity>
                 {item.pocetRezervaci > 0 && (
@@ -865,11 +876,11 @@ const styles = StyleSheet.create({
   detailIconBtn: { paddingTop: 2 },
   detailStatCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
   
-  /* Upravený styl pro kolečko s fajfkou */
+  /* Upravený styl pro kolečko s fajfkou (z 30 na 28 aby seděl se srdíčkem) */
   detailRezervaceKolecko: { 
-    width: 30, 
-    height: 30, 
-    borderRadius: 15, 
+    width: 28, 
+    height: 28, 
+    borderRadius: 14, 
     alignItems: 'center', 
     justifyContent: 'center', 
     borderWidth: 1,
