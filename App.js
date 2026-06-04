@@ -563,23 +563,14 @@ export default function App() {
 
           {/* 👇 STATISTIKY Z PŘEDCHOZÍ ÚPRAVY JSOU TEĎ TADY 👇 */}
           <View style={styles.detailStatsBottomContainer}>
-            <View style={styles.statItem}>
-              <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={32} color="black" />
-              </TouchableOpacity>
-              {item.pocetOblibenych > 0 && (
-                <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
-              )}
-            </View>
-            
             {item.rezervace && (
-              <View style={[styles.statItem, { marginLeft: 25 }]}>
+              <View style={[styles.statItem, { marginRight: 23 }]}>
                 <TouchableOpacity 
                   style={styles.detailIconBtn}
                   onPress={() => setInfoRezervaceVisible(true)}
                 >
                   <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                    <Ionicons name="checkmark-sharp" size={22} color={styles.tagTextRezervovano.color} />
+                    <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
                   </View>
                 </TouchableOpacity>
                 {item.pocetRezervaci > 0 && (
@@ -587,6 +578,15 @@ export default function App() {
                 )}
               </View>
             )}
+
+            <View style={styles.statItem}>
+              <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
+                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={24} color="black" />
+              </TouchableOpacity>
+              {item.pocetOblibenych > 0 && (
+                <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
+              )}
+            </View>
           </View>
 
           {item.rezervace && (
@@ -933,7 +933,7 @@ const styles = StyleSheet.create({
     minWidth: 44,
   },
   detailIconBtn: { 
-    height: 40,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -946,9 +946,9 @@ const styles = StyleSheet.create({
   },
   
   detailRezervaceKolecko: { 
-    width: 32,
-    height: 32, 
-    borderRadius: 16, 
+    width: 24,
+    height: 24, 
+    borderRadius: 12, 
     alignItems: 'center', 
     justifyContent: 'center', 
     borderWidth: 0,
