@@ -542,7 +542,7 @@ export default function App() {
           <View style={styles.detailStatsBottomContainer}>
             <View style={styles.statItem}>
               <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
+                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={32} color="black" />
               </TouchableOpacity>
               {item.pocetOblibenych > 0 && (
                 <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
@@ -550,13 +550,13 @@ export default function App() {
             </View>
             
             {item.rezervace && (
-              <View style={[styles.statItem, { marginLeft: 20 }]}>
+              <View style={[styles.statItem, { marginLeft: 25 }]}>
                 <TouchableOpacity 
                   style={styles.detailIconBtn}
                   onPress={() => setInfoRezervaceVisible(true)}
                 >
                   <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                    <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
+                    <Ionicons name="checkmark-sharp" size={22} color={styles.tagTextRezervovano.color} />
                   </View>
                 </TouchableOpacity>
                 {item.pocetRezervaci > 0 && (
@@ -913,17 +913,31 @@ const styles = StyleSheet.create({
   detailStatsBottomContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    alignItems: 'flex-start',
     marginBottom: 30,
   },
   
-  statItem: { alignItems: 'center' },
-  detailIconBtn: { paddingTop: 2 },
-  detailStatCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
+  statItem: { 
+    alignItems: 'center',
+    minWidth: 44,
+  },
+  detailIconBtn: { 
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailStatCount: { 
+    fontFamily: 'Inter_400Regular', 
+    fontSize: 18,
+    color: '#4B5563', 
+    fontWeight: 'bold' 
+  },
   
   detailRezervaceKolecko: { 
-    width: 26, 
-    height: 26, 
-    borderRadius: 13, 
+    width: 32,
+    height: 32, 
+    borderRadius: 16, 
     alignItems: 'center', 
     justifyContent: 'center', 
     borderWidth: 0,
