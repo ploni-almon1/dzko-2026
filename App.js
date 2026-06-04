@@ -933,7 +933,7 @@ const styles = StyleSheet.create({
     minWidth: 44,
   },
   detailIconBtn: { 
-    height: 46,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -945,8 +945,8 @@ const styles = StyleSheet.create({
   },
   
   detailRezervaceKolecko: { 
-    width: 32,
-    height: 32, 
+    width: 21,
+    height: 21, 
     borderRadius: 11, 
     alignItems: 'center', 
     justifyContent: 'center', 
