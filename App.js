@@ -710,9 +710,9 @@ export default function App() {
                     <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
-                    {/* ZDE JE UPRAVENÉ TLAČÍTKO PRO ZMĚNU ZOBRAZENÍ - IKONA "menu-outline" (3 čisté čárky) */}
+                    {/* ZDE JE UPRAVENÉ TLAČÍTKO PRO ZMĚNU ZOBRAZENÍ - IKONY "list-outline" A "apps-outline" */}
                     <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
-                      <Ionicons name={zobrazitObrazky ? "menu-outline" : "grid-outline"} size={26} color="black" />
+                      <Ionicons name={zobrazitObrazky ? "list-outline" : "apps-outline"} size={26} color="black" />
                     </TouchableOpacity>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
