@@ -5,6 +5,9 @@ import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 
+// 👇👇👇 ZDE JE TVOJE CENTRÁLNÍ BARVA PRO CELOU APLIKACI 👇👇👇
+const DEFAULT_THEME_COLOR = '#8B5CF6'; 
+
 // --- GENERÁTOR MAPY ---
 const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
 <!DOCTYPE html>
@@ -23,7 +26,7 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
         
         .dzko-pin {
             width: 32px; height: 32px;
-            background-color: ${themeColor || '#8B5CF6'}; border: 2px solid white;
+            background-color: ${themeColor || DEFAULT_THEME_COLOR}; border: 2px solid white;
             border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
             box-shadow: -2px 2px 5px rgba(0,0,0,0.3); 
             display: flex; align-items: center; justify-content: center;
@@ -100,7 +103,8 @@ export default function App() {
 
   const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
 
-  const [themeColor, setThemeColor] = useState('#8B5CF6');
+  // Zde si React saje centrální barvu
+  const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
   const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
   const [novaBarvaInput, setNovaBarvaInput] = useState('');
 
@@ -139,7 +143,8 @@ export default function App() {
         const ulozeneRezervace = await AsyncStorage.getItem('@moje_rezervace');
         if (ulozeneRezervace !== null) setMojeRezervace(JSON.parse(ulozeneRezervace));
 
-        const ulozenaBarva = await AsyncStorage.getItem('@theme_color');
+        // Změněn klíč na v2, aby aplikace zapomněla případnou starou uloženou barvu
+        const ulozenaBarva = await AsyncStorage.getItem('@theme_color_v2');
         if (ulozenaBarva !== null) setThemeColor(ulozenaBarva);
 
         const ulozeneZobrazeni = await AsyncStorage.getItem('@zobrazit_obrazky');
@@ -314,7 +319,7 @@ export default function App() {
     if (hexPattern.test(novaBarvaInput.trim())) {
       const novaBarva = novaBarvaInput.trim();
       setThemeColor(novaBarva);
-      try { await AsyncStorage.setItem('@theme_color', novaBarva); } 
+      try { await AsyncStorage.setItem('@theme_color_v2', novaBarva); } // Aktualizovaný klíč
       catch (error) { console.error('Chyba při ukládání barvy:', error); }
       setZobrazitNastaveniBarvy(false);
     } else {
@@ -334,7 +339,6 @@ export default function App() {
     const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
 
     try {
-      // 1. Odeslání dat do tabulky Rezervace
       const response = await fetch(`https://api.airtable.com/v0/${baseId}/Rezervace`, {
         method: 'POST',
         headers: {
@@ -365,12 +369,10 @@ export default function App() {
       setMojeRezervace(noveRezervace);
       await AsyncStorage.setItem('@moje_rezervace', JSON.stringify(noveRezervace));
 
-      // 2. Přidání srdíčka (pokud ho ještě nemá)
       if (!oblibeneIds.includes(detailAkce.id)) {
         prepniOblibene(detailAkce.id);
       }
 
-      // 3. Okamžitá vizuální úprava počtu rezervací a odeslání PATCH updatu do tabulky Program
       const novyPocetRezervaci = (detailAkce.pocetRezervaci || 0) + 1;
       
       setDetailAkce(prev => ({ ...prev, pocetRezervaci: novyPocetRezervaci }));
@@ -378,7 +380,6 @@ export default function App() {
         item.id === detailAkce.id ? { ...item, pocetRezervaci: novyPocetRezervaci } : item
       ));
 
-      // PATCH request na aktualizaci čísla v Airtable tabulce Program
       await fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
         method: 'PATCH',
         headers: {
@@ -637,7 +638,6 @@ export default function App() {
           </View>
         </ScrollView>
 
-        {/* Nový elegantní Modal pro vysvětlení počtu rezervací */}
         <Modal
           visible={infoRezervaceVisible}
           transparent={true}
@@ -710,7 +710,6 @@ export default function App() {
                     <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
-                    {/* ZDE JE UPRAVENÉ TLAČÍTKO PRO ZMĚNU ZOBRAZENÍ - IKONA "reorder-three-outline" */}
                     <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
                       <Ionicons name={zobrazitObrazky ? "reorder-three-outline" : "grid-outline"} size={24} color="black" />
                     </TouchableOpacity>
@@ -758,7 +757,7 @@ export default function App() {
                   <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
                   
                   <View style={styles.menuList}>
-                    {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.')}
+                    {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin.')}
                     {vykresliPolozkuMenu('Archiv', 'link', 'https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}
                     {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
                     {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
@@ -861,7 +860,6 @@ const styles = StyleSheet.create({
   pageTitleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 15 },
   pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28 },
 
-  /* -- OPRAVENÝ STYL PRO TLAČÍTKO PŘEPÍNÁNÍ ZOBRAZENÍ - TVOŘÍ DOKONALÝ ČTVEREC -- */
   toggleViewBtn: {
     width: 44,
     height: 44,
@@ -960,7 +958,6 @@ const styles = StyleSheet.create({
   navItem: { flex: 1, alignItems: 'center', justifyContent: Platform.OS === 'web' ? 'center' : 'flex-start' },
   navText: { fontFamily: 'Inter_400Regular', fontSize: 10, marginTop: Platform.OS === 'web' ? 2 : 4 },
 
-  /* -- Styly pro nový info Modal -- */
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
