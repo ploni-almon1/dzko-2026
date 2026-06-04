@@ -940,9 +940,8 @@ const styles = StyleSheet.create({
   },
   detailStatCount: { 
     fontFamily: 'Inter_400Regular', 
-    fontSize: 18,
+    fontSize: 15,
     color: '#4B5563', 
-    fontWeight: 'bold' 
   },
   
   detailRezervaceKolecko: { 
