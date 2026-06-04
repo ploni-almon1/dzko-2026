@@ -409,7 +409,6 @@ export default function App() {
 
     return (
       <View key={item.id} style={styles.card}>
-        {/* Zde probíhá kontrola, zda má uživatel zapnuté obrázky */}
         {item.image && zobrazitObrazky && (
           <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
             <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
@@ -634,9 +633,9 @@ export default function App() {
                     <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
-                    {/* Ikona přepínající zobrazení obrázků */}
+                    {/* Zde je zmenšená velikost a změněná ikona na menu-outline */}
                     <TouchableOpacity onPress={prepniObrazky} style={{ paddingLeft: 10 }}>
-                      <Ionicons name={zobrazitObrazky ? "list-outline" : "grid-outline"} size={28} color="black" />
+                      <Ionicons name={zobrazitObrazky ? "menu-outline" : "grid-outline"} size={24} color="black" />
                     </TouchableOpacity>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
@@ -782,7 +781,6 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 15 },
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
 
-  // Kontejner obalující nadpis stránky a volitelně další prvky jako ikony přepínání (odsazení přesunuto sem)
   pageTitleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 15 },
   pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28 },
   
