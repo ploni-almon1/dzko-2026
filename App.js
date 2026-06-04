@@ -188,7 +188,8 @@ export default function App() {
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
               odkaz: f['Vstupenky'] || null, 
               rezervace: !!f['Rezervace'],
-              pocetOblibenych: f['Počet oblíbených'] || 0
+              pocetOblibenych: f['Počet oblíbených'] || 0,
+              pocetRezervaci: f['Počet rezervací'] || 0 // Zde se načítá počet rezervací
             };
           });
 
@@ -486,12 +487,30 @@ export default function App() {
         <View style={styles.detailTitleRow}>
           <Text style={styles.detailMainTitle}>{item.nazev}</Text>
           
-          <View style={styles.detailHeartContainer}>
-            <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartBtn}>
-              <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
-            </TouchableOpacity>
-            {item.pocetOblibenych > 0 && (
-              <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
+          {/* Box pro všechny statistiky napravo od nadpisu */}
+          <View style={styles.detailStatsContainer}>
+            <View style={styles.statItem}>
+              <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
+                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
+              </TouchableOpacity>
+              {item.pocetOblibenych > 0 && (
+                <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
+              )}
+            </View>
+            
+            {/* Zobrazí bublinu s rezervacemi jen pokud je u akce možnost rezervace */}
+            {item.rezervace && (
+              <View style={[styles.statItem, { marginTop: 15 }]}>
+                <TouchableOpacity onPress={() => Alert.alert("Rezervace", "Počet aktuálních rezervací na tuto akci.")}>
+                  {/* Použití dynamických stylů z tagPillRezervovano */}
+                  <View style={[styles.tagPillRezervovano, styles.rezervaceBadge]}>
+                    <Ionicons name="checkmark-sharp" size={16} color={styles.tagTextRezervovano.color} />
+                  </View>
+                </TouchableOpacity>
+                {item.pocetRezervaci > 0 && (
+                  <Text style={styles.detailStatCount}>{item.pocetRezervaci}</Text>
+                )}
+              </View>
             )}
           </View>
         </View>
@@ -633,9 +652,9 @@ export default function App() {
                     <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
-                    {/* Zde je zmenšená velikost a změněná ikona na menu-outline */}
+                    {/* Změněná ikona na reorder-three-outline (3 vzdušnější čárky v bloku) */}
                     <TouchableOpacity onPress={prepniObrazky} style={{ paddingLeft: 10 }}>
-                      <Ionicons name={zobrazitObrazky ? "menu-outline" : "grid-outline"} size={24} color="black" />
+                      <Ionicons name={zobrazitObrazky ? "reorder-three-outline" : "grid-outline"} size={24} color="black" />
                     </TouchableOpacity>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
@@ -818,11 +837,14 @@ const styles = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, alignSelf: 'flex-start' },
   backBtnText: { fontFamily: 'Inter_400Regular', fontSize: 16, marginLeft: 5 },
   
+  /* Styly detailu doplněny o kontejner statistik */
   detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, color: '#111827', lineHeight: 32 },
-  detailHeartContainer: { alignItems: 'center', marginLeft: 10 },
-  detailHeartBtn: { paddingTop: 2 },
-  detailHeartCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
+  detailStatsContainer: { alignItems: 'center', marginLeft: 15, paddingTop: 2 },
+  statItem: { alignItems: 'center' },
+  detailIconBtn: { paddingTop: 2 },
+  detailStatCount: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563', marginTop: 2, fontWeight: '600' },
+  rezervaceBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 15, alignSelf: 'center', borderWidth: 1 },
   detailHost: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#374151', marginBottom: 15, marginTop: -5 },
   
   detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
