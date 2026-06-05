@@ -1089,7 +1089,7 @@ const styles = StyleSheet.create({
   /* 👇 STYLY PRO NOVOU ÚVODNÍ "HOME" OBRAZOVKU 👇 */
  homeHeroContainer: {
     width: '100%',
-    aspectRatio: 16/9, // Můžeš zadat třeba 21/9 pro širokoúhlou nudli, nebo 1.5
+    aspectRatio: 2/1, // Můžeš zadat třeba 21/9 pro širokoúhlou nudli, nebo 1.5
     position: 'relative',
   },
   homeHeroImage: {
