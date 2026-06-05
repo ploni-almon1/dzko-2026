@@ -111,6 +111,7 @@ export default function App() {
   const [novaBarvaInput, setNovaBarvaInput] = useState('');
 
   const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
+  const [heroImage, setHeroImage] = useState(null); // 👈 STAV PRO ÚVODNÍ OBRÁZEK
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -165,6 +166,25 @@ export default function App() {
       return;
     }
 
+    // 1. NAČTENÍ ÚVODNÍHO OBRÁZKU Z NOVÉ TABULKY "Nastaveni"
+    fetch(`https://api.airtable.com/v0/${baseId}/Nastaveni`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) return null; 
+        return res.json();
+      })
+      .then((data) => {
+        if (data && data.records && data.records.length > 0) {
+          const record = data.records.find(r => r.fields['Home']);
+          if (record && record.fields['Home'][0]) {
+            setHeroImage(record.fields['Home'][0].url);
+          }
+        }
+      })
+      .catch((err) => console.log('Obrázek pro Home se nenačetl nebo tabulka neexistuje:', err));
+
+    // 2. NAČTENÍ PROGRAMU
     fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -448,6 +468,7 @@ export default function App() {
         <View style={styles.card}>
           {item.image && zobrazitObrazky && (
             <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
+              {/* 👇 ZDE JE TVŮJ NOVÝ STYL PRO OBRÁZEK NA WEBU S POMĚREM 1.5 👇 */}
               <Image source={{ uri: item.image }} style={isDesktop ? styles.desktopCardImage : styles.cardImage} resizeMode="cover" />
             </TouchableOpacity>
           )}
@@ -835,23 +856,22 @@ export default function App() {
                 <Text style={[styles.desktopMenuText, aktivniTab === 'Další' && rozbaleno === 'Pořadatelé' && { color: themeColor, fontWeight: 'bold' }]}>POŘADATELÉ</Text>
               </TouchableOpacity>
 
-              {/* 👇 PŘIDANÉ SRDÍČKO S POČTEM OBLÍBENÝCH DO HLAVIČKY 👇 */}
-<TouchableOpacity 
-  style={styles.desktopHeaderFavBtn} 
-  onPress={() => { setDetailAkce(null); setAktivniTab('Oblíbené'); }}
->
-  <Ionicons 
-    name={oblibeneIds.length > 0 || (aktivniTab === 'Oblíbené' && !detailAkce) ? "heart" : "heart-outline"} 
-    size={24} 
-    color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : "black"} 
-  />
-  {/* Zobrazí se POUZE pokud je v oblíbených více než 0 akcí */}
-  {oblibeneIds.length > 0 && (
-    <Text style={[styles.desktopHeaderFavCount, aktivniTab === 'Oblíbené' && !detailAkce && { color: themeColor }]}>
-      {oblibeneIds.length}
-    </Text>
-  )}
-</TouchableOpacity>
+              {/* HLAVIČKA - SRDÍČKO */}
+              <TouchableOpacity 
+                style={styles.desktopHeaderFavBtn} 
+                onPress={() => { setDetailAkce(null); setAktivniTab('Oblíbené'); }}
+              >
+                <Ionicons 
+                  name={oblibeneIds.length > 0 || (aktivniTab === 'Oblíbené' && !detailAkce) ? "heart" : "heart-outline"} 
+                  size={24} 
+                  color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : "black"} 
+                />
+                {oblibeneIds.length > 0 && (
+                  <Text style={[styles.desktopHeaderFavCount, aktivniTab === 'Oblíbené' && !detailAkce && { color: themeColor }]}>
+                    {oblibeneIds.length}
+                  </Text>
+                )}
+              </TouchableOpacity>
 
             </View>
           )}
@@ -876,6 +896,13 @@ export default function App() {
             <ScrollView style={styles.content}>
               {aktivniTab === 'Program' && (
                 <>
+                  {/* 👇 VYKRESLENÍ ÚVODNÍHO OBRÁZKU 👇 */}
+                  {heroImage && (
+                    <View style={isDesktop ? styles.desktopHeroContainer : styles.mobileHeroContainer}>
+                      <Image source={{ uri: heroImage }} style={styles.heroImageFull} resizeMode="cover" />
+                    </View>
+                  )}
+
                   <View style={styles.pageTitleContainer}>
                     <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
@@ -1015,7 +1042,36 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  /* 👇 ZVĚTŠENÉ TAGY PRO DETAIL 👇 */
+  /* 👇 STYLY PRO ÚVODNÍ (HERO) OBRÁZEK 👇 */
+  desktopHeroContainer: {
+    width: '100%',
+    height: 400,
+    borderRadius: 16,
+    marginTop: 20,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  mobileHeroContainer: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    marginTop: 15,
+    marginBottom: 5,
+    overflow: 'hidden',
+  },
+  heroImageFull: {
+    width: '100%',
+    height: '100%',
+  },
+
+  desktopCardImage: {
+    width: '100%',
+    aspectRatio: 1.5, 
+    borderTopLeftRadius: 10, 
+    borderTopRightRadius: 10, 
+    backgroundColor: '#E5E7EB'
+  },
+
   detailTagPill: {
     alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 18, marginRight: 8, marginTop: 8, borderWidth: 1
   },
@@ -1029,7 +1085,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular', fontSize: 13, fontWeight: '600'
   },
 
-  /* 👇 STYLY PRO DETAIL AKCE NA DESKTOPU 👇 */
   desktopDetailScrollView: {
     flex: 1, 
     paddingHorizontal: 30,
@@ -1127,7 +1182,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  /* 👇 STYLY PRO OBLÍBENÉ DO HLAVIČKY 👇 */
   desktopHeaderFavBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1140,7 +1194,6 @@ const styles = StyleSheet.create({
     marginLeft: 6, 
   },
 
-  /* ... Zbytek původních stylů ... */
   desktopGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1152,13 +1205,6 @@ const styles = StyleSheet.create({
   },
   mobileCardWrapper: {
     width: '100%',
-  },
-    desktopCardImage: {
-    width: '100%',
-    aspectRatio: 16/9, // 👈 Zde si můžeš poměr stran libovolně měnit (např. 16/9, 4/3)
-    borderTopLeftRadius: 10, 
-    borderTopRightRadius: 10, 
-    backgroundColor: '#E5E7EB'
   },
 
   desktopHeader: { 
