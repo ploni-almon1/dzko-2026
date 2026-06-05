@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
   },
   homeHeroOverlay: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 170,
     width: '100%',
     alignItems: 'center',
   },
