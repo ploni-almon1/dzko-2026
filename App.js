@@ -448,7 +448,7 @@ export default function App() {
         <View style={styles.card}>
           {item.image && zobrazitObrazky && (
             <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
-              <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
+              <Image source={{ uri: item.image }} style={isDesktop ? styles.desktopCardImage : styles.cardImage} resizeMode="cover" />
             </TouchableOpacity>
           )}
 
@@ -1152,6 +1152,13 @@ const styles = StyleSheet.create({
   },
   mobileCardWrapper: {
     width: '100%',
+  },
+    desktopCardImage: {
+    width: '100%',
+    aspectRatio: 3/2, // 👈 Zde si můžeš poměr stran libovolně měnit (např. 16/9, 4/3)
+    borderTopLeftRadius: 10, 
+    borderTopRightRadius: 10, 
+    backgroundColor: '#E5E7EB'
   },
 
   desktopHeader: { 
