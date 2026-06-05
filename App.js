@@ -1155,7 +1155,7 @@ const styles = StyleSheet.create({
   },
     desktopCardImage: {
     width: '100%',
-    aspectRatio: 3/2, // 👈 Zde si můžeš poměr stran libovolně měnit (např. 16/9, 4/3)
+    aspectRatio: 16/9, // 👈 Zde si můžeš poměr stran libovolně měnit (např. 16/9, 4/3)
     borderTopLeftRadius: 10, 
     borderTopRightRadius: 10, 
     backgroundColor: '#E5E7EB'
