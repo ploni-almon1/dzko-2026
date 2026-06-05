@@ -518,7 +518,6 @@ export default function App() {
       <>
         <ScrollView style={isDesktop ? styles.desktopDetailScrollView : styles.content} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
           
-          {/* 👇 UPRAVENÁ BREADCRUMB / ZPĚT NAVIGACE 👇 */}
           {isDesktop ? (
             <View style={styles.desktopBreadcrumbsContainer}>
               <TouchableOpacity onPress={() => setDetailAkce(null)} activeOpacity={0.6}>
@@ -533,7 +532,6 @@ export default function App() {
             </TouchableOpacity>
           )}
 
-          {/* 👇 ROZDVOJENÍ LAYOUTU DLE ZAŘÍZENÍ 👇 */}
           {isDesktop ? (
             <View style={styles.desktopDetailLayout}>
               {/* LEVÝ SLOUPEC (BÍLÁ KARTA) */}
@@ -560,19 +558,19 @@ export default function App() {
                 <View style={styles.detailTagsWrapper}>
                   <View style={styles.tagsContainer}>
                     {item.tag && item.tag.map((t, index) => (
-                      <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                        <Text style={styles.tagText}>{t}</Text>
+                      <TouchableOpacity key={index} style={[styles.detailTagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                        <Text style={styles.detailTagText}>{t}</Text>
                       </TouchableOpacity>
                     ))}
                     
                     {item.odkaz && (
-                      <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                        <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                      <TouchableOpacity style={[styles.detailTagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                        <Text style={[styles.detailTagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
                       </TouchableOpacity>
                     )}
                     {item.rezervace && (
-                      <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
-                        <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
+                      <View style={[styles.detailTagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
+                        <Text style={[styles.detailTagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
                           {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
                         </Text>
                       </View>
@@ -580,7 +578,6 @@ export default function App() {
                   </View>
                 </View>
 
-                {/* Rezervační formulář rovnou v bílé kartě pod obsahem */}
                 {item.rezervace && (
                   <View style={[styles.formContainer, {marginTop: 20, marginBottom: 0, padding: 0, borderWidth: 0, shadowOpacity: 0, elevation: 0}]}>
                     <TouchableOpacity activeOpacity={0.7} onPress={() => { setRezervaceOdeslana(false); setRezervaceJmeno(''); setRezervaceEmail(''); setRezervaceChyba(null); }}>
@@ -614,10 +611,27 @@ export default function App() {
                 )}
                 
                 <View style={styles.desktopDetailBottomActions}>
-                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={32} color="black" />
-                  </TouchableOpacity>
-                  {/* Zde můžeš případně přidat další ikony (sdílení atd.) doprava dolu */}
+                  {item.rezervace && (
+                    <View style={styles.detailStatItemHorizontal}>
+                      <TouchableOpacity style={styles.detailIconBtn} onPress={() => setInfoRezervaceVisible(true)}>
+                        <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
+                          <Ionicons name="checkmark-sharp" size={15} color={styles.tagTextRezervovano.color} />
+                        </View>
+                      </TouchableOpacity>
+                      {item.pocetRezervaci > 0 && (
+                        <Text style={styles.detailStatCountHorizontal}>{item.pocetRezervaci}</Text>
+                      )}
+                    </View>
+                  )}
+
+                  <View style={styles.detailStatItemHorizontal}>
+                    <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
+                      <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
+                    </TouchableOpacity>
+                    {item.pocetOblibenych > 0 && (
+                      <Text style={styles.detailStatCountHorizontal}>{item.pocetOblibenych}</Text>
+                    )}
+                  </View>
                 </View>
               </View>
 
@@ -654,19 +668,19 @@ export default function App() {
               <View style={styles.detailTagsWrapper}>
                 <View style={styles.tagsContainer}>
                   {item.tag && item.tag.map((t, index) => (
-                    <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                      <Text style={styles.tagText}>{t}</Text>
+                    <TouchableOpacity key={index} style={[styles.detailTagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                      <Text style={styles.detailTagText}>{t}</Text>
                     </TouchableOpacity>
                   ))}
                   
                   {item.odkaz && (
-                    <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                      <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                    <TouchableOpacity style={[styles.detailTagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                      <Text style={[styles.detailTagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
                     </TouchableOpacity>
                   )}
                   {item.rezervace && (
-                    <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
-                      <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
+                    <View style={[styles.detailTagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
+                      <Text style={[styles.detailTagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
                         {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
                       </Text>
                     </View>
@@ -693,7 +707,7 @@ export default function App() {
 
                 <View style={styles.statItem}>
                   <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={24} color="black" />
+                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
                   </TouchableOpacity>
                   {item.pocetOblibenych > 0 && (
                     <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
@@ -982,10 +996,24 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  /* 👇 ZVĚTŠENÉ TAGY PRO DETAIL 👇 */
+  detailTagPill: {
+    alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 18, marginRight: 8, marginTop: 8, borderWidth: 1
+  },
+  detailTagText: {
+    fontFamily: 'Inter_400Regular', color: 'white', fontSize: 13, fontWeight: '600'
+  },
+  detailTagPillOutline: {
+    backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 18, marginRight: 8, marginTop: 8, borderWidth: 1
+  },
+  detailTagTextOutline: {
+    fontFamily: 'Inter_400Regular', fontSize: 13, fontWeight: '600'
+  },
+
   /* 👇 STYLY PRO DETAIL AKCE NA DESKTOPU 👇 */
   desktopDetailScrollView: {
     flex: 1, 
-    paddingHorizontal: 30, // Větší okraje pro monitor
+    paddingHorizontal: 30,
   },
   desktopBreadcrumbsContainer: {
     flexDirection: 'row',
@@ -996,7 +1024,7 @@ const styles = StyleSheet.create({
   desktopBreadcrumbLink: {
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    color: '#6B7280', // Šedivá pro link
+    color: '#6B7280', 
   },
   desktopBreadcrumbText: {
     fontFamily: 'Inter_400Regular',
@@ -1005,7 +1033,7 @@ const styles = StyleSheet.create({
   },
   desktopDetailLayout: {
     flexDirection: 'row',
-    alignItems: 'stretch',
+    alignItems: 'flex-start', // Změna aby se pravý sloupec nenatahoval na výšku levého
     justifyContent: 'space-between',
     width: '100%',
   },
@@ -1014,7 +1042,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 30,
-    marginRight: 20, // Mezera mezi kartou a obrázkem
+    marginRight: 20, 
     shadowColor: '#000', 
     shadowOffset: { width: 0, height: 2 }, 
     shadowOpacity: 0.05, 
@@ -1054,21 +1082,30 @@ const styles = StyleSheet.create({
   },
   desktopDetailRightColumn: {
     flex: 1,
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    alignItems: 'flex-end', // Zarovná ikony pod obrázkem doprava
   },
   desktopDetailImage: {
     width: '100%',
-    height: '100%', // Na obrázku to vypadá vysoké
-    minHeight: 450,
+    aspectRatio: 1.5, // Udržuje přirozený poměr stran (ideální pro fotky), takže se obrázek nedeformuje a neroztahuje na plnou výšku
     borderRadius: 16,
+    marginBottom: 15,
   },
   desktopDetailBottomActions: {
-    position: 'absolute',
-    bottom: -50,
-    right: 0,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  detailStatItemHorizontal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 20,
+  },
+  detailStatCountHorizontal: {
+    fontFamily: 'Inter_400Regular', 
+    fontSize: 16,
+    color: '#4B5563', 
+    marginLeft: 8,
   },
 
   /* ... Zbytek původních stylů ... */
