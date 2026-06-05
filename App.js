@@ -95,8 +95,11 @@ export default function App() {
   const isDesktop = width >= 1024; 
 
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
+  
+  // 👇 Pokud je uživatel na PC, rovnou startuje na záložce "Home", jinak na "Program"
+  const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
+  
   const [vybranyDen, setVybranyDen] = useState('VŠE');
-  const [aktivniTab, setAktivniTab] = useState('Program');
   const [oblibeneIds, setOblibeneIds] = useState([]);
   const [mojeRezervace, setMojeRezervace] = useState([]);
   const [vybranyTag, setVybranyTag] = useState(null);
@@ -111,7 +114,7 @@ export default function App() {
   const [novaBarvaInput, setNovaBarvaInput] = useState('');
 
   const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
-  const [heroImage, setHeroImage] = useState(null); // 👈 STAV PRO ÚVODNÍ OBRÁZEK
+  const [heroImage, setHeroImage] = useState(null); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -123,6 +126,13 @@ export default function App() {
   const [infoRezervaceVisible, setInfoRezervaceVisible] = useState(false);
 
   const detailScrollViewRef = useRef(null);
+
+  // 👇 Změna stavu při zmenšení okna na PC (aby nezůstal na "Home" tabu na mobilu) 👇
+  useEffect(() => {
+    if (!isDesktop && aktivniTab === 'Home') {
+      setAktivniTab('Program');
+    }
+  }, [isDesktop, aktivniTab]);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -166,7 +176,7 @@ export default function App() {
       return;
     }
 
-    // 1. NAČTENÍ ÚVODNÍHO OBRÁZKU Z NOVÉ TABULKY "Nastaveni"
+    // NAČTENÍ ÚVODNÍHO OBRÁZKU Z TABULKY "Nastaveni"
     fetch(`https://api.airtable.com/v0/${baseId}/Nastaveni`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -184,7 +194,7 @@ export default function App() {
       })
       .catch((err) => console.log('Obrázek pro Home se nenačetl nebo tabulka neexistuje:', err));
 
-    // 2. NAČTENÍ PROGRAMU
+    // NAČTENÍ PROGRAMU
     fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -468,7 +478,6 @@ export default function App() {
         <View style={styles.card}>
           {item.image && zobrazitObrazky && (
             <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
-              {/* 👇 ZDE JE TVŮJ NOVÝ STYL PRO OBRÁZEK NA WEBU S POMĚREM 1.5 👇 */}
               <Image source={{ uri: item.image }} style={isDesktop ? styles.desktopCardImage : styles.cardImage} resizeMode="cover" />
             </TouchableOpacity>
           )}
@@ -658,7 +667,7 @@ export default function App() {
 
             </View>
           ) : (
-            /* MOBILNÍ LAYOUT - Běžné (malé) tagy */
+            /* MOBILNÍ LAYOUT */
             <>
               <View style={styles.detailTitleRow}>
                 <Text style={styles.detailMainTitle}>{item.nazev}</Text>
@@ -826,7 +835,8 @@ export default function App() {
             activeOpacity={0.7}
             onPress={() => {
               if (isDesktop) {
-                setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null);
+                setAktivniTab('Home'); // 👈 LOGO NA WEBU HODÍ NA ÚVODNÍ STRÁNKU
+                setDetailAkce(null);
               } else {
                 setDetailAkce(null);
                 setAktivniTab('Další');
@@ -846,8 +856,8 @@ export default function App() {
               <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
                 <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Další'); setRozbaleno('O festivalu'); }}>
-                <Text style={[styles.desktopMenuText, aktivniTab === 'Další' && rozbaleno === 'O festivalu' && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
+              <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Home'); }}>
+                <Text style={[styles.desktopMenuText, aktivniTab === 'Home' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}>
                 <Text style={styles.desktopMenuText}>ARCHIV</Text>
@@ -879,6 +889,37 @@ export default function App() {
 
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
+          {/* 👇 NOVÁ ÚVODNÍ STRÁNKA POUZE PRO POČÍTAČ 👇 */}
+          {aktivniTab === 'Home' && isDesktop && !detailAkce && (
+             <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+               
+               <View style={styles.homeHeroContainer}>
+                 {heroImage ? (
+                   <Image source={{ uri: heroImage }} style={styles.homeHeroImage} resizeMode="cover" />
+                 ) : (
+                   <View style={[styles.homeHeroImage, { backgroundColor: '#333' }]} />
+                 )}
+                 {/* Tlačítko uprostřed přes obrázek */}
+                 <View style={styles.homeHeroOverlay}>
+                   <TouchableOpacity style={[styles.homeHeroBtn, { backgroundColor: themeColor }]} onPress={() => setAktivniTab('Program')}>
+                     <Text style={styles.homeHeroBtnText}>PROGRAM</Text>
+                   </TouchableOpacity>
+                 </View>
+               </View>
+
+               <View style={styles.homeContentSection}>
+                 <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
+                 <Text style={styles.homeText}>
+                   Termín festivalu: 12.–18. října 2026{'\n\n'}
+                   19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
+                 </Text>
+               </View>
+               
+               {/* Odřádkování na konci ať text nekončí hned u hrany okna */}
+               <View style={{ height: 100 }} />
+             </ScrollView>
+          )}
+
           {aktivniTab === 'Mapa' && (
             <View style={styles.mapTabContainer}>
               <View style={styles.pageTitleContainer}>
@@ -892,17 +933,10 @@ export default function App() {
             </View>
           )}
 
-          {aktivniTab !== 'Mapa' && !detailAkce && (
+          {aktivniTab !== 'Mapa' && aktivniTab !== 'Home' && !detailAkce && (
             <ScrollView style={styles.content}>
               {aktivniTab === 'Program' && (
                 <>
-                  {/* 👇 VYKRESLENÍ ÚVODNÍHO OBRÁZKU 👇 */}
-                  {heroImage && (
-                    <View style={isDesktop ? styles.desktopHeroContainer : styles.mobileHeroContainer}>
-                      <Image source={{ uri: heroImage }} style={styles.heroImageFull} resizeMode="cover" />
-                    </View>
-                  )}
-
                   <View style={styles.pageTitleContainer}>
                     <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
@@ -1042,28 +1076,60 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  /* 👇 STYLY PRO ÚVODNÍ (HERO) OBRÁZEK 👇 */
-  desktopHeroContainer: {
+  /* 👇 STYLY PRO NOVOU ÚVODNÍ "HOME" OBRAZOVKU 👇 */
+  homeHeroContainer: {
     width: '100%',
-    height: 400,
-    borderRadius: 16,
-    marginTop: 20,
-    marginBottom: 10,
-    overflow: 'hidden',
+    height: 600, // Velká výška na monitoru pro plný "hero" efekt
+    position: 'relative',
   },
-  mobileHeroContainer: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginTop: 15,
-    marginBottom: 5,
-    overflow: 'hidden',
-  },
-  heroImageFull: {
+  homeHeroImage: {
     width: '100%',
     height: '100%',
   },
+  homeHeroOverlay: {
+    position: 'absolute',
+    bottom: 50,
+    width: '100%',
+    alignItems: 'center',
+  },
+  homeHeroBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 5, 
+    elevation: 5
+  },
+  homeHeroBtnText: {
+    color: 'white',
+    fontFamily: 'Inter_400Regular',
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 1.5,
+  },
+  homeContentSection: {
+    maxWidth: 900,
+    alignSelf: 'center',
+    paddingHorizontal: 30,
+    paddingTop: 60,
+  },
+  homeSectionTitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#000',
+  },
+  homeText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 18,
+    color: '#333',
+    lineHeight: 28,
+  },
 
+  /* 👇 OSTATNÍ STYLY ZŮSTALY STEJNÉ 👇 */
   desktopCardImage: {
     width: '100%',
     aspectRatio: 1.5, 
