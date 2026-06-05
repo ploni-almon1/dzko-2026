@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
   detailStatsBottomContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 30,
   },
   
