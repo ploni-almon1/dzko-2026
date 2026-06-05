@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "primaryColor": "#3F3973",
+    "primaryColor": "#000000",
     "assetBundlePatterns": ["**/*"],
     "web": {
       "favicon": "./assets/icon.png",
