@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 
 // 👇👇👇 ZDE JE TVOJE CENTRÁLNÍ BARVA PRO CELOU APLIKACI 👇👇👇
-const DEFAULT_THEME_COLOR = '#3A24DC'; 
+const DEFAULT_THEME_COLOR = '#3F3973'; 
 
 // --- GENERÁTOR MAPY ---
 const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
@@ -909,7 +909,7 @@ const styles = StyleSheet.create({
   
   tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 6, marginTop: 6, borderWidth: 1 },
   tagTextOutline: { fontFamily: 'Inter_400Regular', fontSize: 11, fontWeight: '600' },
-  tagPillRezervovano: { backgroundColor: '#1ad67c', borderColor: '#1ad67c' },
+  tagPillRezervovano: { backgroundColor: '#00FF85', borderColor: '#00FF85' },
   tagTextRezervovano: { color: '#000' },
 
   heartIconBtn: { paddingBottom: 0, paddingLeft: 10, marginBottom: -4 },
