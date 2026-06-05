@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert, Modal } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert, Modal, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -91,6 +91,10 @@ export default function App() {
     Inter_400Regular,
   });
 
+  // 👇 DETEKCE ŠÍŘKY OBRAZOVKY 👇
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024; // Zjistí, zda jsme na PC (šířka nad 1024 pixelů)
+
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   const [vybranyDen, setVybranyDen] = useState('VŠE');
   const [aktivniTab, setAktivniTab] = useState('Program');
@@ -103,7 +107,6 @@ export default function App() {
 
   const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
 
-  // Zde si React saje centrální barvu
   const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
   const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
   const [novaBarvaInput, setNovaBarvaInput] = useState('');
@@ -119,7 +122,6 @@ export default function App() {
   const [rezervaceChyba, setRezervaceChyba] = useState(null); 
   const [infoRezervaceVisible, setInfoRezervaceVisible] = useState(false);
 
-  // Reference pro scroll v detailu akce
   const detailScrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -146,7 +148,6 @@ export default function App() {
         const ulozeneRezervace = await AsyncStorage.getItem('@moje_rezervace');
         if (ulozeneRezervace !== null) setMojeRezervace(JSON.parse(ulozeneRezervace));
 
-        // Změněn klíč na v2, aby aplikace zapomněla případnou starou uloženou barvu
         const ulozenaBarva = await AsyncStorage.getItem('@theme_color_v2');
         if (ulozenaBarva !== null) setThemeColor(ulozenaBarva);
 
@@ -309,7 +310,6 @@ export default function App() {
     setRezervaceOdeslana(false);
     setRezervaceChyba(null);
 
-    // Pokud byl kliknut tag pro rezervaci, počkáme chvíli na vykreslení a odscrolujeme dolů
     if (scrollNaRezervaci) {
       setTimeout(() => {
         detailScrollViewRef.current?.scrollToEnd({ animated: true });
@@ -438,6 +438,7 @@ export default function App() {
     </View>
   );
 
+  // 👇 UPRAVENÁ FUNKCE VYKRESLOVÁNÍ KARTY 👇
   const vykresliKartu = (item) => {
     const casParts = item.cas.split(' | ');
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
@@ -445,61 +446,64 @@ export default function App() {
     const maRezervaci = mojeRezervace.includes(item.id);
 
     return (
-      <View key={item.id} style={styles.card}>
-        {item.image && zobrazitObrazky && (
-          <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
-            <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
-          </TouchableOpacity>
-        )}
+      /* Zde se nově přidává obal, který na PC nastaví šířku na 25 % (4 sloupce) */
+      <View key={item.id} style={isDesktop ? styles.desktopCardWrapper : styles.mobileCardWrapper}>
+        <View style={styles.card}>
+          {item.image && zobrazitObrazky && (
+            <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
+              <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
+            </TouchableOpacity>
+          )}
 
-        <View style={styles.cardContent}>
-          <View style={styles.timeLocationRow}>
-            <Text style={styles.cardTime}>{timeText}</Text>
-            {mistoText && (
-              <>
-                <Text style={styles.cardTime}> | </Text>
-                <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                  <Text style={styles.locationLink}>{mistoText}</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-          
-          <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.6}>
-            <Text style={styles.cardTitle}>{item.nazev}</Text>
-          </TouchableOpacity>
-          
-          {item.host !== '' && <Text style={styles.cardHost}>{item.roleHosta}: {item.host}</Text>}
-          
-          <View style={styles.cardBottomRow}>
-            <View style={styles.tagsContainer}>
-              {item.tag && item.tag.map((t, index) => (
-                <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                  <Text style={styles.tagText}>{t}</Text>
-                </TouchableOpacity>
-              ))}
-              
-              {item.odkaz && (
-                <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                  <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
-                </TouchableOpacity>
-              )}
-
-              {item.rezervace && (
-                <TouchableOpacity 
-                  style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]} 
-                  onPress={() => otevriDetail(item, true)} // ZDE SE PŘEDÁVÁ TRUE PRO SCROLL
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
-                    {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
-                  </Text>
-                </TouchableOpacity>
+          <View style={styles.cardContent}>
+            <View style={styles.timeLocationRow}>
+              <Text style={styles.cardTime}>{timeText}</Text>
+              {mistoText && (
+                <>
+                  <Text style={styles.cardTime}> | </Text>
+                  <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                    <Text style={styles.locationLink}>{mistoText}</Text>
+                  </TouchableOpacity>
+                </>
               )}
             </View>
-            <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
-              <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
+            
+            <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.6}>
+              <Text style={styles.cardTitle}>{item.nazev}</Text>
             </TouchableOpacity>
+            
+            {item.host !== '' && <Text style={styles.cardHost}>{item.roleHosta}: {item.host}</Text>}
+            
+            <View style={styles.cardBottomRow}>
+              <View style={styles.tagsContainer}>
+                {item.tag && item.tag.map((t, index) => (
+                  <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                    <Text style={styles.tagText}>{t}</Text>
+                  </TouchableOpacity>
+                ))}
+                
+                {item.odkaz && (
+                  <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                    <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                  </TouchableOpacity>
+                )}
+
+                {item.rezervace && (
+                  <TouchableOpacity 
+                    style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]} 
+                    onPress={() => otevriDetail(item, true)} 
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
+                      {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
+                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -507,6 +511,7 @@ export default function App() {
   };
 
   const vykresliDetail = () => {
+    // ... obsah zůstal zcela stejný jako v tvém originále ...
     const item = detailAkce;
     const casParts = item.cas.split(' | ');
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
@@ -515,7 +520,6 @@ export default function App() {
 
     return (
       <>
-        {/* Přidaná reference detailScrollViewRef do ScrollView */}
         <ScrollView style={styles.content} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
           <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
             <Ionicons name="arrow-back" size={20} color={themeColor} />
@@ -548,7 +552,6 @@ export default function App() {
             {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
           </Text>
 
-          {/* 👇 PŘESUNUTÉ TAGY JSOU TEĎ TADY 👇 */}
           <View style={styles.detailTagsWrapper}>
             <View style={styles.tagsContainer}>
               {item.tag && item.tag.map((t, index) => (
@@ -572,7 +575,6 @@ export default function App() {
             </View>
           </View>
 
-          {/* 👇 STATISTIKY Z PŘEDCHOZÍ ÚPRAVY JSOU TEĎ TADY 👇 */}
           <View style={styles.detailStatsBottomContainer}>
             {item.rezervace && (
               <View style={[styles.statItem, { marginRight: 0 }]}>
@@ -650,7 +652,6 @@ export default function App() {
             </View>
           )}
 
-          {/* Přidáno volné místo pro scrollování */}
           <View style={{ height: 40 }} />
         </ScrollView>
 
@@ -741,7 +742,11 @@ export default function App() {
                       )
                     })}
                   </ScrollView>
-                  {zobrazenePrednasky.length > 0 ? zobrazenePrednasky.map(vykresliKartu) : <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>}
+                  
+                  {/* 👇 MŘÍŽKA PRO POČÍTAČ (PROGRAM) 👇 */}
+                  <View style={isDesktop ? styles.desktopGrid : undefined}>
+                    {zobrazenePrednasky.length > 0 ? zobrazenePrednasky.map(vykresliKartu) : <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>}
+                  </View>
                 </>
               )}
               
@@ -758,7 +763,10 @@ export default function App() {
                       return (
                         <View key={index} style={{ marginBottom: 15 }}>
                           <Text style={styles.favoriteDayHeader}>{den}</Text>
-                          {akceDne.map(vykresliKartu)}
+                          {/* 👇 MŘÍŽKA PRO POČÍTAČ (OBLÍBENÉ) 👇 */}
+                          <View style={isDesktop ? styles.desktopGrid : undefined}>
+                            {akceDne.map(vykresliKartu)}
+                          </View>
                         </View>
                       );
                     })
@@ -768,6 +776,7 @@ export default function App() {
                 </View>
               )}
               
+              {/* ... Další tab zůstal beze změn ... */}
               {aktivniTab === 'Další' && (
                 <View style={styles.dalsiContainer}>
                   <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
@@ -854,6 +863,21 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  /* 👇 ZDE JSOU PŘIDANÉ NOVÉ STYLY PRO POČÍTAČ 👇 */
+  desktopGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -8, // Tohle vyrovnává odsazení okrajových karet
+  },
+  desktopCardWrapper: {
+    width: '25%', // Rozdělí šířku přesně na 4 sloupce
+    paddingHorizontal: 8,
+  },
+  mobileCardWrapper: {
+    width: '100%',
+  },
+
+  /* ... Zbytek tvých původních stylů ... */
   mainContainer: { flex: 1 }, 
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   
@@ -928,10 +952,8 @@ const styles = StyleSheet.create({
   wireframeText: { fontFamily: 'Inter_400Regular', color: '#9CA3AF', marginTop: 10 },
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 15 },
   
-  /* Nový obal pro tagy pod popiskem */
   detailTagsWrapper: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 25 },
   
-  /* Upravený kontejner pro ikonky srdíčka a rezervace */
   detailStatsBottomContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
