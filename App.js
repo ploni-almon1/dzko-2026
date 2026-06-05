@@ -1278,35 +1278,22 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  desktopHeader: { 
+desktopHeader: { 
     height: 70,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#FFFFFF', 
     paddingHorizontal: 30, 
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  desktopHeaderMenu: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 25,
-  },
-  desktopMenuText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: '#000000',
-    letterSpacing: 0.5,
+    // 👇 Stín a odstraněná čára POUZE PRO PC 👇
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05, 
+    shadowRadius: 15, 
+    elevation: 5, 
+    zIndex: 10, 
   },
 
-  mainContainer: { flex: 1 }, 
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  
   header: { 
     height: 60,
     flexDirection: 'row',
@@ -1314,6 +1301,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     backgroundColor: '#FFFFFF', 
     paddingHorizontal: 20, 
+    // 👇 PŮVODNÍ VZHLED PRO MOBIL (pouze čára, žádný stín) 👇
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
