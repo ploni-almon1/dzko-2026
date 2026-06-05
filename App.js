@@ -1087,9 +1087,9 @@ export default function App() {
 
 const styles = StyleSheet.create({
   /* 👇 STYLY PRO NOVOU ÚVODNÍ "HOME" OBRAZOVKU 👇 */
-  homeHeroContainer: {
+ homeHeroContainer: {
     width: '100%',
-    height: 600, 
+    aspectRatio: 16/9, // Můžeš zadat třeba 21/9 pro širokoúhlou nudli, nebo 1.5
     position: 'relative',
   },
   homeHeroImage: {
