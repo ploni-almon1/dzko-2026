@@ -91,9 +91,8 @@ export default function App() {
     Inter_400Regular,
   });
 
-  // 👇 DETEKCE ŠÍŘKY OBRAZOVKY 👇
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024; // Zjistí, zda jsme na PC (šířka nad 1024 pixelů)
+  const isDesktop = width >= 1024; 
 
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   const [vybranyDen, setVybranyDen] = useState('VŠE');
@@ -310,7 +309,7 @@ export default function App() {
     setRezervaceOdeslana(false);
     setRezervaceChyba(null);
 
-    if (scrollNaRezervaci) {
+    if (scrollNaRezervaci && !isDesktop) {
       setTimeout(() => {
         detailScrollViewRef.current?.scrollToEnd({ animated: true });
       }, 300);
@@ -438,7 +437,6 @@ export default function App() {
     </View>
   );
 
-  // 👇 UPRAVENÁ FUNKCE VYKRESLOVÁNÍ KARTY 👇
   const vykresliKartu = (item) => {
     const casParts = item.cas.split(' | ');
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
@@ -518,136 +516,241 @@ export default function App() {
 
     return (
       <>
-        <ScrollView style={styles.content} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
-            <Ionicons name="arrow-back" size={20} color={themeColor} />
-            <Text style={[styles.backBtnText, { color: themeColor }]}>Zpět</Text>
-          </TouchableOpacity>
-
-          <View style={styles.detailTitleRow}>
-            <Text style={styles.detailMainTitle}>{item.nazev}</Text>
-          </View>
-
-          {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
-
-          <View style={styles.detailTimeLocationRow}>
-            <Text style={styles.cardTime}>{timeText}</Text>
-            {mistoText && (
-              <>
-                <Text style={styles.cardTime}> | </Text>
-                <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                  <Text style={styles.locationLink}>{mistoText}</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-
-          {item.image && (
-            <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
+        <ScrollView style={isDesktop ? styles.desktopDetailScrollView : styles.content} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
+          
+          {/* 👇 UPRAVENÁ BREADCRUMB / ZPĚT NAVIGACE 👇 */}
+          {isDesktop ? (
+            <View style={styles.desktopBreadcrumbsContainer}>
+              <TouchableOpacity onPress={() => setDetailAkce(null)} activeOpacity={0.6}>
+                <Text style={styles.desktopBreadcrumbLink}>PROGRAM</Text>
+              </TouchableOpacity>
+              <Text style={styles.desktopBreadcrumbText}> &gt; {item.nazev.toUpperCase()}</Text>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
+              <Ionicons name="arrow-back" size={20} color={themeColor} />
+              <Text style={[styles.backBtnText, { color: themeColor }]}>Zpět</Text>
+            </TouchableOpacity>
           )}
 
-          <Text style={styles.detailDescription}>
-            {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
-          </Text>
-
-          <View style={styles.detailTagsWrapper}>
-            <View style={styles.tagsContainer}>
-              {item.tag && item.tag.map((t, index) => (
-                <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                  <Text style={styles.tagText}>{t}</Text>
-                </TouchableOpacity>
-              ))}
-              
-              {item.odkaz && (
-                <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                  <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
-                </TouchableOpacity>
-              )}
-              {item.rezervace && (
-                <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
-                  <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
-                    {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
-                  </Text>
+          {/* 👇 ROZDVOJENÍ LAYOUTU DLE ZAŘÍZENÍ 👇 */}
+          {isDesktop ? (
+            <View style={styles.desktopDetailLayout}>
+              {/* LEVÝ SLOUPEC (BÍLÁ KARTA) */}
+              <View style={styles.desktopDetailLeftCard}>
+                <View style={styles.desktopTimeLocationRow}>
+                  <Text style={styles.desktopCardTime}>{timeText}</Text>
+                  {mistoText && (
+                    <>
+                      <Text style={styles.desktopCardTime}> | </Text>
+                      <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                        <Text style={[styles.desktopCardTime, {textDecorationLine: 'underline'}]}>{mistoText}</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
-              )}
-            </View>
-          </View>
+                
+                <Text style={styles.desktopDetailMainTitle}>{item.nazev}</Text>
+                {item.host !== '' && <Text style={styles.desktopDetailHost}>{item.roleHosta}: {item.host}</Text>}
 
-          <View style={styles.detailStatsBottomContainer}>
-            {item.rezervace && (
-              <View style={[styles.statItem, { marginRight: 0 }]}>
-                <TouchableOpacity 
-                  style={styles.detailIconBtn}
-                  onPress={() => setInfoRezervaceVisible(true)}
-                >
-                  <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                    <Ionicons name="checkmark-sharp" size={15} color={styles.tagTextRezervovano.color} />
+                <Text style={styles.desktopDetailDescription}>
+                  {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
+                </Text>
+
+                <View style={styles.detailTagsWrapper}>
+                  <View style={styles.tagsContainer}>
+                    {item.tag && item.tag.map((t, index) => (
+                      <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                        <Text style={styles.tagText}>{t}</Text>
+                      </TouchableOpacity>
+                    ))}
+                    
+                    {item.odkaz && (
+                      <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                        <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                      </TouchableOpacity>
+                    )}
+                    {item.rezervace && (
+                      <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
+                        <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
+                          {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                </TouchableOpacity>
-                {item.pocetRezervaci > 0 && (
-                  <Text style={styles.detailStatCount}>{item.pocetRezervaci}</Text>
+                </View>
+
+                {/* Rezervační formulář rovnou v bílé kartě pod obsahem */}
+                {item.rezervace && (
+                  <View style={[styles.formContainer, {marginTop: 20, marginBottom: 0, padding: 0, borderWidth: 0, shadowOpacity: 0, elevation: 0}]}>
+                    <TouchableOpacity activeOpacity={0.7} onPress={() => { setRezervaceOdeslana(false); setRezervaceJmeno(''); setRezervaceEmail(''); setRezervaceChyba(null); }}>
+                      <Text style={styles.formTitle}>Rezervace</Text>
+                    </TouchableOpacity>
+                    
+                    {rezervaceOdeslana ? (
+                      <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
+                    ) : (
+                      <>
+                        {rezervaceChyba && <Text style={styles.errorText}>{rezervaceChyba}</Text>}
+                        <TextInput style={styles.input} placeholder="Jméno a příjmení" value={rezervaceJmeno} onChangeText={setRezervaceJmeno} placeholderTextColor="#9CA3AF" />
+                        <TextInput style={styles.input} placeholder="E-mail" keyboardType="email-address" autoCapitalize="none" value={rezervaceEmail} onChangeText={setRezervaceEmail} placeholderTextColor="#9CA3AF" />
+                        <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
+                          {odesilaRezervaci ? <ActivityIndicator color="white" /> : <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>}
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
                 )}
               </View>
-            )}
 
-            <View style={styles.statItem}>
-              <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={24} color="black" />
-              </TouchableOpacity>
-              {item.pocetOblibenych > 0 && (
-                <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
-              )}
-            </View>
-          </View>
-
-          {item.rezervace && (
-            <View style={styles.formContainer}>
-              <TouchableOpacity 
-                activeOpacity={0.7} 
-                onPress={() => {
-                  setRezervaceOdeslana(false);
-                  setRezervaceJmeno('');
-                  setRezervaceEmail('');
-                  setRezervaceChyba(null);
-                }}
-              >
-                <Text style={styles.formTitle}>Rezervace</Text>
-              </TouchableOpacity>
-              
-              {rezervaceOdeslana ? (
-                <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
-              ) : (
-                <>
-                  {rezervaceChyba && (
-                    <Text style={styles.errorText}>{rezervaceChyba}</Text>
-                  )}
-                  
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Jméno a příjmení"
-                    value={rezervaceJmeno}
-                    onChangeText={setRezervaceJmeno}
-                    placeholderTextColor="#9CA3AF"
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="E-mail"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={rezervaceEmail}
-                    onChangeText={setRezervaceEmail}
-                    placeholderTextColor="#9CA3AF"
-                  />
-                  <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
-                    {odesilaRezervaci ? (
-                      <ActivityIndicator color="white" />
-                    ) : (
-                      <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>
-                    )}
+              {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) */}
+              <View style={styles.desktopDetailRightColumn}>
+                {item.image ? (
+                  <Image source={{ uri: item.image }} style={styles.desktopDetailImage} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.desktopDetailImage, {backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center'}]}>
+                    <Text style={{color: '#9CA3AF'}}>Obrázek zatím není</Text>
+                  </View>
+                )}
+                
+                <View style={styles.desktopDetailBottomActions}>
+                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
+                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={32} color="black" />
                   </TouchableOpacity>
-                </>
-              )}
+                  {/* Zde můžeš případně přidat další ikony (sdílení atd.) doprava dolu */}
+                </View>
+              </View>
+
             </View>
+          ) : (
+            /* PŮVODNÍ MOBILNÍ LAYOUT */
+            <>
+              <View style={styles.detailTitleRow}>
+                <Text style={styles.detailMainTitle}>{item.nazev}</Text>
+              </View>
+
+              {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
+
+              <View style={styles.detailTimeLocationRow}>
+                <Text style={styles.cardTime}>{timeText}</Text>
+                {mistoText && (
+                  <>
+                    <Text style={styles.cardTime}> | </Text>
+                    <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                      <Text style={styles.locationLink}>{mistoText}</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+
+              {item.image && (
+                <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
+              )}
+
+              <Text style={styles.detailDescription}>
+                {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
+              </Text>
+
+              <View style={styles.detailTagsWrapper}>
+                <View style={styles.tagsContainer}>
+                  {item.tag && item.tag.map((t, index) => (
+                    <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                      <Text style={styles.tagText}>{t}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  
+                  {item.odkaz && (
+                    <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                      <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                    </TouchableOpacity>
+                  )}
+                  {item.rezervace && (
+                    <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
+                      <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
+                        {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.detailStatsBottomContainer}>
+                {item.rezervace && (
+                  <View style={[styles.statItem, { marginRight: 0 }]}>
+                    <TouchableOpacity 
+                      style={styles.detailIconBtn}
+                      onPress={() => setInfoRezervaceVisible(true)}
+                    >
+                      <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
+                        <Ionicons name="checkmark-sharp" size={15} color={styles.tagTextRezervovano.color} />
+                      </View>
+                    </TouchableOpacity>
+                    {item.pocetRezervaci > 0 && (
+                      <Text style={styles.detailStatCount}>{item.pocetRezervaci}</Text>
+                    )}
+                  </View>
+                )}
+
+                <View style={styles.statItem}>
+                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
+                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={24} color="black" />
+                  </TouchableOpacity>
+                  {item.pocetOblibenych > 0 && (
+                    <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
+                  )}
+                </View>
+              </View>
+
+              {item.rezervace && (
+                <View style={styles.formContainer}>
+                  <TouchableOpacity 
+                    activeOpacity={0.7} 
+                    onPress={() => {
+                      setRezervaceOdeslana(false);
+                      setRezervaceJmeno('');
+                      setRezervaceEmail('');
+                      setRezervaceChyba(null);
+                    }}
+                  >
+                    <Text style={styles.formTitle}>Rezervace</Text>
+                  </TouchableOpacity>
+                  
+                  {rezervaceOdeslana ? (
+                    <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
+                  ) : (
+                    <>
+                      {rezervaceChyba && (
+                        <Text style={styles.errorText}>{rezervaceChyba}</Text>
+                      )}
+                      
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Jméno a příjmení"
+                        value={rezervaceJmeno}
+                        onChangeText={setRezervaceJmeno}
+                        placeholderTextColor="#9CA3AF"
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="E-mail"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        value={rezervaceEmail}
+                        onChangeText={setRezervaceEmail}
+                        placeholderTextColor="#9CA3AF"
+                      />
+                      <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
+                        {odesilaRezervaci ? (
+                          <ActivityIndicator color="white" />
+                        ) : (
+                          <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>
+                        )}
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              )}
+            </>
           )}
 
           <View style={{ height: 40 }} />
@@ -660,11 +763,7 @@ export default function App() {
           onRequestClose={() => setInfoRezervaceVisible(false)}
         >
           <View style={styles.modalOverlay}>
-            <TouchableOpacity 
-              style={StyleSheet.absoluteFill} 
-              activeOpacity={1} 
-              onPress={() => setInfoRezervaceVisible(false)} 
-            />
+            <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setInfoRezervaceVisible(false)} />
             <View style={styles.modalContent}>
               <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setInfoRezervaceVisible(false)}>
                 <Ionicons name="close" size={24} color="#4B5563" />
@@ -686,7 +785,6 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        {/* 👇 NOVÁ LOGIKA HLAVIČKY 👇 */}
         <View style={isDesktop ? styles.desktopHeader : styles.header}>
           <TouchableOpacity 
             style={isDesktop ? styles.headerLeft : {flexDirection: 'row', alignItems: 'center'}}
@@ -853,7 +951,6 @@ export default function App() {
 
           {detailAkce && vykresliDetail()}
 
-          {/* 👇 SKRYTÍ SPODNÍ LIŠTY NA PC 👇 */}
           {!isDesktop && (
             <View style={styles.bottomNav}>
               <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
@@ -885,6 +982,96 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  /* 👇 STYLY PRO DETAIL AKCE NA DESKTOPU 👇 */
+  desktopDetailScrollView: {
+    flex: 1, 
+    paddingHorizontal: 30, // Větší okraje pro monitor
+  },
+  desktopBreadcrumbsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  desktopBreadcrumbLink: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#6B7280', // Šedivá pro link
+  },
+  desktopBreadcrumbText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#000000',
+  },
+  desktopDetailLayout: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  desktopDetailLeftCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 30,
+    marginRight: 20, // Mezera mezi kartou a obrázkem
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 6, 
+    elevation: 2
+  },
+  desktopTimeLocationRow: {
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 10,
+  },
+  desktopCardTime: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#4B5563',
+  },
+  desktopDetailMainTitle: {
+    fontFamily: 'Inter_400Regular', 
+    fontSize: 32, 
+    color: '#000000', 
+    fontWeight: 'bold',
+    marginBottom: 10,
+    lineHeight: 38,
+  },
+  desktopDetailHost: {
+    fontFamily: 'Inter_400Regular', 
+    fontSize: 16, 
+    color: '#000000', 
+    marginBottom: 25,
+  },
+  desktopDetailDescription: {
+    fontFamily: 'Inter_400Regular', 
+    fontSize: 18, 
+    color: '#000000', 
+    lineHeight: 28, 
+    marginBottom: 30,
+  },
+  desktopDetailRightColumn: {
+    flex: 1,
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  desktopDetailImage: {
+    width: '100%',
+    height: '100%', // Na obrázku to vypadá vysoké
+    minHeight: 450,
+    borderRadius: 16,
+  },
+  desktopDetailBottomActions: {
+    position: 'absolute',
+    bottom: -50,
+    right: 0,
+    flexDirection: 'row',
+  },
+
+  /* ... Zbytek původních stylů ... */
   desktopGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -898,7 +1085,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  /* 👇 NOVÉ STYLY PRO DESKTOP HLAVIČKU 👇 */
   desktopHeader: { 
     height: 70,
     flexDirection: 'row',
@@ -925,7 +1111,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  /* ... Zbytek původních stylů ... */
   mainContainer: { flex: 1 }, 
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   
