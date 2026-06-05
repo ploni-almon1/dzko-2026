@@ -909,7 +909,7 @@ const styles = StyleSheet.create({
   
   tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 6, marginTop: 6, borderWidth: 1 },
   tagTextOutline: { fontFamily: 'Inter_400Regular', fontSize: 11, fontWeight: '600' },
-  tagPillRezervovano: { backgroundColor: '#00FF85', borderColor: '#00FF85' },
+  tagPillRezervovano: { backgroundColor: '#1ad67c', borderColor: '#1ad67c' },
   tagTextRezervovano: { color: '#000' },
 
   heartIconBtn: { paddingBottom: 0, paddingLeft: 10, marginBottom: -4 },
