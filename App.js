@@ -836,21 +836,22 @@ export default function App() {
               </TouchableOpacity>
 
               {/* 👇 PŘIDANÉ SRDÍČKO S POČTEM OBLÍBENÝCH DO HLAVIČKY 👇 */}
-              <TouchableOpacity 
-                style={styles.desktopHeaderFavBtn} 
-                onPress={() => { setDetailAkce(null); setAktivniTab('Oblíbené'); }}
-              >
-                <Ionicons 
-                  name={oblibeneIds.length > 0 || (aktivniTab === 'Oblíbené' && !detailAkce) ? "heart" : "heart-outline"} 
-                  size={24} 
-                  color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : "black"} 
-                />
-                {oblibeneIds.length > 0 && (
-                  <Text style={[styles.desktopHeaderFavCount, aktivniTab === 'Oblíbené' && !detailAkce && { color: themeColor }]}>
-                    {oblibeneIds.length}
-                  </Text>
-                )}
-              </TouchableOpacity>
+<TouchableOpacity 
+  style={styles.desktopHeaderFavBtn} 
+  onPress={() => { setDetailAkce(null); setAktivniTab('Oblíbené'); }}
+>
+  <Ionicons 
+    name={oblibeneIds.length > 0 || (aktivniTab === 'Oblíbené' && !detailAkce) ? "heart" : "heart-outline"} 
+    size={24} 
+    color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : "black"} 
+  />
+  {/* Zobrazí se POUZE pokud je v oblíbených více než 0 akcí */}
+  {oblibeneIds.length > 0 && (
+    <Text style={[styles.desktopHeaderFavCount, aktivniTab === 'Oblíbené' && !detailAkce && { color: themeColor }]}>
+      {oblibeneIds.length}
+    </Text>
+  )}
+</TouchableOpacity>
 
             </View>
           )}
