@@ -96,7 +96,6 @@ export default function App() {
 
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   
-  // 👇 Pokud je uživatel na PC, rovnou startuje na záložce "Home", jinak na "Program"
   const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
   
   const [vybranyDen, setVybranyDen] = useState('VŠE');
@@ -127,7 +126,6 @@ export default function App() {
 
   const detailScrollViewRef = useRef(null);
 
-  // 👇 Změna stavu při zmenšení okna na PC (aby nezůstal na "Home" tabu na mobilu) 👇
   useEffect(() => {
     if (!isDesktop && aktivniTab === 'Home') {
       setAktivniTab('Program');
@@ -238,6 +236,16 @@ export default function App() {
         });
 
         setPrednaskyVsechny(upravenaData);
+
+        // 👇 AUTOMATICKÉ ČIŠTĚNÍ PAMĚTI OD "DUCHŮ" 👇
+        setOblibeneIds(staraSrdicka => {
+          const platnaSrdicka = staraSrdicka.filter(id => upravenaData.some(akce => akce.id === id));
+          if (platnaSrdicka.length !== staraSrdicka.length) {
+            AsyncStorage.setItem('@moje_srdicka', JSON.stringify(platnaSrdicka));
+          }
+          return platnaSrdicka;
+        });
+
         setLoading(false);
       })
       .catch((err) => {
@@ -835,7 +843,7 @@ export default function App() {
             activeOpacity={0.7}
             onPress={() => {
               if (isDesktop) {
-                setAktivniTab('Home'); // 👈 LOGO NA WEBU HODÍ NA ÚVODNÍ STRÁNKU
+                setAktivniTab('Home'); 
                 setDetailAkce(null);
               } else {
                 setDetailAkce(null);
@@ -889,7 +897,7 @@ export default function App() {
 
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
-          {/* 👇 NOVÁ ÚVODNÍ STRÁNKA POUZE PRO POČÍTAČ 👇 */}
+          {/* 👇 ÚVODNÍ STRÁNKA POUZE PRO POČÍTAČ 👇 */}
           {aktivniTab === 'Home' && isDesktop && !detailAkce && (
              <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
                
@@ -899,10 +907,13 @@ export default function App() {
                  ) : (
                    <View style={[styles.homeHeroImage, { backgroundColor: '#333' }]} />
                  )}
-                 {/* Tlačítko uprostřed přes obrázek */}
                  <View style={styles.homeHeroOverlay}>
-                   <TouchableOpacity style={[styles.homeHeroBtn, { backgroundColor: themeColor }]} onPress={() => setAktivniTab('Program')}>
-                     <Text style={styles.homeHeroBtnText}>PROGRAM</Text>
+                   {/* 👇 OUTLINE TLAČÍTKO PROGRAM 👇 */}
+                   <TouchableOpacity 
+                     style={[styles.homeHeroBtn, { borderColor: themeColor }]} 
+                     onPress={() => setAktivniTab('Program')}
+                   >
+                     <Text style={[styles.homeHeroBtnText, { color: themeColor }]}>PROGRAM</Text>
                    </TouchableOpacity>
                  </View>
                </View>
@@ -915,7 +926,6 @@ export default function App() {
                  </Text>
                </View>
                
-               {/* Odřádkování na konci ať text nekončí hned u hrany okna */}
                <View style={{ height: 100 }} />
              </ScrollView>
           )}
@@ -1079,7 +1089,7 @@ const styles = StyleSheet.create({
   /* 👇 STYLY PRO NOVOU ÚVODNÍ "HOME" OBRAZOVKU 👇 */
   homeHeroContainer: {
     width: '100%',
-    height: 600, // Velká výška na monitoru pro plný "hero" efekt
+    height: 600, 
     position: 'relative',
   },
   homeHeroImage: {
@@ -1096,14 +1106,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 30,
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.3, 
-    shadowRadius: 5, 
-    elevation: 5
+    borderWidth: 2, 
+    backgroundColor: 'transparent', 
   },
   homeHeroBtnText: {
-    color: 'white',
     fontFamily: 'Inter_400Regular',
     fontSize: 18,
     fontWeight: 'bold',
@@ -1129,7 +1135,6 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
 
-  /* 👇 OSTATNÍ STYLY ZŮSTALY STEJNÉ 👇 */
   desktopCardImage: {
     width: '100%',
     aspectRatio: 1.5, 
