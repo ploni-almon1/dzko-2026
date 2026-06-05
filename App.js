@@ -446,7 +446,6 @@ export default function App() {
     const maRezervaci = mojeRezervace.includes(item.id);
 
     return (
-      /* Zde se nově přidává obal, který na PC nastaví šířku na 25 % (4 sloupce) */
       <View key={item.id} style={isDesktop ? styles.desktopCardWrapper : styles.mobileCardWrapper}>
         <View style={styles.card}>
           {item.image && zobrazitObrazky && (
@@ -511,7 +510,6 @@ export default function App() {
   };
 
   const vykresliDetail = () => {
-    // ... obsah zůstal zcela stejný jako v tvém originále ...
     const item = detailAkce;
     const casParts = item.cas.split(' | ');
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
@@ -688,21 +686,45 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        <TouchableOpacity 
-          style={styles.header} 
-          activeOpacity={0.7}
-          onPress={() => {
-            setDetailAkce(null);
-            setAktivniTab('Další');
-            setRozbaleno('O festivalu');
-          }}
-        >
-          <Image 
-            source={require('./assets/star.png')} 
-            style={[styles.headerLogo, { tintColor: themeColor }]} 
-          />
-          <Text style={styles.headerText}>DŽKO</Text>
-        </TouchableOpacity>
+        {/* 👇 NOVÁ LOGIKA HLAVIČKY 👇 */}
+        <View style={isDesktop ? styles.desktopHeader : styles.header}>
+          <TouchableOpacity 
+            style={isDesktop ? styles.headerLeft : {flexDirection: 'row', alignItems: 'center'}}
+            activeOpacity={0.7}
+            onPress={() => {
+              if (isDesktop) {
+                setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null);
+              } else {
+                setDetailAkce(null);
+                setAktivniTab('Další');
+                setRozbaleno('O festivalu');
+              }
+            }}
+          >
+            <Image 
+              source={require('./assets/star.png')} 
+              style={[styles.headerLogo, { tintColor: themeColor }]} 
+            />
+            <Text style={styles.headerText}>{isDesktop ? "DNY ŽIDOVSKÉ KULTURY OLOMOUC" : "DŽKO"}</Text>
+          </TouchableOpacity>
+
+          {isDesktop && (
+            <View style={styles.desktopHeaderMenu}>
+              <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
+                <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Další'); setRozbaleno('O festivalu'); }}>
+                <Text style={[styles.desktopMenuText, aktivniTab === 'Další' && rozbaleno === 'O festivalu' && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}>
+                <Text style={styles.desktopMenuText}>ARCHIV</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Další'); setRozbaleno('Pořadatelé'); }}>
+                <Text style={[styles.desktopMenuText, aktivniTab === 'Další' && rozbaleno === 'Pořadatelé' && { color: themeColor, fontWeight: 'bold' }]}>POŘADATELÉ</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
@@ -743,7 +765,6 @@ export default function App() {
                     })}
                   </ScrollView>
                   
-                  {/* 👇 MŘÍŽKA PRO POČÍTAČ (PROGRAM) 👇 */}
                   <View style={isDesktop ? styles.desktopGrid : undefined}>
                     {zobrazenePrednasky.length > 0 ? zobrazenePrednasky.map(vykresliKartu) : <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>}
                   </View>
@@ -763,7 +784,6 @@ export default function App() {
                       return (
                         <View key={index} style={{ marginBottom: 15 }}>
                           <Text style={styles.favoriteDayHeader}>{den}</Text>
-                          {/* 👇 MŘÍŽKA PRO POČÍTAČ (OBLÍBENÉ) 👇 */}
                           <View style={isDesktop ? styles.desktopGrid : undefined}>
                             {akceDne.map(vykresliKartu)}
                           </View>
@@ -776,7 +796,6 @@ export default function App() {
                 </View>
               )}
               
-              {/* ... Další tab zůstal beze změn ... */}
               {aktivniTab === 'Další' && (
                 <View style={styles.dalsiContainer}>
                   <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
@@ -834,27 +853,30 @@ export default function App() {
 
           {detailAkce && vykresliDetail()}
 
-          <View style={styles.bottomNav}>
-            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
-              <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? themeColor : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? themeColor : 'black' }]}>Program</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Oblíbené'); setDetailAkce(null); }}>
-              <Ionicons name={aktivniTab === 'Oblíbené' && !detailAkce ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : 'black' }]}>Oblíbené</Text>
-            </TouchableOpacity>
+          {/* 👇 SKRYTÍ SPODNÍ LIŠTY NA PC 👇 */}
+          {!isDesktop && (
+            <View style={styles.bottomNav}>
+              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
+                <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? themeColor : 'black'} />
+                <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? themeColor : 'black' }]}>Program</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Oblíbené'); setDetailAkce(null); }}>
+                <Ionicons name={aktivniTab === 'Oblíbené' && !detailAkce ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : 'black'} />
+                <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : 'black' }]}>Oblíbené</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Mapa'); setMapFocus(null); setDetailAkce(null); }}>
-              <Ionicons name={aktivniTab === 'Mapa' ? "map" : "map-outline"} size={24} color={aktivniTab === 'Mapa' ? themeColor : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Mapa' ? themeColor : 'black' }]}>Mapa</Text>
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Mapa'); setMapFocus(null); setDetailAkce(null); }}>
+                <Ionicons name={aktivniTab === 'Mapa' ? "map" : "map-outline"} size={24} color={aktivniTab === 'Mapa' ? themeColor : 'black'} />
+                <Text style={[styles.navText, { color: aktivniTab === 'Mapa' ? themeColor : 'black' }]}>Mapa</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Další'); setDetailAkce(null); }}>
-              <Ionicons name={aktivniTab === 'Další' ? "grid" : "grid-outline"} size={24} color={aktivniTab === 'Další' ? themeColor : 'black'} />
-              <Text style={[styles.navText, { color: aktivniTab === 'Další' ? themeColor : 'black' }]}>Další</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Další'); setDetailAkce(null); }}>
+                <Ionicons name={aktivniTab === 'Další' ? "grid" : "grid-outline"} size={24} color={aktivniTab === 'Další' ? themeColor : 'black'} />
+                <Text style={[styles.navText, { color: aktivniTab === 'Další' ? themeColor : 'black' }]}>Další</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
       </SafeAreaView>
@@ -863,21 +885,47 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  /* 👇 ZDE JSOU PŘIDANÉ NOVÉ STYLY PRO POČÍTAČ 👇 */
   desktopGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -8, // Tohle vyrovnává odsazení okrajových karet
+    marginHorizontal: -8, 
   },
   desktopCardWrapper: {
-    width: '25%', // Rozdělí šířku přesně na 4 sloupce
+    width: '25%', 
     paddingHorizontal: 8,
   },
   mobileCardWrapper: {
     width: '100%',
   },
 
-  /* ... Zbytek tvých původních stylů ... */
+  /* 👇 NOVÉ STYLY PRO DESKTOP HLAVIČKU 👇 */
+  desktopHeader: { 
+    height: 70,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF', 
+    paddingHorizontal: 30, 
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  desktopHeaderMenu: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 25,
+  },
+  desktopMenuText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#000000',
+    letterSpacing: 0.5,
+  },
+
+  /* ... Zbytek původních stylů ... */
   mainContainer: { flex: 1 }, 
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   
