@@ -534,7 +534,7 @@ export default function App() {
 
           {isDesktop ? (
             <View style={styles.desktopDetailLayout}>
-              {/* LEVÝ SLOUPEC (BÍLÁ KARTA) */}
+              {/* LEVÝ SLOUPEC (BÍLÁ KARTA) - DESKTOP */}
               <View style={styles.desktopDetailLeftCard}>
                 <View style={styles.desktopTimeLocationRow}>
                   <Text style={styles.desktopCardTime}>{timeText}</Text>
@@ -600,7 +600,7 @@ export default function App() {
                 )}
               </View>
 
-              {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) */}
+              {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) - DESKTOP */}
               <View style={styles.desktopDetailRightColumn}>
                 {item.image ? (
                   <Image source={{ uri: item.image }} style={styles.desktopDetailImage} resizeMode="cover" />
@@ -637,7 +637,7 @@ export default function App() {
 
             </View>
           ) : (
-            /* PŮVODNÍ MOBILNÍ LAYOUT */
+            /* MOBILNÍ LAYOUT - Běžné (malé) tagy */
             <>
               <View style={styles.detailTitleRow}>
                 <Text style={styles.detailMainTitle}>{item.nazev}</Text>
@@ -668,19 +668,19 @@ export default function App() {
               <View style={styles.detailTagsWrapper}>
                 <View style={styles.tagsContainer}>
                   {item.tag && item.tag.map((t, index) => (
-                    <TouchableOpacity key={index} style={[styles.detailTagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                      <Text style={styles.detailTagText}>{t}</Text>
+                    <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                      <Text style={styles.tagText}>{t}</Text>
                     </TouchableOpacity>
                   ))}
                   
                   {item.odkaz && (
-                    <TouchableOpacity style={[styles.detailTagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                      <Text style={[styles.detailTagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                    <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                      <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
                     </TouchableOpacity>
                   )}
                   {item.rezervace && (
-                    <View style={[styles.detailTagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
-                      <Text style={[styles.detailTagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
+                    <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
+                      <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
                         {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
                       </Text>
                     </View>
@@ -834,6 +834,24 @@ export default function App() {
               <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Další'); setRozbaleno('Pořadatelé'); }}>
                 <Text style={[styles.desktopMenuText, aktivniTab === 'Další' && rozbaleno === 'Pořadatelé' && { color: themeColor, fontWeight: 'bold' }]}>POŘADATELÉ</Text>
               </TouchableOpacity>
+
+              {/* 👇 PŘIDANÉ SRDÍČKO S POČTEM OBLÍBENÝCH DO HLAVIČKY 👇 */}
+              <TouchableOpacity 
+                style={styles.desktopHeaderFavBtn} 
+                onPress={() => { setDetailAkce(null); setAktivniTab('Oblíbené'); }}
+              >
+                <Ionicons 
+                  name={oblibeneIds.length > 0 || (aktivniTab === 'Oblíbené' && !detailAkce) ? "heart" : "heart-outline"} 
+                  size={24} 
+                  color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : "black"} 
+                />
+                {oblibeneIds.length > 0 && (
+                  <Text style={[styles.desktopHeaderFavCount, aktivniTab === 'Oblíbené' && !detailAkce && { color: themeColor }]}>
+                    {oblibeneIds.length}
+                  </Text>
+                )}
+              </TouchableOpacity>
+
             </View>
           )}
         </View>
@@ -1033,7 +1051,7 @@ const styles = StyleSheet.create({
   },
   desktopDetailLayout: {
     flexDirection: 'row',
-    alignItems: 'flex-start', // Změna aby se pravý sloupec nenatahoval na výšku levého
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     width: '100%',
   },
@@ -1083,11 +1101,11 @@ const styles = StyleSheet.create({
   desktopDetailRightColumn: {
     flex: 1,
     flexDirection: 'column',
-    alignItems: 'flex-end', // Zarovná ikony pod obrázkem doprava
+    alignItems: 'flex-end', 
   },
   desktopDetailImage: {
     width: '100%',
-    aspectRatio: 1.5, // Udržuje přirozený poměr stran (ideální pro fotky), takže se obrázek nedeformuje a neroztahuje na plnou výšku
+    aspectRatio: 1.5, 
     borderRadius: 16,
     marginBottom: 15,
   },
@@ -1106,6 +1124,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4B5563', 
     marginLeft: 8,
+  },
+
+  /* 👇 STYLY PRO OBLÍBENÉ DO HLAVIČKY 👇 */
+  desktopHeaderFavBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 15,
+  },
+  desktopHeaderFavCount: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 18,
+    color: '#000000',
+    marginLeft: 6, 
   },
 
   /* ... Zbytek původních stylů ... */
