@@ -268,7 +268,8 @@ export default function App() {
               odkaz: f['Vstupenky'] || null, 
               rezervace: !!f['Rezervace'],
               pocetOblibenych: f['Počet oblíbených'] || 0,
-              pocetRezervaci: f['Počet rezervací'] || 0
+              pocetRezervaci: f['Počet rezervací'] || 0,
+              kapacita: f['Kapacita'] || null // 👇 PŘIDANÁ KAPACITA Z AIRTABLU
             };
           });
 
@@ -282,7 +283,6 @@ export default function App() {
 
         setPrednaskyVsechny(upravenaData);
 
-        // 👇 AUTOMATICKÉ ČIŠTĚNÍ PAMĚTI OD "DUCHŮ" 👇
         setOblibeneIds(staraSrdicka => {
           const platnaSrdicka = staraSrdicka.filter(id => upravenaData.some(akce => akce.id === id));
           if (platnaSrdicka.length !== staraSrdicka.length) {
@@ -421,10 +421,25 @@ export default function App() {
 
   const handleOdeslatRezervaci = async () => {
     setRezervaceChyba(null); 
+    
+    // 👇 BEZPEČNOSTNÍ KONTROLA JMÉNA A E-MAILU 👇
     if (!rezervaceJmeno.trim() || !rezervaceEmail.trim()) {
       setRezervaceChyba('Prosím, vyplňte jméno i e-mail.');
       return;
     }
+
+    if (!rezervaceJmeno.trim().includes(' ') || rezervaceJmeno.trim().length < 5) {
+      setRezervaceChyba('Zadejte prosím celé jméno a příjmení (s mezerou).');
+      return;
+    }
+
+    // Regulární výraz pro základní validaci e-mailu (neco@neco.cz)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(rezervaceEmail.trim())) {
+      setRezervaceChyba('Zadejte prosím platnou e-mailovou adresu (např. jan.novak@email.cz).');
+      return;
+    }
+    // ☝️ KONEC BEZPEČNOSTNÍ KONTROLY ☝️
     
     setOdesilaRezervaci(true);
     const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
@@ -525,6 +540,9 @@ export default function App() {
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
     const mistoText = casParts.length > 2 ? casParts[2] : null;
     const maRezervaci = mojeRezervace.includes(item.id);
+    
+    // 👇 LOGIKA PRO ZJIŠTĚNÍ PLNÉ KAPACITY 👇
+    const jePlno = item.kapacita && item.pocetRezervaci >= item.kapacita;
 
     return (
       <View key={item.id} style={isDesktop ? styles.desktopCardWrapper : styles.mobileCardWrapper}>
@@ -568,14 +586,25 @@ export default function App() {
                   </TouchableOpacity>
                 )}
 
+                {/* ZMĚNA BAREV PODLE KAPACITY A REZERVACE */}
                 {item.rezervace && (
                   <TouchableOpacity 
-                    style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]} 
+                    style={[
+                      styles.tagPillOutline, 
+                      { borderColor: themeColor }, 
+                      maRezervaci && !jePlno && styles.tagPillRezervovano,
+                      jePlno && styles.tagPillPlno // Pokud je plno, bude šedivý
+                    ]} 
                     onPress={() => otevriDetail(item, true)} 
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
-                      {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
+                    <Text style={[
+                      styles.tagTextOutline, 
+                      { color: themeColor }, 
+                      maRezervaci && !jePlno && styles.tagTextRezervovano,
+                      jePlno && styles.tagTextPlno
+                    ]}>
+                      {jePlno ? 'OBSAZENO' : (maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -596,6 +625,9 @@ export default function App() {
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
     const mistoText = casParts.length > 2 ? casParts[2] : null;
     const maRezervaci = mojeRezervace.includes(item.id);
+    
+    // 👇 KONTROLA KAPACITY V DETAILU 👇
+    const jePlno = item.kapacita && item.pocetRezervaci >= item.kapacita;
 
     return (
       <>
@@ -652,9 +684,19 @@ export default function App() {
                       </TouchableOpacity>
                     )}
                     {item.rezervace && (
-                      <View style={[styles.detailTagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
-                        <Text style={[styles.detailTagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
-                          {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
+                      <View style={[
+                        styles.detailTagPillOutline, 
+                        { borderColor: themeColor }, 
+                        maRezervaci && !jePlno && styles.tagPillRezervovano,
+                        jePlno && styles.tagPillPlno
+                      ]}>
+                        <Text style={[
+                          styles.detailTagTextOutline, 
+                          { color: themeColor }, 
+                          maRezervaci && !jePlno && styles.tagTextRezervovano,
+                          jePlno && styles.tagTextPlno
+                        ]}>
+                          {jePlno ? 'OBSAZENO' : (maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE')}
                         </Text>
                       </View>
                     )}
@@ -663,17 +705,22 @@ export default function App() {
 
                 {item.rezervace && (
                   <View style={[styles.formContainer, {marginTop: 20, marginBottom: 0, padding: 0, borderWidth: 0, shadowOpacity: 0, elevation: 0}]}>
-                    <TouchableOpacity activeOpacity={0.7} onPress={() => { setRezervaceOdeslana(false); setRezervaceJmeno(''); setRezervaceEmail(''); setRezervaceChyba(null); }}>
-                      <Text style={styles.formTitle}>Rezervace</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.formTitle}>Rezervace</Text>
                     
-                    {rezervaceOdeslana ? (
+                    {/* 👇 ZDE SKRÝVÁME FORMULÁŘ POKUD JE PLNO 👇 */}
+                    {jePlno ? (
+                      <View style={{ backgroundColor: '#F3F4F6', padding: 15, borderRadius: 8 }}>
+                         <Text style={{ fontFamily: 'Inter_400Regular', color: '#4B5563', textAlign: 'center' }}>
+                           Kapacita této akce již byla naplněna.
+                         </Text>
+                      </View>
+                    ) : rezervaceOdeslana ? (
                       <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
                     ) : (
                       <>
                         {rezervaceChyba && <Text style={styles.errorText}>{rezervaceChyba}</Text>}
-                        <TextInput style={styles.input} placeholder="Jméno a příjmení" value={rezervaceJmeno} onChangeText={setRezervaceJmeno} placeholderTextColor="#9CA3AF" />
-                        <TextInput style={styles.input} placeholder="E-mail" keyboardType="email-address" autoCapitalize="none" value={rezervaceEmail} onChangeText={setRezervaceEmail} placeholderTextColor="#9CA3AF" />
+                        <TextInput style={styles.input} placeholder="Celé jméno a příjmení" value={rezervaceJmeno} onChangeText={setRezervaceJmeno} placeholderTextColor="#9CA3AF" />
+                        <TextInput style={styles.input} placeholder="E-mail (např. jan.novak@email.cz)" keyboardType="email-address" autoCapitalize="none" value={rezervaceEmail} onChangeText={setRezervaceEmail} placeholderTextColor="#9CA3AF" />
                         <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
                           {odesilaRezervaci ? <ActivityIndicator color="white" /> : <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>}
                         </TouchableOpacity>
@@ -702,7 +749,10 @@ export default function App() {
                         </View>
                       </TouchableOpacity>
                       {item.pocetRezervaci > 0 && (
-                        <Text style={styles.detailStatCountHorizontal}>{item.pocetRezervaci}</Text>
+                        // 👇 ZOBRAZENÍ KAPACITY U IKONKY 👇
+                        <Text style={styles.detailStatCountHorizontal}>
+                          {item.pocetRezervaci}{item.kapacita ? ` / ${item.kapacita}` : ''}
+                        </Text>
                       )}
                     </View>
                   )}
@@ -762,9 +812,19 @@ export default function App() {
                     </TouchableOpacity>
                   )}
                   {item.rezervace && (
-                    <View style={[styles.tagPillOutline, { borderColor: themeColor }, maRezervaci && styles.tagPillRezervovano]}>
-                      <Text style={[styles.tagTextOutline, { color: themeColor }, maRezervaci && styles.tagTextRezervovano]}>
-                        {maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE'}
+                    <View style={[
+                      styles.tagPillOutline, 
+                      { borderColor: themeColor }, 
+                      maRezervaci && !jePlno && styles.tagPillRezervovano,
+                      jePlno && styles.tagPillPlno
+                    ]}>
+                      <Text style={[
+                        styles.tagTextOutline, 
+                        { color: themeColor }, 
+                        maRezervaci && !jePlno && styles.tagTextRezervovano,
+                        jePlno && styles.tagTextPlno
+                      ]}>
+                        {jePlno ? 'OBSAZENO' : (maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE')}
                       </Text>
                     </View>
                   )}
@@ -773,7 +833,7 @@ export default function App() {
 
               <View style={styles.detailStatsBottomContainer}>
                 {item.rezervace && (
-                  <View style={[styles.statItem, { marginRight: 0 }]}>
+                  <View style={[styles.statItem, { marginRight: 15 }]}>
                     <TouchableOpacity 
                       style={styles.detailIconBtn}
                       onPress={() => setInfoRezervaceVisible(true)}
@@ -783,7 +843,9 @@ export default function App() {
                       </View>
                     </TouchableOpacity>
                     {item.pocetRezervaci > 0 && (
-                      <Text style={styles.detailStatCount}>{item.pocetRezervaci}</Text>
+                      <Text style={styles.detailStatCount}>
+                        {item.pocetRezervaci}{item.kapacita ? ` / ${item.kapacita}` : ''}
+                      </Text>
                     )}
                   </View>
                 )}
@@ -800,19 +862,15 @@ export default function App() {
 
               {item.rezervace && (
                 <View style={styles.formContainer}>
-                  <TouchableOpacity 
-                    activeOpacity={0.7} 
-                    onPress={() => {
-                      setRezervaceOdeslana(false);
-                      setRezervaceJmeno('');
-                      setRezervaceEmail('');
-                      setRezervaceChyba(null);
-                    }}
-                  >
-                    <Text style={styles.formTitle}>Rezervace</Text>
-                  </TouchableOpacity>
+                  <Text style={styles.formTitle}>Rezervace</Text>
                   
-                  {rezervaceOdeslana ? (
+                  {jePlno ? (
+                    <View style={{ backgroundColor: '#F3F4F6', padding: 15, borderRadius: 8 }}>
+                       <Text style={{ fontFamily: 'Inter_400Regular', color: '#4B5563', textAlign: 'center' }}>
+                         Kapacita této akce již byla naplněna.
+                       </Text>
+                    </View>
+                  ) : rezervaceOdeslana ? (
                     <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
                   ) : (
                     <>
@@ -822,14 +880,14 @@ export default function App() {
                       
                       <TextInput
                         style={styles.input}
-                        placeholder="Jméno a příjmení"
+                        placeholder="Celé jméno a příjmení"
                         value={rezervaceJmeno}
                         onChangeText={setRezervaceJmeno}
                         placeholderTextColor="#9CA3AF"
                       />
                       <TextInput
                         style={styles.input}
-                        placeholder="E-mail"
+                        placeholder="E-mail (např. jan.novak@email.cz)"
                         keyboardType="email-address"
                         autoCapitalize="none"
                         value={rezervaceEmail}
@@ -866,7 +924,11 @@ export default function App() {
                 <Ionicons name="close" size={24} color="#4B5563" />
               </TouchableOpacity>
               <Text style={styles.modalTitle}>Rezervace</Text>
-              <Text style={styles.modalText}>Toto číslo ukazuje počet aktuálních rezervací na tuto akci.</Text>
+              <Text style={styles.modalText}>
+                {item.kapacita 
+                  ? `Zobrazený počet ukazuje aktuální stav ze stávající kapacity ${item.kapacita} míst.` 
+                  : `Toto číslo ukazuje počet aktuálních rezervací na tuto akci.`}
+              </Text>
             </View>
           </View>
         </Modal>
@@ -984,7 +1046,6 @@ export default function App() {
                 <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder={0} allow="geolocation" />
               ) : (
                 <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
-              )}
               )}
             </View>
           )}
@@ -1432,8 +1493,11 @@ const styles = StyleSheet.create({
   
   tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 6, marginTop: 6, borderWidth: 1 },
   tagTextOutline: { fontFamily: 'Inter_400Regular', fontSize: 11, fontWeight: '600' },
+  
   tagPillRezervovano: { backgroundColor: '#1ad67c', borderColor: '#1ad67c' },
   tagTextRezervovano: { color: '#000' },
+  tagPillPlno: { backgroundColor: '#D1D5DB', borderColor: '#D1D5DB' },
+  tagTextPlno: { color: '#4B5563' },
 
   heartIconBtn: { paddingBottom: 0, paddingLeft: 10, marginBottom: -4 },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#6B7280', textAlign: 'center', marginTop: 30, lineHeight: 22 },
