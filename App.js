@@ -981,10 +981,10 @@ export default function App() {
                 <Text style={styles.pageTitle}>MAPA FESTIVALU</Text>
               </View>
               {Platform.OS === 'web' ? (
-                {/* Přidán parametr allow="geolocation" pro sledování polohy v iframe */}
-                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder="0" allow="geolocation" />
+                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder={0} allow="geolocation" />
               ) : (
                 <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
+              )}
               )}
             </View>
           )}
