@@ -1017,10 +1017,10 @@ export default function App() {
 
                   <View style={styles.socialContainer}>
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
-                      <Image source={require('./assets/muo-icon.png')} style={styles.customSocialIcon} />
+                      <Image source={require('./assets/muo-icon2.png')} style={styles.customSocialIcon} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')}>
-                      <Image source={require('./assets/facebook-icon.png')} style={styles.customSocialIcon} />
+                      <Image source={require('./assets/facebook-icon2.png')} style={styles.customSocialIcon} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                       <Ionicons name="logo-instagram" size={20} color="white" />
