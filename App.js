@@ -82,15 +82,13 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
 
-        // 👇 LOKALIZACE UŽIVATELE 👇
-        // Neustále sleduje polohu
+        // LOKALIZACE UŽIVATELE
         map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
 
         var userMarker = null;
 
         function onLocationFound(e) {
             if (!userMarker) {
-                // Přidání modré tečky reprezentující polohu uživatele
                 var userIcon = L.divIcon({
                     className: 'dzko-user-pin',
                     html: '<div style="background-color: #3B82F6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>',
@@ -99,14 +97,13 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
                 });
                 userMarker = L.marker(e.latlng, {icon: userIcon, zIndexOffset: 1000}).addTo(map).bindPopup("Vaše aktuální poloha");
             } else {
-                // Aktualizace pozice, pokud se uživatel pohne
                 userMarker.setLatLng(e.latlng);
             }
         }
 
         map.on('locationfound', onLocationFound);
 
-        // 👇 TLAČÍTKO PRO VYCENTROVÁNÍ NA POLOHU UŽIVATELE 👇
+        // TLAČÍTKO PRO VYCENTROVÁNÍ NA POLOHU UŽIVATELE
         var locateControl = L.control({position: 'topright'});
         locateControl.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
@@ -131,6 +128,29 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
 </html>
 `;
 
+// 👇 CHYTRÁ FUNKCE PRO ZJIŠTĚNÍ AKTUÁLNÍHO DNE 👇
+const ziskejVychoziDen = () => {
+  const dnes = new Date();
+  const rok = dnes.getFullYear();
+  const mesic = dnes.getMonth(); // Pozor: Měsíce jsou v JS od 0 (Leden = 0, Říjen = 9)
+  const den = dnes.getDate();
+
+  // Zkontroluje, zda je právě teď termín festivalu (říjen 2026)
+  if (rok === 2026 && mesic === 9) {
+    switch (den) {
+      case 12: return 'PO 12';
+      case 13: return 'ÚT 13';
+      case 14: return 'ST 14';
+      case 15: return 'ČT 15';
+      case 16: return 'PÁ 16';
+      case 17: return 'SO 17';
+      case 18: return 'NE 18';
+      default: return 'VŠE'; // Před nebo po festivalu se ukáže VŠE
+    }
+  }
+  return 'VŠE'; // Mimo termín festivalu se ukáže VŠE
+};
+
 export default function App() {
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -143,7 +163,9 @@ export default function App() {
   
   const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
   
-  const [vybranyDen, setVybranyDen] = useState('VŠE');
+  // Místo natvrdo nastaveného 'VŠE' teď aplikace při spuštění zjistí datum
+  const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
+  
   const [oblibeneIds, setOblibeneIds] = useState([]);
   const [mojeRezervace, setMojeRezervace] = useState([]);
   const [vybranyTag, setVybranyTag] = useState(null);
@@ -269,7 +291,7 @@ export default function App() {
               rezervace: !!f['Rezervace'],
               pocetOblibenych: f['Počet oblíbených'] || 0,
               pocetRezervaci: f['Počet rezervací'] || 0,
-              kapacita: f['Kapacita'] || null // 👇 PŘIDANÁ KAPACITA Z AIRTABLU
+              kapacita: f['Kapacita'] || null 
             };
           });
 
@@ -422,7 +444,6 @@ export default function App() {
   const handleOdeslatRezervaci = async () => {
     setRezervaceChyba(null); 
     
-    // 👇 BEZPEČNOSTNÍ KONTROLA JMÉNA A E-MAILU 👇
     if (!rezervaceJmeno.trim() || !rezervaceEmail.trim()) {
       setRezervaceChyba('Prosím, vyplňte jméno i e-mail.');
       return;
@@ -433,13 +454,11 @@ export default function App() {
       return;
     }
 
-    // Regulární výraz pro základní validaci e-mailu (neco@neco.cz)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(rezervaceEmail.trim())) {
       setRezervaceChyba('Zadejte prosím platnou e-mailovou adresu (např. jan.novak@email.cz).');
       return;
     }
-    // ☝️ KONEC BEZPEČNOSTNÍ KONTROLY ☝️
     
     setOdesilaRezervaci(true);
     const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
@@ -541,7 +560,6 @@ export default function App() {
     const mistoText = casParts.length > 2 ? casParts[2] : null;
     const maRezervaci = mojeRezervace.includes(item.id);
     
-    // 👇 LOGIKA PRO ZJIŠTĚNÍ PLNÉ KAPACITY 👇
     const jePlno = item.kapacita && item.pocetRezervaci >= item.kapacita;
 
     return (
@@ -586,14 +604,13 @@ export default function App() {
                   </TouchableOpacity>
                 )}
 
-                {/* ZMĚNA BAREV PODLE KAPACITY A REZERVACE */}
                 {item.rezervace && (
                   <TouchableOpacity 
                     style={[
                       styles.tagPillOutline, 
                       { borderColor: themeColor }, 
                       maRezervaci && !jePlno && styles.tagPillRezervovano,
-                      jePlno && styles.tagPillPlno // Pokud je plno, bude šedivý
+                      jePlno && styles.tagPillPlno 
                     ]} 
                     onPress={() => otevriDetail(item, true)} 
                     activeOpacity={0.7}
@@ -626,7 +643,6 @@ export default function App() {
     const mistoText = casParts.length > 2 ? casParts[2] : null;
     const maRezervaci = mojeRezervace.includes(item.id);
     
-    // 👇 KONTROLA KAPACITY V DETAILU 👇
     const jePlno = item.kapacita && item.pocetRezervaci >= item.kapacita;
 
     return (
@@ -707,7 +723,6 @@ export default function App() {
                   <View style={[styles.formContainer, {marginTop: 20, marginBottom: 0, padding: 0, borderWidth: 0, shadowOpacity: 0, elevation: 0}]}>
                     <Text style={styles.formTitle}>Rezervace</Text>
                     
-                    {/* 👇 ZDE SKRÝVÁME FORMULÁŘ POKUD JE PLNO 👇 */}
                     {jePlno ? (
                       <View style={{ backgroundColor: '#F3F4F6', padding: 15, borderRadius: 8 }}>
                          <Text style={{ fontFamily: 'Inter_400Regular', color: '#4B5563', textAlign: 'center' }}>
@@ -749,7 +764,6 @@ export default function App() {
                         </View>
                       </TouchableOpacity>
                       {item.pocetRezervaci > 0 && (
-                        // 👇 ZOBRAZENÍ KAPACITY U IKONKY 👇
                         <Text style={styles.detailStatCountHorizontal}>
                           {item.pocetRezervaci}{item.kapacita ? ` / ${item.kapacita}` : ''}
                         </Text>
@@ -968,7 +982,7 @@ export default function App() {
 
           {isDesktop && (
             <View style={styles.desktopHeaderMenu}>
-              <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
+              <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
                 <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Home'); }}>
@@ -1055,7 +1069,7 @@ export default function App() {
               {aktivniTab === 'Program' && (
                 <>
                   <View style={styles.pageTitleContainer}>
-                    <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
+                    <TouchableOpacity onPress={() => { setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
@@ -1109,7 +1123,6 @@ export default function App() {
 
                   {oblibeneZobrazeni.length > 0 ? (
                     dny.map((den, index) => {
-                      // Pokud uživatel filtruje konkrétní den a neodpovídá to, přeskočit ho
                       if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
 
                       const akceDne = oblibeneZobrazeni.filter(item => item.den === den);
@@ -1192,7 +1205,8 @@ export default function App() {
 
           {!isDesktop && (
             <View style={styles.bottomNav}>
-              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
+              {/* 👇 ZDE SE PŘI KLIKNUTÍ TAKÉ AKTUALIZUJE DEN NA DNEŠNÍ 👇 */}
+              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
                 <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? themeColor : 'black'} />
                 <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? themeColor : 'black' }]}>Program</Text>
               </TouchableOpacity>
