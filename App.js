@@ -82,11 +82,8 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
 
-        // LOKALIZACE UŽIVATELE
-        map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
-
+        // 👇 BEZPEČNÁ LOKALIZACE UŽIVATELE (OCHRANA PŘED SPADNUTÍM) 👇
         var userMarker = null;
-
         function onLocationFound(e) {
             if (!userMarker) {
                 var userIcon = L.divIcon({
@@ -101,7 +98,13 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
             }
         }
 
-        map.on('locationfound', onLocationFound);
+        try {
+            map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
+            map.on('locationfound', onLocationFound);
+            map.on('locationerror', function(e){ console.warn("Lokalizace: ", e.message); });
+        } catch(err) {
+            console.warn("Chyba lokalizace: ", err);
+        }
 
         // TLAČÍTKO PRO VYCENTROVÁNÍ NA POLOHU UŽIVATELE
         var locateControl = L.control({position: 'topright'});
@@ -117,7 +120,7 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
             div.title = 'Ukaž moji polohu';
             div.innerHTML = '<i class="fa-solid fa-location-crosshairs" style="color: black; font-size: 16px;"></i>';
             div.onclick = function(){
-                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
+                try { map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true}); } catch(e){}
             }
             return div;
         };
@@ -289,7 +292,7 @@ export default function App() {
               pocetOblibenych: f['Počet oblíbených'] || 0,
               pocetRezervaci: f['Počet rezervací'] || 0,
               kapacita: f['Kapacita'] || null,
-              highlight: !!f['Highlight'] // 👇 NAČTENÍ CHECKBOXU Z AIRTABLU
+              highlight: !!f['Highlight'] 
             };
           });
 
@@ -391,7 +394,6 @@ export default function App() {
 
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
   
-  // 👇 VÝBĚR HIGHLIGHTŮ PRO ÚVODNÍ STRÁNKU 👇
   const highlightAkce = prednaskyVsechny.filter(item => item.highlight).slice(0, 4);
 
   const handleLocationClick = (mistoText) => {
@@ -1048,10 +1050,10 @@ export default function App() {
                  </Text>
                </View>
 
-               {/* 👇 NOVÁ SEKCE PRO TVŮJ VÝBĚR (HIGHLIGHTY) 👇 */}
+               {/* 👇 NOVÁ SEKCE PRO TVŮJ VÝBĚR (HIGHLIGHTY) MÁ TEĎ VÍCE PROSTORU 👇 */}
                {highlightAkce.length > 0 && (
-                 <View style={[styles.homeContentSection, { paddingTop: 40, paddingBottom: 20 }]}>
-                   <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
+                 <View style={styles.homeHighlightSection}>
+                   <Text style={[styles.homeSectionTitle, { textAlign: 'center' }]}>TIPY Z PROGRAMU</Text>
                    <View style={styles.desktopGrid}>
                      {highlightAkce.map(vykresliKartu)}
                    </View>
@@ -1068,7 +1070,7 @@ export default function App() {
                 <Text style={styles.pageTitle}>MAPA FESTIVALU</Text>
               </View>
               {Platform.OS === 'web' ? (
-                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder={0} allow="geolocation" />
+                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder="0" allow="geolocation" />
               ) : (
                 <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
               )}
@@ -1295,6 +1297,15 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: 30,
     paddingTop: 60,
+  },
+  /* 👇 ZDE JE NOVÝ ŠIRŠÍ STYL PRO KARTIČKY NA ÚVODNÍ STRÁNCE 👇 */
+  homeHighlightSection: {
+    maxWidth: 1200,
+    alignSelf: 'center',
+    paddingHorizontal: 30,
+    paddingTop: 40,
+    paddingBottom: 40,
+    width: '100%',
   },
   homeSectionTitle: {
     fontFamily: 'Inter_400Regular',
