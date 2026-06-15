@@ -81,6 +81,51 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
         pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc', 'fa-star-of-david');
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
+
+        // 👇 LOKALIZACE UŽIVATELE 👇
+        // Neustále sleduje polohu
+        map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
+
+        var userMarker = null;
+
+        function onLocationFound(e) {
+            if (!userMarker) {
+                // Přidání modré tečky reprezentující polohu uživatele
+                var userIcon = L.divIcon({
+                    className: 'dzko-user-pin',
+                    html: '<div style="background-color: #3B82F6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                });
+                userMarker = L.marker(e.latlng, {icon: userIcon, zIndexOffset: 1000}).addTo(map).bindPopup("Vaše aktuální poloha");
+            } else {
+                // Aktualizace pozice, pokud se uživatel pohne
+                userMarker.setLatLng(e.latlng);
+            }
+        }
+
+        map.on('locationfound', onLocationFound);
+
+        // 👇 TLAČÍTKO PRO VYCENTROVÁNÍ NA POLOHU UŽIVATELE 👇
+        var locateControl = L.control({position: 'topright'});
+        locateControl.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            div.style.backgroundColor = 'white';
+            div.style.width = '30px';
+            div.style.height = '30px';
+            div.style.cursor = 'pointer';
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.justifyContent = 'center';
+            div.title = 'Ukaž moji polohu';
+            div.innerHTML = '<i class="fa-solid fa-location-crosshairs" style="color: black; font-size: 16px;"></i>';
+            div.onclick = function(){
+                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
+            }
+            return div;
+        };
+        locateControl.addTo(map);
+
     </script>
 </body>
 </html>
@@ -936,7 +981,8 @@ export default function App() {
                 <Text style={styles.pageTitle}>MAPA FESTIVALU</Text>
               </View>
               {Platform.OS === 'web' ? (
-                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder="0" />
+                {/* Přidán parametr allow="geolocation" pro sledování polohy v iframe */}
+                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder="0" allow="geolocation" />
               ) : (
                 <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
               )}
@@ -956,6 +1002,10 @@ export default function App() {
                     </TouchableOpacity>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
+                    <TouchableOpacity style={[styles.dayPill, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor, borderColor: themeColor }]}
+                      onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
+                      <Text style={[styles.dayText, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
+                    </TouchableOpacity>
                     {dny.map((den, index) => {
                       const isActive = (vybranyDen === den && !vybranyTag);
                       return (
@@ -978,8 +1028,29 @@ export default function App() {
                   <View style={styles.pageTitleContainer}>
                     <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
                   </View>
+                  
+                  {/* PŘIDÁNO FILTROVÁNÍ DNŮ DO OBLÍBENÝCH */}
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
+                    <TouchableOpacity style={[styles.dayPill, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor, borderColor: themeColor }]}
+                      onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
+                      <Text style={[styles.dayText, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
+                    </TouchableOpacity>
+                    {dny.map((den, index) => {
+                      const isActive = (vybranyDen === den && !vybranyTag);
+                      return (
+                        <TouchableOpacity key={index} style={[styles.dayPill, isActive && { backgroundColor: themeColor, borderColor: themeColor }]}
+                          onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
+                          <Text style={[styles.dayText, isActive && styles.dayTextActive]}>{den}</Text>
+                        </TouchableOpacity>
+                      )
+                    })}
+                  </ScrollView>
+
                   {oblibeneZobrazeni.length > 0 ? (
                     dny.map((den, index) => {
+                      // Pokud uživatel filtruje konkrétní den a neodpovídá to, přeskočit ho
+                      if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
+
                       const akceDne = oblibeneZobrazeni.filter(item => item.den === den);
                       if (akceDne.length === 0) return null;
                       
@@ -994,6 +1065,9 @@ export default function App() {
                     })
                   ) : (
                     <Text style={styles.emptyText}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
+                  )}
+                  {oblibeneZobrazeni.length > 0 && vybranyDen !== 'VŠE' && oblibeneZobrazeni.filter(item => item.den === vybranyDen).length === 0 && (
+                    <Text style={styles.emptyText}>Pro vybraný den nemáte uložené žádné oblíbené akce.</Text>
                   )}
                 </View>
               )}
@@ -1086,10 +1160,9 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  /* 👇 STYLY PRO NOVOU ÚVODNÍ "HOME" OBRAZOVKU 👇 */
  homeHeroContainer: {
     width: '100%',
-    aspectRatio: 2/1, // Můžeš zadat třeba 21/9 pro širokoúhlou nudli, nebo 1.5
+    aspectRatio: 2/1, 
     position: 'relative',
   },
   homeHeroImage: {
@@ -1487,4 +1560,3 @@ const styles = StyleSheet.create({
     lineHeight: 22
   }
 });
-
