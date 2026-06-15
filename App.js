@@ -128,7 +128,6 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
 </html>
 `;
 
-// 👇 CHYTRÁ FUNKCE PRO ZJIŠTĚNÍ AKTUÁLNÍHO DNE 👇
 const ziskejVychoziDen = () => {
   const dnes = new Date();
   const rok = dnes.getFullYear();
@@ -163,7 +162,6 @@ export default function App() {
   
   const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
   
-  // Místo natvrdo nastaveného 'VŠE' teď aplikace při spuštění zjistí datum
   const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
   
   const [oblibeneIds, setOblibeneIds] = useState([]);
@@ -1092,8 +1090,29 @@ export default function App() {
                     })}
                   </ScrollView>
                   
-                  <View style={isDesktop ? styles.desktopGrid : undefined}>
-                    {zobrazenePrednasky.length > 0 ? zobrazenePrednasky.map(vykresliKartu) : <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>}
+                  {/* 👇 PŘIDÁNO ROZDĚLENÍ PROGRAMU DO DNŮ 👇 */}
+                  <View style={{ paddingBottom: 20 }}>
+                    {zobrazenePrednasky.length > 0 ? (
+                      dny.map((den, index) => {
+                        // Přeskočí dny, které uživatel nemá vybrané, pokud zrovna filtruje
+                        if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
+
+                        const akceDne = zobrazenePrednasky.filter(item => item.den === den);
+                        // Přeskočí dny, ve kterých není žádný program (např. při filtraci přes Tag)
+                        if (akceDne.length === 0) return null;
+                        
+                        return (
+                          <View key={index} style={{ marginBottom: 15 }}>
+                            <Text style={styles.favoriteDayHeader}>{den}</Text>
+                            <View style={isDesktop ? styles.desktopGrid : undefined}>
+                              {akceDne.map(vykresliKartu)}
+                            </View>
+                          </View>
+                        );
+                      })
+                    ) : (
+                      <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>
+                    )}
                   </View>
                 </>
               )}
@@ -1104,7 +1123,6 @@ export default function App() {
                     <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
                   </View>
                   
-                  {/* PŘIDÁNO FILTROVÁNÍ DNŮ DO OBLÍBENÝCH */}
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
                     <TouchableOpacity style={[styles.dayPill, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor, borderColor: themeColor }]}
                       onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
@@ -1205,7 +1223,6 @@ export default function App() {
 
           {!isDesktop && (
             <View style={styles.bottomNav}>
-              {/* 👇 ZDE SE PŘI KLIKNUTÍ TAKÉ AKTUALIZUJE DEN NA DNEŠNÍ 👇 */}
               <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
                 <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? themeColor : 'black'} />
                 <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? themeColor : 'black' }]}>Program</Text>
