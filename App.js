@@ -82,8 +82,11 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
 
-        // 👇 BEZPEČNÁ LOKALIZACE UŽIVATELE (OCHRANA PŘED SPADNUTÍM) 👇
+        // LOKALIZACE UŽIVATELE
+        map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
+
         var userMarker = null;
+
         function onLocationFound(e) {
             if (!userMarker) {
                 var userIcon = L.divIcon({
@@ -98,13 +101,7 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
             }
         }
 
-        try {
-            map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
-            map.on('locationfound', onLocationFound);
-            map.on('locationerror', function(e){ console.warn("Lokalizace: ", e.message); });
-        } catch(err) {
-            console.warn("Chyba lokalizace: ", err);
-        }
+        map.on('locationfound', onLocationFound);
 
         // TLAČÍTKO PRO VYCENTROVÁNÍ NA POLOHU UŽIVATELE
         var locateControl = L.control({position: 'topright'});
@@ -120,7 +117,7 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
             div.title = 'Ukaž moji polohu';
             div.innerHTML = '<i class="fa-solid fa-location-crosshairs" style="color: black; font-size: 16px;"></i>';
             div.onclick = function(){
-                try { map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true}); } catch(e){}
+                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
             }
             return div;
         };
@@ -134,9 +131,10 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
 const ziskejVychoziDen = () => {
   const dnes = new Date();
   const rok = dnes.getFullYear();
-  const mesic = dnes.getMonth(); 
+  const mesic = dnes.getMonth(); // Pozor: Měsíce jsou v JS od 0 (Leden = 0, Říjen = 9)
   const den = dnes.getDate();
 
+  // Zkontroluje, zda je právě teď termín festivalu (říjen 2026)
   if (rok === 2026 && mesic === 9) {
     switch (den) {
       case 12: return 'PO 12';
@@ -146,10 +144,10 @@ const ziskejVychoziDen = () => {
       case 16: return 'PÁ 16';
       case 17: return 'SO 17';
       case 18: return 'NE 18';
-      default: return 'VŠE'; 
+      default: return 'VŠE'; // Před nebo po festivalu se ukáže VŠE
     }
   }
-  return 'VŠE'; 
+  return 'VŠE'; // Mimo termín festivalu se ukáže VŠE
 };
 
 export default function App() {
@@ -291,8 +289,7 @@ export default function App() {
               rezervace: !!f['Rezervace'],
               pocetOblibenych: f['Počet oblíbených'] || 0,
               pocetRezervaci: f['Počet rezervací'] || 0,
-              kapacita: f['Kapacita'] || null,
-              highlight: !!f['Highlight'] 
+              kapacita: f['Kapacita'] || null 
             };
           });
 
@@ -393,8 +390,6 @@ export default function App() {
     : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
 
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
-  
-  const highlightAkce = prednaskyVsechny.filter(item => item.highlight).slice(0, 4);
 
   const handleLocationClick = (mistoText) => {
     const coords = mapaLokace[mistoText];
@@ -1049,16 +1044,6 @@ export default function App() {
                    19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
                  </Text>
                </View>
-
-               {/* 👇 NOVÁ SEKCE PRO TVŮJ VÝBĚR (HIGHLIGHTY) MÁ TEĎ VÍCE PROSTORU 👇 */}
-               {highlightAkce.length > 0 && (
-                 <View style={styles.homeHighlightSection}>
-                   <Text style={[styles.homeSectionTitle, { textAlign: 'center' }]}>TIPY Z PROGRAMU</Text>
-                   <View style={styles.desktopGrid}>
-                     {highlightAkce.map(vykresliKartu)}
-                   </View>
-                 </View>
-               )}
                
                <View style={{ height: 100 }} />
              </ScrollView>
@@ -1070,7 +1055,7 @@ export default function App() {
                 <Text style={styles.pageTitle}>MAPA FESTIVALU</Text>
               </View>
               {Platform.OS === 'web' ? (
-                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder="0" allow="geolocation" />
+                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder={0} allow="geolocation" />
               ) : (
                 <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
               )}
@@ -1105,12 +1090,15 @@ export default function App() {
                     })}
                   </ScrollView>
                   
+                  {/* 👇 PŘIDÁNO ROZDĚLENÍ PROGRAMU DO DNŮ 👇 */}
                   <View style={{ paddingBottom: 20 }}>
                     {zobrazenePrednasky.length > 0 ? (
                       dny.map((den, index) => {
+                        // Přeskočí dny, které uživatel nemá vybrané, pokud zrovna filtruje
                         if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
 
                         const akceDne = zobrazenePrednasky.filter(item => item.den === den);
+                        // Přeskočí dny, ve kterých není žádný program (např. při filtraci přes Tag)
                         if (akceDne.length === 0) return null;
                         
                         return (
@@ -1297,15 +1285,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: 30,
     paddingTop: 60,
-  },
-  /* 👇 ZDE JE NOVÝ ŠIRŠÍ STYL PRO KARTIČKY NA ÚVODNÍ STRÁNCE 👇 */
-  homeHighlightSection: {
-    maxWidth: 1200,
-    alignSelf: 'center',
-    paddingHorizontal: 30,
-    paddingTop: 40,
-    paddingBottom: 40,
-    width: '100%',
   },
   homeSectionTitle: {
     fontFamily: 'Inter_400Regular',
