@@ -82,15 +82,13 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
 
-        // 👇 LOKALIZACE UŽIVATELE 👇
-        // Neustále sleduje polohu
+        // LOKALIZACE UŽIVATELE
         map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
 
         var userMarker = null;
 
         function onLocationFound(e) {
             if (!userMarker) {
-                // Přidání modré tečky reprezentující polohu uživatele
                 var userIcon = L.divIcon({
                     className: 'dzko-user-pin',
                     html: '<div style="background-color: #3B82F6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>',
@@ -99,14 +97,13 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
                 });
                 userMarker = L.marker(e.latlng, {icon: userIcon, zIndexOffset: 1000}).addTo(map).bindPopup("Vaše aktuální poloha");
             } else {
-                // Aktualizace pozice, pokud se uživatel pohne
                 userMarker.setLatLng(e.latlng);
             }
         }
 
         map.on('locationfound', onLocationFound);
 
-        // 👇 TLAČÍTKO PRO VYCENTROVÁNÍ NA POLOHU UŽIVATELE 👇
+        // TLAČÍTKO PRO VYCENTROVÁNÍ NA POLOHU UŽIVATELE
         var locateControl = L.control({position: 'topright'});
         locateControl.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
@@ -131,6 +128,27 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
 </html>
 `;
 
+const ziskejVychoziDen = () => {
+  const dnes = new Date();
+  const rok = dnes.getFullYear();
+  const mesic = dnes.getMonth(); 
+  const den = dnes.getDate();
+
+  if (rok === 2026 && mesic === 9) {
+    switch (den) {
+      case 12: return 'PO 12';
+      case 13: return 'ÚT 13';
+      case 14: return 'ST 14';
+      case 15: return 'ČT 15';
+      case 16: return 'PÁ 16';
+      case 17: return 'SO 17';
+      case 18: return 'NE 18';
+      default: return 'VŠE'; 
+    }
+  }
+  return 'VŠE'; 
+};
+
 export default function App() {
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -143,7 +161,8 @@ export default function App() {
   
   const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
   
-  const [vybranyDen, setVybranyDen] = useState('VŠE');
+  const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
+  
   const [oblibeneIds, setOblibeneIds] = useState([]);
   const [mojeRezervace, setMojeRezervace] = useState([]);
   const [vybranyTag, setVybranyTag] = useState(null);
@@ -269,7 +288,8 @@ export default function App() {
               rezervace: !!f['Rezervace'],
               pocetOblibenych: f['Počet oblíbených'] || 0,
               pocetRezervaci: f['Počet rezervací'] || 0,
-              kapacita: f['Kapacita'] || null // 👇 PŘIDANÁ KAPACITA Z AIRTABLU
+              kapacita: f['Kapacita'] || null,
+              highlight: !!f['Highlight'] // 👇 NAČTENÍ CHECKBOXU Z AIRTABLU
             };
           });
 
@@ -370,6 +390,9 @@ export default function App() {
     : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
 
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
+  
+  // 👇 VÝBĚR HIGHLIGHTŮ PRO ÚVODNÍ STRÁNKU 👇
+  const highlightAkce = prednaskyVsechny.filter(item => item.highlight).slice(0, 4);
 
   const handleLocationClick = (mistoText) => {
     const coords = mapaLokace[mistoText];
@@ -422,7 +445,6 @@ export default function App() {
   const handleOdeslatRezervaci = async () => {
     setRezervaceChyba(null); 
     
-    // 👇 BEZPEČNOSTNÍ KONTROLA JMÉNA A E-MAILU 👇
     if (!rezervaceJmeno.trim() || !rezervaceEmail.trim()) {
       setRezervaceChyba('Prosím, vyplňte jméno i e-mail.');
       return;
@@ -433,13 +455,11 @@ export default function App() {
       return;
     }
 
-    // Regulární výraz pro základní validaci e-mailu (neco@neco.cz)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(rezervaceEmail.trim())) {
       setRezervaceChyba('Zadejte prosím platnou e-mailovou adresu (např. jan.novak@email.cz).');
       return;
     }
-    // ☝️ KONEC BEZPEČNOSTNÍ KONTROLY ☝️
     
     setOdesilaRezervaci(true);
     const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
@@ -541,7 +561,6 @@ export default function App() {
     const mistoText = casParts.length > 2 ? casParts[2] : null;
     const maRezervaci = mojeRezervace.includes(item.id);
     
-    // 👇 LOGIKA PRO ZJIŠTĚNÍ PLNÉ KAPACITY 👇
     const jePlno = item.kapacita && item.pocetRezervaci >= item.kapacita;
 
     return (
@@ -586,14 +605,13 @@ export default function App() {
                   </TouchableOpacity>
                 )}
 
-                {/* ZMĚNA BAREV PODLE KAPACITY A REZERVACE */}
                 {item.rezervace && (
                   <TouchableOpacity 
                     style={[
                       styles.tagPillOutline, 
                       { borderColor: themeColor }, 
                       maRezervaci && !jePlno && styles.tagPillRezervovano,
-                      jePlno && styles.tagPillPlno // Pokud je plno, bude šedivý
+                      jePlno && styles.tagPillPlno 
                     ]} 
                     onPress={() => otevriDetail(item, true)} 
                     activeOpacity={0.7}
@@ -626,7 +644,6 @@ export default function App() {
     const mistoText = casParts.length > 2 ? casParts[2] : null;
     const maRezervaci = mojeRezervace.includes(item.id);
     
-    // 👇 KONTROLA KAPACITY V DETAILU 👇
     const jePlno = item.kapacita && item.pocetRezervaci >= item.kapacita;
 
     return (
@@ -707,7 +724,6 @@ export default function App() {
                   <View style={[styles.formContainer, {marginTop: 20, marginBottom: 0, padding: 0, borderWidth: 0, shadowOpacity: 0, elevation: 0}]}>
                     <Text style={styles.formTitle}>Rezervace</Text>
                     
-                    {/* 👇 ZDE SKRÝVÁME FORMULÁŘ POKUD JE PLNO 👇 */}
                     {jePlno ? (
                       <View style={{ backgroundColor: '#F3F4F6', padding: 15, borderRadius: 8 }}>
                          <Text style={{ fontFamily: 'Inter_400Regular', color: '#4B5563', textAlign: 'center' }}>
@@ -749,7 +765,6 @@ export default function App() {
                         </View>
                       </TouchableOpacity>
                       {item.pocetRezervaci > 0 && (
-                        // 👇 ZOBRAZENÍ KAPACITY U IKONKY 👇
                         <Text style={styles.detailStatCountHorizontal}>
                           {item.pocetRezervaci}{item.kapacita ? ` / ${item.kapacita}` : ''}
                         </Text>
@@ -968,11 +983,11 @@ export default function App() {
 
           {isDesktop && (
             <View style={styles.desktopHeaderMenu}>
+              <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
+                <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Home'); }}>
                 <Text style={[styles.desktopMenuText, aktivniTab === 'Home' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
-                <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}>
                 <Text style={styles.desktopMenuText}>ARCHIV</Text>
@@ -1006,56 +1021,45 @@ export default function App() {
           
           {/* 👇 ÚVODNÍ STRÁNKA POUZE PRO POČÍTAČ 👇 */}
           {aktivniTab === 'Home' && isDesktop && !detailAkce && (
-            <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
-              
-              <View style={styles.homeHeroContainer}>
-                {heroImage ? (
-                  <Image source={{ uri: heroImage }} style={styles.homeHeroImage} resizeMode="cover" />
-                ) : (
-                  <View style={[styles.homeHeroImage, { backgroundColor: '#E5E7EB' }]} />
-                )}
-                <View style={styles.homeHeroOverlay}>
-                  {/* 👇 OUTLINE TLAČÍTKO PROGRAM 👇 */}
-                  <TouchableOpacity 
-                    style={[styles.homeHeroBtn, { borderColor: themeColor }]} 
-                    onPress={() => setAktivniTab('Program')}
-                  >
-                    <Text style={[styles.homeHeroBtnText, { color: themeColor }]}>PROGRAM</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+             <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+               
+               <View style={styles.homeHeroContainer}>
+                 {heroImage ? (
+                   <Image source={{ uri: heroImage }} style={styles.homeHeroImage} resizeMode="cover" />
+                 ) : (
+                   <View style={[styles.homeHeroImage, { backgroundColor: '#333' }]} />
+                 )}
+                 <View style={styles.homeHeroOverlay}>
+                   {/* 👇 OUTLINE TLAČÍTKO PROGRAM 👇 */}
+                   <TouchableOpacity 
+                     style={[styles.homeHeroBtn, { borderColor: themeColor }]} 
+                     onPress={() => setAktivniTab('Program')}
+                   >
+                     <Text style={[styles.homeHeroBtnText, { color: themeColor }]}>PROGRAM</Text>
+                   </TouchableOpacity>
+                 </View>
+               </View>
 
-              <View style={styles.homeSection}>
-                <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
-                <Text style={styles.homeText}>
-                  Termín festivalu: 12.–18. října 2026{'\n\n'}
-                  19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
-                </Text>
-              </View>
-              
-              {prednaskyVsechny.length > 0 && (
-                <View style={styles.homeSection}>
-                  <Text style={styles.homeSectionTitle}>PROGRAM</Text>
-                  <View style={styles.desktopGrid}>
-                    {prednaskyVsechny.slice(0, 4).map(vykresliKartu)}
-                  </View>
-                  <TouchableOpacity onPress={() => setAktivniTab('Program')} style={{ marginTop: 15, alignSelf: 'flex-start' }}>
-                    <Text style={styles.dalsiProgramLink}>Další v sekci program...</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+               <View style={styles.homeContentSection}>
+                 <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
+                 <Text style={styles.homeText}>
+                   Termín festivalu: 12.–18. října 2026{'\n\n'}
+                   19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
+                 </Text>
+               </View>
 
-              <View style={styles.homeSection}>
-                <Text style={styles.homeSectionTitle}>MAPA</Text>
-                {Platform.OS === 'web' ? (
-                  <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder={0} allow="geolocation" />
-                ) : (
-                  <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
-                )}
-              </View>
-              
-              <View style={{ height: 100 }} />
-            </ScrollView>
+               {/* 👇 NOVÁ SEKCE PRO TVŮJ VÝBĚR (HIGHLIGHTY) 👇 */}
+               {highlightAkce.length > 0 && (
+                 <View style={[styles.homeContentSection, { paddingTop: 40, paddingBottom: 20 }]}>
+                   <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
+                   <View style={styles.desktopGrid}>
+                     {highlightAkce.map(vykresliKartu)}
+                   </View>
+                 </View>
+               )}
+               
+               <View style={{ height: 100 }} />
+             </ScrollView>
           )}
 
           {aktivniTab === 'Mapa' && (
@@ -1076,7 +1080,7 @@ export default function App() {
               {aktivniTab === 'Program' && (
                 <>
                   <View style={styles.pageTitleContainer}>
-                    <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
+                    <TouchableOpacity onPress={() => { setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
@@ -1099,8 +1103,26 @@ export default function App() {
                     })}
                   </ScrollView>
                   
-                  <View style={isDesktop ? styles.desktopGrid : undefined}>
-                    {zobrazenePrednasky.length > 0 ? zobrazenePrednasky.map(vykresliKartu) : <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>}
+                  <View style={{ paddingBottom: 20 }}>
+                    {zobrazenePrednasky.length > 0 ? (
+                      dny.map((den, index) => {
+                        if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
+
+                        const akceDne = zobrazenePrednasky.filter(item => item.den === den);
+                        if (akceDne.length === 0) return null;
+                        
+                        return (
+                          <View key={index} style={{ marginBottom: 15 }}>
+                            <Text style={styles.favoriteDayHeader}>{den}</Text>
+                            <View style={isDesktop ? styles.desktopGrid : undefined}>
+                              {akceDne.map(vykresliKartu)}
+                            </View>
+                          </View>
+                        );
+                      })
+                    ) : (
+                      <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>
+                    )}
                   </View>
                 </>
               )}
@@ -1111,7 +1133,6 @@ export default function App() {
                     <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
                   </View>
                   
-                  {/* PŘIDÁNO FILTROVÁNÍ DNŮ DO OBLÍBENÝCH */}
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
                     <TouchableOpacity style={[styles.dayPill, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor, borderColor: themeColor }]}
                       onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
@@ -1130,7 +1151,6 @@ export default function App() {
 
                   {oblibeneZobrazeni.length > 0 ? (
                     dny.map((den, index) => {
-                      // Pokud uživatel filtruje konkrétní den a neodpovídá to, přeskočit ho
                       if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
 
                       const akceDne = oblibeneZobrazeni.filter(item => item.den === den);
@@ -1213,7 +1233,7 @@ export default function App() {
 
           {!isDesktop && (
             <View style={styles.bottomNav}>
-              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
+              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
                 <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? themeColor : 'black'} />
                 <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? themeColor : 'black' }]}>Program</Text>
               </TouchableOpacity>
@@ -1270,19 +1290,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1.5,
   },
-  homeSection: {
-    maxWidth: 1200,
-    width: '100%',
+  homeContentSection: {
+    maxWidth: 900,
     alignSelf: 'center',
     paddingHorizontal: 30,
     paddingTop: 60,
-  },
-  dalsiProgramLink: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    color: '#000000',
-    marginTop: 10,
-    paddingVertical: 5,
   },
   homeSectionTitle: {
     fontFamily: 'Inter_400Regular',
