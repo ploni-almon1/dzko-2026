@@ -131,10 +131,9 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
 const ziskejVychoziDen = () => {
   const dnes = new Date();
   const rok = dnes.getFullYear();
-  const mesic = dnes.getMonth(); // Pozor: Měsíce jsou v JS od 0 (Leden = 0, Říjen = 9)
+  const mesic = dnes.getMonth(); 
   const den = dnes.getDate();
 
-  // Zkontroluje, zda je právě teď termín festivalu (říjen 2026)
   if (rok === 2026 && mesic === 9) {
     switch (den) {
       case 12: return 'PO 12';
@@ -144,10 +143,10 @@ const ziskejVychoziDen = () => {
       case 16: return 'PÁ 16';
       case 17: return 'SO 17';
       case 18: return 'NE 18';
-      default: return 'VŠE'; // Před nebo po festivalu se ukáže VŠE
+      default: return 'VŠE'; 
     }
   }
-  return 'VŠE'; // Mimo termín festivalu se ukáže VŠE
+  return 'VŠE'; 
 };
 
 export default function App() {
@@ -289,7 +288,8 @@ export default function App() {
               rezervace: !!f['Rezervace'],
               pocetOblibenych: f['Počet oblíbených'] || 0,
               pocetRezervaci: f['Počet rezervací'] || 0,
-              kapacita: f['Kapacita'] || null 
+              kapacita: f['Kapacita'] || null,
+              highlight: !!f['Highlight'] // 👇 NAČTENÍ CHECKBOXU Z AIRTABLU
             };
           });
 
@@ -390,6 +390,9 @@ export default function App() {
     : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
 
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
+  
+  // 👇 VÝBĚR HIGHLIGHTŮ PRO ÚVODNÍ STRÁNKU 👇
+  const highlightAkce = prednaskyVsechny.filter(item => item.highlight).slice(0, 4);
 
   const handleLocationClick = (mistoText) => {
     const coords = mapaLokace[mistoText];
@@ -1044,6 +1047,16 @@ export default function App() {
                    19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
                  </Text>
                </View>
+
+               {/* 👇 NOVÁ SEKCE PRO TVŮJ VÝBĚR (HIGHLIGHTY) 👇 */}
+               {highlightAkce.length > 0 && (
+                 <View style={[styles.homeContentSection, { paddingTop: 40, paddingBottom: 20 }]}>
+                   <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
+                   <View style={styles.desktopGrid}>
+                     {highlightAkce.map(vykresliKartu)}
+                   </View>
+                 </View>
+               )}
                
                <View style={{ height: 100 }} />
              </ScrollView>
@@ -1090,15 +1103,12 @@ export default function App() {
                     })}
                   </ScrollView>
                   
-                  {/* 👇 PŘIDÁNO ROZDĚLENÍ PROGRAMU DO DNŮ 👇 */}
                   <View style={{ paddingBottom: 20 }}>
                     {zobrazenePrednasky.length > 0 ? (
                       dny.map((den, index) => {
-                        // Přeskočí dny, které uživatel nemá vybrané, pokud zrovna filtruje
                         if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
 
                         const akceDne = zobrazenePrednasky.filter(item => item.den === den);
-                        // Přeskočí dny, ve kterých není žádný program (např. při filtraci přes Tag)
                         if (akceDne.length === 0) return null;
                         
                         return (
