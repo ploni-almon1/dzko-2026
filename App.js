@@ -585,7 +585,7 @@ export default function App() {
 
     return (
       <View key={item.id} style={isDesktop ? styles.desktopCardWrapper : styles.mobileCardWrapper}>
-        <View style={[styles.card, isDesktop && { backgroundColor: '#FFFFFF' }]}>
+        <View style={styles.card}>
           {item.image && zobrazitObrazky && (
             <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.8}>
               <Image source={{ uri: item.image }} style={isDesktop ? styles.desktopCardImage : styles.cardImage} resizeMode="cover" />
@@ -1058,13 +1058,10 @@ export default function App() {
                {/* 👇 PROGRAM SEKCE NA DOMOVSKÉ STRÁNCE 👇 */}
                {highlightAkce.length > 0 && (
                  <View style={[styles.homeContentSection, { paddingTop: 80, paddingBottom: 20 }]}>
-                   <Text style={styles.homeSectionTitle}>PROGRAM</Text>
+                   <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
                    <View style={styles.desktopGrid}>
                      {highlightAkce.map(vykresliKartu)}
                    </View>
-                   <TouchableOpacity onPress={() => setAktivniTab('Program')} style={{ marginTop: 15 }}>
-                     <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 18, color: '#333' }}>Další v sekci program...</Text>
-                   </TouchableOpacity>
                  </View>
                )}
 
@@ -1107,7 +1104,7 @@ export default function App() {
           {aktivniTab !== 'Mapa' && aktivniTab !== 'Home' && !detailAkce && (
             <ScrollView style={styles.content}>
               {aktivniTab === 'Program' && (
-                <>
+                <View style={isDesktop ? styles.desktopContainer : null}>
                   <View style={styles.pageTitleContainer}>
                     <TouchableOpacity onPress={() => { setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
@@ -1117,16 +1114,16 @@ export default function App() {
                     </TouchableOpacity>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
-                    <TouchableOpacity style={[styles.dayPill, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor, borderColor: themeColor }]}
+                    <TouchableOpacity style={[styles.dayPill, { borderColor: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor }]}
                       onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
-                      <Text style={[styles.dayText, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
+                      <Text style={[styles.dayText, { color: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
                     </TouchableOpacity>
                     {dny.map((den, index) => {
                       const isActive = (vybranyDen === den && !vybranyTag);
                       return (
-                        <TouchableOpacity key={index} style={[styles.dayPill, isActive && { backgroundColor: themeColor, borderColor: themeColor }]}
+                        <TouchableOpacity key={index} style={[styles.dayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
                           onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
-                          <Text style={[styles.dayText, isActive && styles.dayTextActive]}>{den}</Text>
+                          <Text style={[styles.dayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
                         </TouchableOpacity>
                       )
                     })}
@@ -1141,7 +1138,7 @@ export default function App() {
                         if (akceDne.length === 0) return null;
                         
                         return (
-                          <View key={index} style={{ marginBottom: 15 }}>
+                          <View key={index} style={{ marginBottom: 20 }}>
                             <Text style={styles.favoriteDayHeader}>{den}</Text>
                             <View style={isDesktop ? styles.desktopGrid : undefined}>
                               {akceDne.map(vykresliKartu)}
@@ -1153,26 +1150,26 @@ export default function App() {
                       <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>
                     )}
                   </View>
-                </>
+                </View>
               )}
               
               {aktivniTab === 'Oblíbené' && (
-                <View style={{ paddingBottom: 20 }}>
+                <View style={[isDesktop ? styles.desktopContainer : null, { paddingBottom: 20 }]}>
                   <View style={styles.pageTitleContainer}>
                     <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
                   </View>
                   
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
-                    <TouchableOpacity style={[styles.dayPill, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor, borderColor: themeColor }]}
+                    <TouchableOpacity style={[styles.dayPill, { borderColor: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor }]}
                       onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
-                      <Text style={[styles.dayText, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
+                      <Text style={[styles.dayText, { color: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
                     </TouchableOpacity>
                     {dny.map((den, index) => {
                       const isActive = (vybranyDen === den && !vybranyTag);
                       return (
-                        <TouchableOpacity key={index} style={[styles.dayPill, isActive && { backgroundColor: themeColor, borderColor: themeColor }]}
+                        <TouchableOpacity key={index} style={[styles.dayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
                           onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
-                          <Text style={[styles.dayText, isActive && styles.dayTextActive]}>{den}</Text>
+                          <Text style={[styles.dayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
                         </TouchableOpacity>
                       )
                     })}
@@ -1186,7 +1183,7 @@ export default function App() {
                       if (akceDne.length === 0) return null;
                       
                       return (
-                        <View key={index} style={{ marginBottom: 15 }}>
+                        <View key={index} style={{ marginBottom: 20 }}>
                           <Text style={styles.favoriteDayHeader}>{den}</Text>
                           <View style={isDesktop ? styles.desktopGrid : undefined}>
                             {akceDne.map(vykresliKartu)}
@@ -1319,12 +1316,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1.5,
   },
-  // 👇 ZÁSADNÍ ZMĚNA: Přidán maxWidth 1200 pro perfektní lícování s červenými lajnami
+  // 👇 Hlavní kontejner pro úvodní obrazovku zarovnaný na stejnou linii
   homeContentSection: {
     width: '100%',
-    maxWidth: 1200, 
+    maxWidth: 1240, 
     alignSelf: 'center',
-    paddingHorizontal: 30, 
+    paddingHorizontal: 15, 
     paddingTop: 60,
   },
   homeSectionTitle: {
@@ -1362,12 +1359,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular', fontSize: 13, fontWeight: '600'
   },
 
+  // 👇 Kontejner detailu akce zarovnaný s hlavičkou
   desktopDetailScrollView: {
     flex: 1, 
     width: '100%',
-    maxWidth: 1200, // Aby se i detail řídil červenými lajnami
+    maxWidth: 1240, 
     alignSelf: 'center',
-    paddingHorizontal: 30,
+    paddingHorizontal: 15,
   },
   desktopBreadcrumbsContainer: {
     flexDirection: 'row',
@@ -1487,27 +1485,27 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  // 👇 DESKTOPOVÁ HLAVIČKA s vnitřním zarovnáním 👇
   desktopHeader: { 
     height: 55,
     width: '100%',
     backgroundColor: '#FFFFFF', 
     alignItems: 'center',
     justifyContent: 'center',
-    // Zde jsou nové stíny:
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 5, 
-    zIndex: 10, // Důležité, aby stín padal na text pod ním
+    zIndex: 10,
   },
+  // 👇 Hlavička se nyní lícovat s Programem přesně na 1240px
   desktopHeaderInner: {
     width: '100%',
+    maxWidth: 1240, 
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 30,
+    paddingHorizontal: 15,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -1523,6 +1521,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000000',
     letterSpacing: 0.5,
+  },
+
+  // 👇 Centrální kontejner (obal) pro sekci Program a Oblíbené (PC verze)
+  desktopContainer: {
+    width: '100%',
+    maxWidth: 1240,
+    alignSelf: 'center',
+    paddingTop: 10,
   },
 
   mainContainer: { flex: 1 }, 
@@ -1544,8 +1550,9 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 15 },
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
 
-  pageTitleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 15 },
-  pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 28 },
+  // 👇 Upravené styly programu (Zvětšený nadpis, změněné "Pilulky" filtrů a nadpisy dnů) 👇
+  pageTitleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, marginBottom: 15 },
+  pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 32, letterSpacing: 1 },
 
   toggleViewBtn: {
     width: 44,
@@ -1555,14 +1562,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, 
+  favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 20, color: '#000', marginBottom: 15, marginTop: 15 }, 
   
-  daysContainer: { flexDirection: 'row', marginBottom: 20 },
-  dayPill: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: '#D1D5DB', marginRight: 6, backgroundColor: 'transparent' },
-  dayText: { fontFamily: 'Inter_400Regular', color: '#374151', fontSize: 13 },
+  webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
+  daysContainer: { flexDirection: 'row', marginBottom: 30 },
+  dayPill: { 
+    width: 89,             // 👈 Tímto trefíme přesnou šířku, aby 3 dny vyšly na 1 kartu
+    height: 36,            // 👈 Zmenšení výšky zpět na decentní velikost
+    borderRadius: 18, 
+    borderWidth: 1, 
+    marginRight: 16,       // 👈 Přesně 16px mezera (stejná jako mezera v gridu karet)
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  dayText: { fontFamily: 'Inter_400Regular', fontSize: 14 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   
-  card: { backgroundColor: '#F3F4F6', borderRadius: 0, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 10, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
   cardContent: { padding: 15 },
   cardImage: { width: '100%', height: 160, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: '#E5E7EB' },
   
