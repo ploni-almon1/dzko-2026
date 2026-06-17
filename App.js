@@ -648,8 +648,8 @@ export default function App() {
 
     return (
       <>
-        <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }} contentContainerStyle={isDesktop ? { flexGrow: 1, paddingVertical: 30 } : { flexGrow: 1 }} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
-          <View style={isDesktop ? [styles.desktopContent, { borderRadius: 16 }] : styles.content}>
+        <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
+          <View style={isDesktop ? styles.desktopContent : styles.content}>
             
             {isDesktop ? (
               <View style={styles.desktopBreadcrumbsContainer}>
@@ -667,7 +667,6 @@ export default function App() {
 
             {isDesktop ? (
               <View style={styles.desktopDetailLayout}>
-                {/* LEVÝ SLOUPEC (BÍLÁ KARTA S OHRANIČENÍM) - DESKTOP */}
                 <View style={styles.desktopDetailLeftCard}>
                   <View style={styles.desktopTimeLocationRow}>
                     <Text style={styles.desktopCardTime}>{timeText}</Text>
@@ -747,7 +746,7 @@ export default function App() {
                   )}
                 </View>
 
-                {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) - DESKTOP */}
+                {/* PRAVÝ SLOUPEC */}
                 <View style={styles.desktopDetailRightColumn}>
                   {item.image ? (
                     <Image source={{ uri: item.image }} style={styles.desktopDetailImage} resizeMode="cover" />
@@ -961,7 +960,7 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        {/* 👇 HLAVIČKA NA BÍLÉM POZADÍ, UPROSTŘED NA 1200px 👇 */}
+        {/* 👇 HLAVIČKA NA BÍLÉM POZADÍ, NIŽŠÍ VÝŠKA, O FESTIVALU PRVNÍ 👇 */}
         <View style={isDesktop ? styles.desktopHeaderWrapper : styles.header}>
           <View style={isDesktop ? styles.desktopHeaderInner : {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
             <TouchableOpacity 
@@ -987,11 +986,12 @@ export default function App() {
 
             {isDesktop && (
               <View style={styles.desktopHeaderMenu}>
-                <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
-                  <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
-                </TouchableOpacity>
+                {/* PROHOZENO: O FESTIVALU JE PRVNÍ */}
                 <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Home'); }}>
                   <Text style={[styles.desktopMenuText, aktivniTab === 'Home' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
+                  <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}>
                   <Text style={styles.desktopMenuText}>ARCHIV</Text>
@@ -1022,7 +1022,7 @@ export default function App() {
 
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
-          {/* 👇 ÚVODNÍ STRÁNKA (HOME) 👇 */}
+          {/* 👇 ÚVODNÍ STRÁNKA (HOME) NA ŠEDÉM POZADÍ 👇 */}
           {aktivniTab === 'Home' && isDesktop && !detailAkce && (
              <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }} contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}>
                
@@ -1042,11 +1042,10 @@ export default function App() {
                  </View>
                </View>
 
-               {/* 👇 BÍLÝ KONTEJNER PRO OBSAH DOMOVSKÉ STRÁNKY 👇 */}
-               <View style={[styles.desktopContent, { marginTop: 30, borderRadius: 16 }]}>
-                 <View style={{ paddingTop: 10, paddingBottom: 30 }}>
-                   <Text style={[styles.homeSectionTitle, { textAlign: 'center' }]}>O FESTIVALU</Text>
-                   <Text style={[styles.homeText, { textAlign: 'center', maxWidth: 900, alignSelf: 'center' }]}>
+               <View style={styles.desktopContent}>
+                 <View style={{ paddingTop: 40, paddingBottom: 30 }}>
+                   <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
+                   <Text style={[styles.homeText, { maxWidth: 900 }]}>
                      Termín festivalu: 12.–18. října 2026{'\n\n'}
                      19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
                    </Text>
@@ -1054,7 +1053,7 @@ export default function App() {
 
                  {highlightAkce.length > 0 && (
                    <View style={{ paddingTop: 30, paddingBottom: 20 }}>
-                     <Text style={[styles.homeSectionTitle, { textAlign: 'center' }]}>TIPY Z PROGRAMU</Text>
+                     <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
                      <View style={styles.desktopGrid}>
                        {highlightAkce.map(vykresliKartu)}
                      </View>
@@ -1079,9 +1078,9 @@ export default function App() {
           )}
 
           {aktivniTab !== 'Mapa' && aktivniTab !== 'Home' && !detailAkce && (
-            // 👇 ZDE JSOU ZÁLOŽKY PROGRAM A OBLÍBENÉ ULOŽENÉ NA BÍLÉM "PAPÍŘE" 👇
-            <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }} contentContainerStyle={isDesktop ? { flexGrow: 1, paddingVertical: 30 } : { flexGrow: 1 }}>
-              <View style={isDesktop ? [styles.desktopContent, { borderRadius: 16 }] : styles.content}>
+            // 👇 ZDE JSOU ZÁLOŽKY NA ZPĚT NA ŠEDÉM POZADÍ, ČISTÝ DESIGN 👇
+            <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+              <View style={isDesktop ? styles.desktopContent : styles.content}>
                 
                 {aktivniTab === 'Program' && (
                   <>
@@ -1268,25 +1267,19 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  /* 👇 HLAVNÍ BÍLÝ KONTEJNER PRO OBSAH NA POČÍTAČI 👇 */
+  /* 👇 ZRUŠEN BÍLÝ POZADÍ, POUZE VYMEZENÍ MAX. ŠÍŘKY PRO DOKONALÉ LÍCOVÁNÍ 👇 */
   desktopContent: { 
     width: '100%', 
     maxWidth: 1200, 
     alignSelf: 'center', 
-    backgroundColor: '#FFFFFF', // Bílý "papír"
-    paddingHorizontal: 40,
-    paddingTop: 40,
+    paddingHorizontal: 30, // 30px okraje pro dorovnání
+    paddingTop: 30,
     paddingBottom: 60,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
   },
 
-  /* 👇 HLAVIČKA ZAROVNANÁ K LEVÉMU KRAJI OBSAHU (40px) 👇 */
+  /* 👇 HLAVIČKA MÁ MENŠÍ VÝŠKU (60px) 👇 */
   desktopHeaderWrapper: {
-    height: 70,
+    height: 60,
     backgroundColor: '#FFFFFF', 
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
@@ -1300,7 +1293,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 1200,
     alignSelf: 'center',
-    paddingHorizontal: 40, 
+    paddingHorizontal: 30, // Musí být stejné jako padding v desktopContent
   },
   headerLeft: {
     flexDirection: 'row',
@@ -1318,32 +1311,32 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  /* 👇 MŘÍŽKA KARET - PŘESNĚ 4 SLOUPCE 👇 */
+  /* 👇 MATEMATIKA MŘÍŽKY: Levý okraj první karty začíná PŘESNĚ s okrajem textu PROGRAM 👇 */
   desktopGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -15, // Roztáhne hranice mřížky, aby karta lícovala s textem
+    marginHorizontal: -12, // Negativní margin ruší padding u kraje
   },
   desktopCardWrapper: {
-    width: '25%', // PŘESNĚ 4 KARTY. Když budou v datech 3, čtvrté místo zůstane prázdné.
+    width: '25%', // PŘESNĚ 4 KARTY v řádku. Když budou v datech jen 3, čtvrté místo zůstane prázdné.
     flexGrow: 0,
     flexShrink: 0,
-    paddingHorizontal: 15, // Vnitřní výplň tvoří přesnou 30px mezeru mezi kartami
-    marginBottom: 30, 
+    paddingHorizontal: 12, // Vytváří 24px mezery mezi kartami
+    marginBottom: 24, 
   },
 
-  /* 👇 BÍLÁ KARTA S OHRANIČENÍM 👇 */
+  /* 👇 KARTA BÍLÁ A KULATÁ 👇 */
   card: { 
     backgroundColor: '#FFFFFF', 
     borderRadius: 16, 
-    borderWidth: 1,           // Jemný rámeček, aby karta na bílém podkladu nezanikla
+    borderWidth: 1,           
     borderColor: '#E5E7EB', 
     shadowColor: '#000', 
     shadowOffset: { width: 0, height: 4 }, 
     shadowOpacity: 0.05, 
     shadowRadius: 10, 
     elevation: 3,
-    height: '100%', // Karta se přizpůsobí výšce ostatních
+    height: '100%', 
     overflow: 'hidden',
   },
   cardContent: { 
@@ -1357,12 +1350,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB'
   },
 
-  /* 👇 KULATĚJŠÍ A LÉPE ROZMÍSTĚNÉ BUBLINY PRO DNY 👇 */
+  /* 👇 BUBLINY PRO DNY 👇 */
   daysContainer: { 
     flexDirection: 'row', 
     flexWrap: 'wrap',
     marginBottom: 30,
-    gap: 12, // Moderní CSS gap pro přesné a stejné mezery
+    marginLeft: 0,
+    gap: 12, 
   },
   dayPill: { 
     paddingVertical: 10, 
@@ -1371,7 +1365,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: '#D1D5DB', 
     backgroundColor: 'transparent',
-    // Fallback pro starší prohlížeče, kde gap nefunguje:
     marginRight: Platform.OS === 'web' ? 0 : 12,
     marginBottom: Platform.OS === 'web' ? 0 : 12,
   },
