@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 
 // 👇👇👇 ZDE JE TVOJE CENTRÁLNÍ BARVA PRO CELOU APLIKACI 👇👇👇
-const DEFAULT_THEME_COLOR = '#1E3A8A'; // Updated to match the blue from the image
+const DEFAULT_THEME_COLOR = '#3A24DC'; 
 
 // --- GENERÁTOR MAPY ---
 const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
@@ -740,7 +740,7 @@ export default function App() {
                         <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
                           {odesilaRezervaci ? <ActivityIndicator color="white" /> : <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>}
                         </TouchableOpacity>
-                      </    >
+                      </>
                     )}
                   </View>
                 )}
@@ -801,7 +801,7 @@ export default function App() {
                     <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
                       <Text style={styles.locationLink}>{mistoText}</Text>
                     </TouchableOpacity>
-                  </  >
+                  </>
                 )}
               </View>
 
@@ -1024,39 +1024,12 @@ export default function App() {
              <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
                
                <View style={styles.homeHeroContainer}>
-                 {/* Stylized background to match the blurring and text texture */}
-                 <View style={styles.heroBackgroundBlur} />
-                 
+                 {heroImage ? (
+                   <Image source={{ uri: heroImage }} style={styles.homeHeroImage} resizeMode="cover" />
+                 ) : (
+                   <View style={[styles.homeHeroImage, { backgroundColor: '#333' }]} />
+                 )}
                  <View style={styles.homeHeroOverlay}>
-                   {/* Top Left Text */}
-                   <View style={styles.heroTopLeftTextGroup}>
-                     <Text style={styles.heroTerminText}>TERIMÍN FESTIVALU: 12.–18. ŘÍJNA 2026</Text>
-                     <Text style={styles.heroProgramText}>PROGRAM</Text>
-                   </View>
-
-                   {/* Geometric stylized elements */}
-                   <View style={styles.heroShapesRow}>
-                     <View style={styles.heroShapePlus} />
-                     <View style={styles.heroShapePlus} />
-                     <View style={styles.heroShapeBlueSquare} />
-                     <View style={styles.heroShapePlus} />
-                   </View>
-                   
-                   {/* Centered box O FESTIVALU */}
-                   <View style={styles.centeredFestivalBox}>
-                     <Text style={styles.centeredFestivalText}>O FESTIVALU</Text>
-                   </View>
-
-                   {/* Bottom Grid for shapes */}
-                   <View style={styles.heroBottomShapesGrid}>
-                     {[1, 2, 3, 4].map((item) => (
-                       <View key={item} style={styles.heroBottomShapeCard}>
-                         <View style={styles.heroShapePlusSmall} />
-                       </View>
-                     ))}
-                     <View style={[styles.heroBottomShapeCard, { backgroundColor: themeColor }]} />
-                   </View>
-
                    {/* 👇 OUTLINE TLAČÍTKO PROGRAM 👇 */}
                    <TouchableOpacity 
                      style={[styles.homeHeroBtn, { borderColor: themeColor }]} 
@@ -1070,64 +1043,17 @@ export default function App() {
                <View style={styles.homeContentSection}>
                  <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
                  <Text style={styles.homeText}>
-                   Dny židovské kultury Olomouc se i letos vrací, aby... Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.{'\n\n'}
-                   19. ročník festivalu (12.–18. 10. 2026) s podtitulem "Morava – na periferii, nebo v centru?" se zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií, nebo svébytným a vlivným centrem.
+                   Termín festivalu: 12.–18. října 2026{'\n\n'}
+                   19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
                  </Text>
                </View>
 
-               {/* 👇 TIPY Z PROGRAMU - NOW A GRID OF FOUR 👇 */}
+               {/* 👇 NOVÁ SEKCE PRO TVŮJ VÝBĚR (HIGHLIGHTY) 👇 */}
                {highlightAkce.length > 0 && (
                  <View style={[styles.homeContentSection, { paddingTop: 40, paddingBottom: 20 }]}>
                    <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
                    <View style={styles.desktopGrid}>
-                     {highlightAkce.map((item, index) => {
-                       // Use specific placeholder data as shown in the design
-                       const placeholders = [
-                         { time: 'PO 12 | 19:30 | MUO CENTRAL', title: 'S kytarou a vtipem', description: 'Láskyplný i ironický pohled...' },
-                         { time: 'ÚT 13 | 18:00 | MOZARTEUM', title: 'Morava v tanci', description: 'Tradiční židovský folklor...' },
-                         { time: 'ST 14 | 20:00 | MUO CENTRAL', title: 'Film a periferie', description: 'Projekce a diskuse o...' },
-                         { time: 'ČT 15 | 17:00 | MOZARTEUM', title: 'Architektura periferie', description: 'Kompletní přehled...' }
-                       ];
-                       const placeholder = placeholders[index];
-                       const tags = item.tag && item.tag.map(tag => tag.toUpperCase());
-
-                       return (
-                         <View key={item.id} style={styles.desktopCardWrapper}>
-                           <View style={[styles.card, styles.tipCard]}>
-                             <View style={styles.placeholderTipImage} />
-                             <View style={styles.cardContent}>
-                               <View style={styles.timeLocationRow}>
-                                 <Text style={styles.cardTime}>{placeholder.time}</Text>
-                               </View>
-                               
-                               <TouchableOpacity onPress={() => otevriDetail(item)} activeOpacity={0.6}>
-                                 <Text style={styles.tipCardTitle}>{placeholder.title}</Text>
-                               </TouchableOpacity>
-                               
-                               <Text style={styles.tipCardDescription}>{placeholder.description}</Text>
-                               
-                               <View style={styles.cardBottomRow}>
-                                 <View style={styles.tagsContainer}>
-                                   {tags && tags.map((t, idx) => (
-                                     <View key={idx} style={[styles.tipTagPill, { backgroundColor: '#E5E7EB', borderColor: '#E5E7EB' }]}>
-                                       <Text style={styles.tipTagText}>{t}</Text>
-                                     </View>
-                                   ))}
-                                   {item.rezervace && (
-                                     <View style={[styles.tipTagPill, { backgroundColor: themeColor, borderColor: themeColor }]}>
-                                       <Text style={[styles.tipTagText, { color: 'white' }]}>NUTNÁ REZERVACE</Text>
-                                     </View>
-                                   )}
-                                 </View>
-                                 <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.heartIconBtn}>
-                                   <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
-                                 </TouchableOpacity>
-                               </View>
-                             </View>
-                           </View>
-                         </View>
-                       );
-                     })}
+                     {highlightAkce.map(vykresliKartu)}
                    </View>
                  </View>
                )}
@@ -1338,100 +1264,22 @@ export default function App() {
 const styles = StyleSheet.create({
  homeHeroContainer: {
     width: '100%',
-    aspectRatio: 2/1, // Large hero ratio
+    aspectRatio: 2/1, 
     position: 'relative',
-    backgroundColor: 'black', // fallback
-  },
-  heroBackgroundBlur: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000000CC', // Dark mask
   },
   homeHeroImage: {
     width: '100%',
     height: '100%',
   },
   homeHeroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    paddingTop: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroTopLeftTextGroup: {
     position: 'absolute',
-    top: 30,
-    left: 40,
-  },
-  heroTerminText: {
-    fontFamily: 'Inter_400Regular',
-    color: 'white',
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  heroProgramText: {
-    fontFamily: 'Inter_400Regular',
-    color: 'white',
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  heroShapesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    bottom: 170,
     width: '100%',
-    paddingHorizontal: 150,
-    marginTop: -80,
-  },
-  heroShapePlus: {
-    width: 60,
-    height: 60,
-    borderWidth: 8,
-    borderColor: 'white',
-    transform: [{ rotate: '45deg' }],
-  },
-  heroShapeBlueSquare: {
-    width: 80,
-    height: 80,
-    backgroundColor: DEFAULT_THEME_COLOR,
-    transform: [{ rotate: '15deg' }],
-  },
-  centeredFestivalBox: {
-    backgroundColor: 'white',
-    paddingVertical: 30,
-    paddingHorizontal: 80,
-    borderRadius: 8,
     alignItems: 'center',
-    marginVertical: 40,
-  },
-  centeredFestivalText: {
-    fontFamily: 'Inter_400Regular',
-    color: 'black',
-    fontSize: 36,
-    fontWeight: 'bold',
-  },
-  heroBottomShapesGrid: {
-    flexDirection: 'row',
-    width: '100%',
-    paddingHorizontal: 200,
-    justifyContent: 'space-around',
-    marginBottom: 50,
-  },
-  heroBottomShapeCard: {
-    width: 80,
-    height: 80,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroShapePlusSmall: {
-    width: 30,
-    height: 30,
-    borderWidth: 4,
-    borderColor: 'black',
-    transform: [{ rotate: '45deg' }],
   },
   homeHeroBtn: {
     paddingVertical: 14,
-    paddingHorizontal: 60,
+    paddingHorizontal: 40,
     borderRadius: 30,
     borderWidth: 2, 
     backgroundColor: 'transparent', 
@@ -1458,52 +1306,8 @@ const styles = StyleSheet.create({
   homeText: {
     fontFamily: 'Inter_400Regular',
     fontSize: 18,
-    color: '#4B5563',
+    color: '#333',
     lineHeight: 28,
-  },
-  tipCard: {
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowOpacity: 0.05,
-    borderRadius: 8,
-  },
-  tipCardTitle: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#111827',
-  },
-  tipCardDescription: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 22,
-    marginBottom: 15,
-  },
-  tipTagPill: {
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 18,
-    marginRight: 6,
-    marginTop: 6,
-    borderWidth: 0,
-  },
-  tipTagText: {
-    fontFamily: 'Inter_400Regular',
-    color: '#374151',
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  placeholderTipImage: {
-    width: '100%',
-    height: 150,
-    backgroundColor: '#374151',
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
   },
 
   desktopCardImage: {
@@ -1861,3 +1665,4 @@ const styles = StyleSheet.create({
     lineHeight: 22
   }
 });
+
