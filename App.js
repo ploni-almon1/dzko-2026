@@ -82,11 +82,8 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
         pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
 
-        // LOKALIZACE UŽIVATELE
-        map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
-
+        // BEZPEČNÁ LOKALIZACE UŽIVATELE (OCHRANA PŘED SPADNUTÍM)
         var userMarker = null;
-
         function onLocationFound(e) {
             if (!userMarker) {
                 var userIcon = L.divIcon({
@@ -101,7 +98,13 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
             }
         }
 
-        map.on('locationfound', onLocationFound);
+        try {
+            map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
+            map.on('locationfound', onLocationFound);
+            map.on('locationerror', function(e){ console.warn("Lokalizace: ", e.message); });
+        } catch(err) {
+            console.warn("Chyba lokalizace: ", err);
+        }
 
         // TLAČÍTKO PRO VYCENTROVÁNÍ NA POLOHU UŽIVATELE
         var locateControl = L.control({position: 'topright'});
@@ -117,7 +120,7 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
             div.title = 'Ukaž moji polohu';
             div.innerHTML = '<i class="fa-solid fa-location-crosshairs" style="color: black; font-size: 16px;"></i>';
             div.onclick = function(){
-                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
+                try { map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true}); } catch(e){}
             }
             return div;
         };
@@ -289,7 +292,7 @@ export default function App() {
               pocetOblibenych: f['Počet oblíbených'] || 0,
               pocetRezervaci: f['Počet rezervací'] || 0,
               kapacita: f['Kapacita'] || null,
-              highlight: !!f['Highlight'] // 👇 NAČTENÍ CHECKBOXU Z AIRTABLU
+              highlight: !!f['Highlight'] 
             };
           });
 
@@ -391,7 +394,6 @@ export default function App() {
 
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
   
-  // 👇 VÝBĚR HIGHLIGHTŮ PRO ÚVODNÍ STRÁNKU 👇
   const highlightAkce = prednaskyVsechny.filter(item => item.highlight).slice(0, 4);
 
   const handleLocationClick = (mistoText) => {
@@ -959,67 +961,67 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        <View style={isDesktop ? styles.desktopHeader : styles.header}>
-          <TouchableOpacity 
-            style={isDesktop ? styles.headerLeft : {flexDirection: 'row', alignItems: 'center'}}
-            activeOpacity={0.7}
-            onPress={() => {
-              if (isDesktop) {
-                setAktivniTab('Home'); 
-                setDetailAkce(null);
-              } else {
-                setDetailAkce(null);
-                setAktivniTab('Další');
-                setRozbaleno('O festivalu');
-              }
-            }}
-          >
-            <Image 
-              source={require('./assets/star.png')} 
-              style={[styles.headerLogo, { tintColor: themeColor }]} 
-            />
-            <Text style={styles.headerText}>{isDesktop ? "DNY ŽIDOVSKÉ KULTURY OLOMOUC" : "DŽKO"}</Text>
-          </TouchableOpacity>
+        {/* 👇 Obalená hlavička, aby lícovala s obsahem na maximální šířku 1200px 👇 */}
+        <View style={isDesktop ? styles.desktopHeaderWrapper : styles.header}>
+          <View style={isDesktop ? styles.desktopHeaderInner : {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+            <TouchableOpacity 
+              style={isDesktop ? styles.headerLeft : {flexDirection: 'row', alignItems: 'center'}}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (isDesktop) {
+                  setAktivniTab('Home'); 
+                  setDetailAkce(null);
+                } else {
+                  setDetailAkce(null);
+                  setAktivniTab('Další');
+                  setRozbaleno('O festivalu');
+                }
+              }}
+            >
+              <Image 
+                source={require('./assets/star.png')} 
+                style={[styles.headerLogo, { tintColor: themeColor }]} 
+              />
+              <Text style={styles.headerText}>{isDesktop ? "DNY ŽIDOVSKÉ KULTURY OLOMOUC" : "DŽKO"}</Text>
+            </TouchableOpacity>
 
-          {isDesktop && (
-            <View style={styles.desktopHeaderMenu}>
-              <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
-                <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Home'); }}>
-                <Text style={[styles.desktopMenuText, aktivniTab === 'Home' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}>
-                <Text style={styles.desktopMenuText}>ARCHIV</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Další'); setRozbaleno('Pořadatelé'); }}>
-                <Text style={[styles.desktopMenuText, aktivniTab === 'Další' && rozbaleno === 'Pořadatelé' && { color: themeColor, fontWeight: 'bold' }]}>POŘADATELÉ</Text>
-              </TouchableOpacity>
+            {isDesktop && (
+              <View style={styles.desktopHeaderMenu}>
+                <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
+                  <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Home'); }}>
+                  <Text style={[styles.desktopMenuText, aktivniTab === 'Home' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}>
+                  <Text style={styles.desktopMenuText}>ARCHIV</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Další'); setRozbaleno('Pořadatelé'); }}>
+                  <Text style={[styles.desktopMenuText, aktivniTab === 'Další' && rozbaleno === 'Pořadatelé' && { color: themeColor, fontWeight: 'bold' }]}>POŘADATELÉ</Text>
+                </TouchableOpacity>
 
-              {/* HLAVIČKA - SRDÍČKO */}
-              <TouchableOpacity 
-                style={styles.desktopHeaderFavBtn} 
-                onPress={() => { setDetailAkce(null); setAktivniTab('Oblíbené'); }}
-              >
-                <Ionicons 
-                  name={oblibeneIds.length > 0 || (aktivniTab === 'Oblíbené' && !detailAkce) ? "heart" : "heart-outline"} 
-                  size={24} 
-                  color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : "black"} 
-                />
-                {oblibeneIds.length > 0 && (
-                  <Text style={[styles.desktopHeaderFavCount, aktivniTab === 'Oblíbené' && !detailAkce && { color: themeColor }]}>
-                    {oblibeneIds.length}
-                  </Text>
-                )}
-              </TouchableOpacity>
-
-            </View>
-          )}
+                <TouchableOpacity 
+                  style={styles.desktopHeaderFavBtn} 
+                  onPress={() => { setDetailAkce(null); setAktivniTab('Oblíbené'); }}
+                >
+                  <Ionicons 
+                    name={oblibeneIds.length > 0 || (aktivniTab === 'Oblíbené' && !detailAkce) ? "heart" : "heart-outline"} 
+                    size={24} 
+                    color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : "black"} 
+                  />
+                  {oblibeneIds.length > 0 && (
+                    <Text style={[styles.desktopHeaderFavCount, aktivniTab === 'Oblíbené' && !detailAkce && { color: themeColor }]}>
+                      {oblibeneIds.length}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
-          {/* 👇 ÚVODNÍ STRÁNKA POUZE PRO POČÍTAČ 👇 */}
           {aktivniTab === 'Home' && isDesktop && !detailAkce && (
              <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
                
@@ -1030,7 +1032,6 @@ export default function App() {
                    <View style={[styles.homeHeroImage, { backgroundColor: '#333' }]} />
                  )}
                  <View style={styles.homeHeroOverlay}>
-                   {/* 👇 OUTLINE TLAČÍTKO PROGRAM 👇 */}
                    <TouchableOpacity 
                      style={[styles.homeHeroBtn, { borderColor: themeColor }]} 
                      onPress={() => setAktivniTab('Program')}
@@ -1040,18 +1041,19 @@ export default function App() {
                  </View>
                </View>
 
-               <View style={styles.homeContentSection}>
-                 <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
-                 <Text style={styles.homeText}>
-                   Termín festivalu: 12.–18. října 2026{'\n\n'}
-                   19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
-                 </Text>
+               <View style={styles.desktopContent}>
+                 <View style={{ paddingTop: 60, paddingBottom: 20 }}>
+                   <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
+                   <Text style={styles.homeText}>
+                     Termín festivalu: 12.–18. října 2026{'\n\n'}
+                     19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
+                   </Text>
+                 </View>
                </View>
 
-               {/* 👇 NOVÁ SEKCE PRO TVŮJ VÝBĚR (HIGHLIGHTY) 👇 */}
                {highlightAkce.length > 0 && (
-                 <View style={[styles.homeContentSection, { paddingTop: 40, paddingBottom: 20 }]}>
-                   <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
+                 <View style={[styles.desktopContent, { paddingTop: 40, paddingBottom: 40 }]}>
+                   <Text style={[styles.homeSectionTitle, { textAlign: 'center' }]}>TIPY Z PROGRAMU</Text>
                    <View style={styles.desktopGrid}>
                      {highlightAkce.map(vykresliKartu)}
                    </View>
@@ -1068,7 +1070,7 @@ export default function App() {
                 <Text style={styles.pageTitle}>MAPA FESTIVALU</Text>
               </View>
               {Platform.OS === 'web' ? (
-                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder={0} allow="geolocation" />
+                <iframe srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} style={styles.webMap} frameBorder="0" allow="geolocation" />
               ) : (
                 <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
               )}
@@ -1076,7 +1078,8 @@ export default function App() {
           )}
 
           {aktivniTab !== 'Mapa' && aktivniTab !== 'Home' && !detailAkce && (
-            <ScrollView style={styles.content}>
+            // 👇 ZDE JE NOVÝ WRAPPER PRO DESKTOP (Program, Oblíbené, Další) 👇
+            <ScrollView style={isDesktop ? styles.desktopContent : styles.content}>
               {aktivniTab === 'Program' && (
                 <>
                   <View style={styles.pageTitleContainer}>
@@ -1262,7 +1265,16 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
- homeHeroContainer: {
+  /* 👇 OBECNÝ MAX-WIDTH 1200px WRAPPER PRO DESKTOP 👇 */
+  desktopContent: { 
+    flex: 1, 
+    width: '100%', 
+    maxWidth: 1200, 
+    alignSelf: 'center', 
+    paddingHorizontal: 30 
+  },
+
+  homeHeroContainer: {
     width: '100%',
     aspectRatio: 2/1, 
     position: 'relative',
@@ -1290,12 +1302,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1.5,
   },
-  homeContentSection: {
-    maxWidth: 900,
-    alignSelf: 'center',
-    paddingHorizontal: 30,
-    paddingTop: 60,
-  },
   homeSectionTitle: {
     fontFamily: 'Inter_400Regular',
     fontSize: 32,
@@ -1313,8 +1319,8 @@ const styles = StyleSheet.create({
   desktopCardImage: {
     width: '100%',
     aspectRatio: 1.5, 
-    borderTopLeftRadius: 10, 
-    borderTopRightRadius: 10, 
+    borderTopLeftRadius: 16, // Více zaoblené podle návrhu
+    borderTopRightRadius: 16, 
     backgroundColor: '#E5E7EB'
   },
 
@@ -1334,6 +1340,9 @@ const styles = StyleSheet.create({
   desktopDetailScrollView: {
     flex: 1, 
     paddingHorizontal: 30,
+    maxWidth: 1200,
+    alignSelf: 'center',
+    width: '100%',
   },
   desktopBreadcrumbsContainer: {
     flexDirection: 'row',
@@ -1440,28 +1449,37 @@ const styles = StyleSheet.create({
     marginLeft: 6, 
   },
 
+  /* 👇 PŘESNÁ 4-SLOUPCOVÁ MŘÍŽKA PODLE OBRÁZKU 👇 */
   desktopGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -8, 
+    marginHorizontal: -10, // Kompenzuje padding karet
   },
   desktopCardWrapper: {
     width: '25%', 
-    paddingHorizontal: 8,
+    paddingHorizontal: 10, // Mezera mezi kartami
+    marginBottom: 20, // Mezera pod kartami
   },
   mobileCardWrapper: {
     width: '100%',
   },
 
-  desktopHeader: { 
+  /* 👇 HLAVIČKA ZAROVNANÁ NA MAX 1200px 👇 */
+  desktopHeaderWrapper: {
     height: 70,
+    backgroundColor: '#FFFFFF', 
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    justifyContent: 'center',
+  },
+  desktopHeaderInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF', 
-    paddingHorizontal: 30, 
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    width: '100%',
+    maxWidth: 1200,
+    alignSelf: 'center',
+    paddingHorizontal: 30,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -1512,14 +1530,17 @@ const styles = StyleSheet.create({
   favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563', marginBottom: 10, borderBottomWidth: 1, borderColor: '#D1D5DB', paddingBottom: 5 }, 
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
-  daysContainer: { flexDirection: 'row', marginBottom: 20 },
-  dayPill: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: '#D1D5DB', marginRight: 6, backgroundColor: 'transparent' },
+  daysContainer: { flexDirection: 'row', marginBottom: 30 },
+  
+  /* 👇 BUBLINKY ZMĚNĚNÉ PODLE OBRÁZKU 👇 */
+  dayPill: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 25, borderWidth: 1, borderColor: '#D1D5DB', marginRight: 10, backgroundColor: 'transparent' },
   dayText: { fontFamily: 'Inter_400Regular', color: '#374151', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   
-  card: { backgroundColor: '#F3F4F6', borderRadius: 10, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
-  cardContent: { padding: 15 },
-  cardImage: { width: '100%', height: 160, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: '#E5E7EB' },
+  /* 👇 KARTA BÍLÁ A KULATĚJŠÍ 👇 */
+  card: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 3 },
+  cardContent: { padding: 18 }, // Mírně zvětšený padding u textu
+  cardImage: { width: '100%', height: 160, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: '#E5E7EB' },
   
   timeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' },
   cardTime: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563' },
