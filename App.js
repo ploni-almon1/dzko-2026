@@ -1062,6 +1062,12 @@ export default function App() {
                    <View style={styles.desktopGrid}>
                      {highlightAkce.map(vykresliKartu)}
                    </View>
+                   {/* 👇 Tady je vrácený odkaz na další akce 👇 */}
+                   <TouchableOpacity onPress={() => setAktivniTab('Program')} style={{ marginTop: 20 }}>
+                     <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 18, color: '#333', }}>
+                       Další akce v sekci program...
+                     </Text>
+                   </TouchableOpacity>
                  </View>
                )}
 
