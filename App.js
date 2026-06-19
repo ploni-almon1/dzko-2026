@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert, Modal, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert, Modal, useWindowDimensions, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -351,6 +351,19 @@ export default function App() {
 
         setPrednaskyVsechny(upravenaData);
 
+        // 👇 NOVÉ: KONTROLA PARAMETRU ?akce= V URL ADRESE A AUTOMATICKÉ OTEVŘENÍ DETAILU 👇
+        if (Platform.OS === 'web') {
+          const urlParams = new URLSearchParams(window.location.search);
+          const sdileneId = urlParams.get('akce');
+          if (sdileneId) {
+            const nalezenaAkce = upravenaData.find(a => a.id === sdileneId);
+            if (nalezenaAkce) {
+              setDetailAkce(nalezenaAkce);
+              setAktivniTab('Program');
+            }
+          }
+        }
+
         setOblibeneIds(staraSrdicka => {
           const platnaSrdicka = staraSrdicka.filter(id => upravenaData.some(akce => akce.id === id));
           if (platnaSrdicka.length !== staraSrdicka.length) {
@@ -474,6 +487,25 @@ export default function App() {
     setVybranyDen('VŠE');
     setAktivniTab('Program');
     setDetailAkce(null);
+  };
+
+  // 👇 NOVÁ FUNKCE PRO PROCES SDÍLENÍ AKCE (KOPÍROVÁNÍ LINKU NEBO SYSTÉMOVÉ SDÍLENÍ) 👇
+  const sdiletAkci = async (item) => {
+    try {
+      if (Platform.OS === 'web') {
+        const shareUrl = window.location.origin + window.location.pathname + '?akce=' + item.id;
+        await navigator.clipboard.writeText(shareUrl);
+        // Nativní prohlížečový alert funguje na webu 100%
+        window.alert('Zkopírováno!\n\nOdkaz na tuto akci byl zkopírován do schránky.');
+      } else {
+        const shareUrl = 'https://muo.cz/central/dzko-2025/?akce=' + item.id;
+        await Share.share({
+          message: `Dny židovské kultury Olomouc - Podívej se na akci: ${item.nazev}\n${shareUrl}`,
+        });
+      }
+    } catch (error) {
+      console.error('Chyba při sdílení události:', error);
+    }
   };
 
   const ulozNovyMotiv = async () => {
@@ -745,17 +777,34 @@ export default function App() {
         </View>
 
         {/* Sloupec 4: Sociální sítě */}
-        {/* Sloupec 4: Sociální sítě */}
         <View style={[styles.footerSocialCol, !isDesktop && { justifyContent: 'flex-start' }]}>
-          <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
-            <Image source={require('./assets/muo2-icon.png')} style={styles.footerSocialIconImg} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')}>
-            <Image source={require('./assets/facebook2-icon.png')} style={styles.footerSocialIconImg} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
-            <Ionicons name="logo-instagram" size={24} color="black" />
-          </TouchableOpacity>
+          {Platform.OS === 'web' ? (
+            <>
+              {/* Odkazy pro web s tagem <a>, aby se zobrazoval stavový řádek vlevo dole */}
+              <a href="https://muo.cz/central/dzko-2025/" target="_blank" style={{...styles.footerSocialBtn, textDecoration: 'none'}}>
+                <Image source={require('./assets/muo2-icon.png')} style={styles.footerSocialIconImg} />
+              </a>
+              <a href="https://www.facebook.com/profile.php?id=61567469939592" target="_blank" style={{...styles.footerSocialBtn, textDecoration: 'none'}}>
+                <Image source={require('./assets/facebook2-icon.png')} style={styles.footerSocialIconImg} />
+              </a>
+              <a href="https://www.instagram.com/judaistika_upol/" target="_blank" style={{...styles.footerSocialBtn, textDecoration: 'none'}}>
+                <Ionicons name="logo-instagram" size={24} color="black" />
+              </a>
+            </>
+          ) : (
+            <>
+              {/* Klasická dotyková tlačítka pro mobilní aplikaci */}
+              <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
+                <Image source={require('./assets/muo2-icon.png')} style={styles.footerSocialIconImg} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')}>
+                <Image source={require('./assets/facebook2-icon.png')} style={styles.footerSocialIconImg} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
+                <Ionicons name="logo-instagram" size={24} color="black" />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
       </View>
@@ -773,8 +822,12 @@ export default function App() {
 
     return (
       <>
-        <ScrollView style={isDesktop ? styles.desktopDetailScrollView : styles.content} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
+        {/* 👇 ScrollView je teď roztáhnutý naplno do krajů */}
+        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
           
+          {/* 👇 Až tento View drží obsah uvnitř hranice 1270px */}
+          <View style={isDesktop ? styles.desktopDetailScrollView : styles.content}>
+
           {isDesktop ? (
             <View style={styles.desktopBreadcrumbsContainer}>
               <TouchableOpacity onPress={() => setDetailAkce(null)} activeOpacity={0.6}>
@@ -793,16 +846,29 @@ export default function App() {
             <View style={styles.desktopDetailLayout}>
               {/* LEVÝ SLOUPEC (BÍLÁ KARTA) - DESKTOP */}
               <View style={styles.desktopDetailLeftCard}>
-                <View style={styles.desktopTimeLocationRow}>
-                  <Text style={styles.desktopCardTime}>{timeText}</Text>
-                  {mistoText && (
-                    <>
-                      <Text style={styles.desktopCardTime}> | </Text>
-                      <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                        <Text style={styles.desktopCardTime}>{mistoText}</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
+                
+                {/* 👇 ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET (ROZTAŽENO DO STRAN) 👇 */}
+                <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
+                  
+                  {/* Levá část (Čas a Místo) */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={styles.desktopCardTime}>{timeText}</Text>
+                    {mistoText && (
+                      <>
+                        <Text style={styles.desktopCardTime}> | </Text>
+                        <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                          <Text style={styles.desktopCardTime}>{mistoText}</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                  
+                  {/* Pravá část (Tlačítko Sdílet) */}
+                  <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15 }} activeOpacity={0.6}>
+                    <Ionicons name="share-social-outline" size={16} color="black" />
+                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
+                  </TouchableOpacity>
+
                 </View>
                 
                 <Text style={styles.desktopDetailMainTitle}>{item.nazev}</Text>
@@ -918,16 +984,28 @@ export default function App() {
 
               {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
 
-              <View style={styles.detailTimeLocationRow}>
-                <Text style={styles.cardTime}>{timeText}</Text>
-                {mistoText && (
-                  <>
-                    <Text style={styles.cardTime}> | </Text>
-                    <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                      <Text style={styles.locationLink}>{mistoText}</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
+              {/* 👇 ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET PRO MOBIL 👇 */}
+              <View style={[styles.detailTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
+                
+                {/* Levá část (Čas a Místo) */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
+                  <Text style={styles.cardTime}>{timeText}</Text>
+                  {mistoText && (
+                    <>
+                      <Text style={styles.cardTime}> | </Text>
+                      <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                        <Text style={styles.locationLink}>{mistoText}</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+                
+                {/* Pravá část (Tlačítko Sdílet) */}
+                <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2, marginLeft: 10 }} activeOpacity={0.6}>
+                  <Ionicons name="share-social-outline" size={16} color="black" />
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
+                </TouchableOpacity>
+
               </View>
 
               {item.image && (
@@ -1049,7 +1127,10 @@ export default function App() {
           )}
 
           <View style={{ height: 40 }} />
-          {/* VLOŽENÁ PATIČKA DO DETAILU AKCE NA POČÍTAČI/MOBILU */}
+          
+          </View> {/* 👈 ZDE ZAVÍRÁME OMEZOVAČ 1270px */}
+
+          {/* 👇 PATIČKA JE NYNÍ VOLNÁ A NATÁHNE SE AŽ DO KRAJŮ */}
           {vykresliPaticku()}
         </ScrollView>
 
@@ -1157,7 +1238,7 @@ export default function App() {
                  <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
                  <Text style={styles.homeText}>
                    Termín festivalu: 12.–18. října 2026{'\n\n'}
-                   19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
+                   19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky and otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
                  </Text>
                </View>
 
@@ -1338,7 +1419,7 @@ export default function App() {
                       {vykresliPolozkuMenu('Pořadatelé', 'expand', [
                         { label: 'Muzeum umění Olomouc', url: 'https://muo.cz/' },
                         { label: 'Židovská obec Olomouc', url: 'https://kehila-olomouc.cz/rs/' },
-                        { label: 'Centrum judaistických studií', url: 'https://judaistika.upol.cz/' }
+                        { label: 'Centrum judaistických studií', url: 'https://judaistika_upol.cz/' }
                       ])}
                       {vykresliPolozkuMenu('Kontakt', 'expand', 'Produkce festivalu\nAlexandr Jeništa\njenista@muo.cz\n+420 770 147 527\n\nPokladna MUO | CENTRAL\n+420 585 514 241\npokladna@muo.cz\nút–ne 10-18 hodin\n\nMuzeum umění Olomouc\nDenisova 47, 771 11 Olomouc\n+420 585 514 111\ninfo@muo.cz')}
                     </View>
@@ -1935,6 +2016,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    display: 'flex', // 👈 Přidáno pro správné formátování HTML odkazu
   },
   footerSocialIconImg: {
     width: 40,
