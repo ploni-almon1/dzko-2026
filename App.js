@@ -1131,8 +1131,8 @@ const vykresliDetail = () => {
           <View style={{ height: 40 }} />
           </View> {/* 👈 ZDE SE UZAVÍRÁ OMEZOVAČ 1270px */}
 
-          {/* VLOŽENÁ PATIČKA NA CELOU ŠÍŘKU DO DETAILU AKCE NA POČÍTAČI/MOBILU */}
-          {vykresliPaticku()}
+          {/* VLOŽENÁ PATIČKA NA CELOU ŠÍŘKU POUZE NA POČÍTAČI */}
+          {isDesktop && vykresliPaticku()}
         </ScrollView>
 
         <Modal
@@ -1460,8 +1460,8 @@ const vykresliDetail = () => {
                 )}
               </View>
               
-              {/* VLOŽENÁ PATIČKA PRO TYTO TŘI ZÁLOŽKY */}
-              {vykresliPaticku()}
+              {/* VLOŽENÁ PATIČKA POUZE PRO POČÍTAČ */}
+              {isDesktop && vykresliPaticku()}
             </ScrollView>
           )}
 
