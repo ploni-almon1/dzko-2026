@@ -1119,17 +1119,17 @@ export default function App() {
                       <Ionicons name={zobrazitObrazky ? "reorder-three-outline" : "grid-outline"} size={24} color="black" />
                     </TouchableOpacity>
                   </View>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
-                    <TouchableOpacity style={[styles.dayPill, { borderColor: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor }]}
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer]}>
+                    <TouchableOpacity style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor }]}
                       onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
-                      <Text style={[styles.dayText, { color: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
+                      <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
                     </TouchableOpacity>
                     {dny.map((den, index) => {
                       const isActive = (vybranyDen === den && !vybranyTag);
                       return (
-                        <TouchableOpacity key={index} style={[styles.dayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
+                        <TouchableOpacity key={index} style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
                           onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
-                          <Text style={[styles.dayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
+                          <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
                         </TouchableOpacity>
                       )
                     })}
@@ -1165,17 +1165,17 @@ export default function App() {
                     <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
                   </View>
                   
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.daysContainer}>
-                    <TouchableOpacity style={[styles.dayPill, { borderColor: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor }]}
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer]}>
+                    <TouchableOpacity style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor }]}
                       onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
-                      <Text style={[styles.dayText, { color: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
+                      <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
                     </TouchableOpacity>
                     {dny.map((den, index) => {
                       const isActive = (vybranyDen === den && !vybranyTag);
                       return (
-                        <TouchableOpacity key={index} style={[styles.dayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
+                        <TouchableOpacity key={index} style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
                           onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
-                          <Text style={[styles.dayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
+                          <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
                         </TouchableOpacity>
                       )
                     })}
