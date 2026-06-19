@@ -1424,17 +1424,22 @@ const vykresliDetail = () => {
                     </View>
 
                     <View style={styles.socialContainer}>
-                      <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
-                        {/* 👇 Zde vracíme původní muo-icon.png 👇 */}
-                        <Image source={require('./assets/muo-icon.png')} style={[styles.customSocialIcon, { tintColor: 'white' }]} />
+                      
+                      {/* MUO Ikonka - tvůj obrázek oříznutý do kulata */}
+                      <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')} activeOpacity={0.7}>
+                        <Image source={require('./assets/muo-icon.png')} style={styles.customSocialIcon} />
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')}>
-                        {/* 👇 Zde vracíme původní facebook-icon.png 👇 */}
-                        <Image source={require('./assets/facebook-icon.png')} style={[styles.customSocialIcon, { tintColor: 'white' }]} />
+                      
+                      {/* Facebook Ikonka - tvůj černý čtverec oříznutý do kulata */}
+                      <TouchableOpacity onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')} activeOpacity={0.7}>
+                        <Image source={require('./assets/facebook-icon.png')} style={styles.customSocialIcon} />
                       </TouchableOpacity>
+                      
+                      {/* Instagram zůstává jako systémová vektorová ikona */}
                       <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                         <Ionicons name="logo-instagram" size={20} color="white" />
                       </TouchableOpacity>
+                      
                       <TouchableOpacity style={styles.socialCircleBtn} onPress={() => {
                           if (!zobrazitNastaveniBarvy) setNovaBarvaInput(themeColor);
                           setZobrazitNastaveniBarvy(!zobrazitNastaveniBarvy);
@@ -1889,7 +1894,7 @@ const styles = StyleSheet.create({
   socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
   // 👇 Obrázek zmenšíme a změníme na 'contain', aby seděl uvnitř černého kolečka 👇
-  customSocialIcon: { width: 20, height: 20, resizeMode: 'contain' },
+  customSocialIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover'},
   
   colorPickerContainer: { marginTop: 25, padding: 15, backgroundColor: 'white', borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB' },
   colorPickerTitle: { fontFamily: 'Inter_400Regular', fontSize: 16, marginBottom: 10, color: '#111827', fontWeight: 'bold' },
