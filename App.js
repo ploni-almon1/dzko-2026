@@ -9,7 +9,8 @@ import { StatusBar } from 'expo-status-bar';
 const DEFAULT_THEME_COLOR = '#3A24DC'; 
 
 // --- GENERÁTOR MAPY ---
-const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
+// Přidány parametry showExpandButton a isExpanded
+const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandButton = false, isExpanded = false) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -124,25 +125,56 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
 
         map.on('locationfound', onLocationFound);
 
-        // TLAČÍTKO PRO VYCENTROVÁNÍ NA POLOHU UŽIVATELE
-        var locateControl = L.control({position: 'topright'});
-        locateControl.onAdd = function (map) {
-            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-            div.style.backgroundColor = 'white';
-            div.style.width = '30px';
-            div.style.height = '30px';
-            div.style.cursor = 'pointer';
-            div.style.display = 'flex';
-            div.style.alignItems = 'center';
-            div.style.justifyContent = 'center';
-            div.title = 'Ukaž moji polohu';
-            div.innerHTML = '<i class="fa-solid fa-location-crosshairs" style="color: black; font-size: 16px;"></i>';
-            div.onclick = function(){
-                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
+        // 👇 NOVINKA: Odchycení chyby s polohou
+        var userClickedLocate = false; 
+
+        map.on('locationerror', function(e) {
+            if (userClickedLocate) {
+                alert("Nepodařilo se zjistit polohu.\\n\\nDůvod: " + e.message + "\\n\\n1) Zkontrolujte povolení polohy v prohlížeči.\\n2) Pokud testujete na mobilu přes vývojářskou URL, prohlížeč to blokuje kvůli absenci HTTPS šifrování.");
+                userClickedLocate = false;
             }
+        });
+
+        // 👇👇👇 ZDE JSOU OBĚ TLAČÍTKA SLOUČENÁ DO JEDNOHO BLOKU 👇👇👇
+        var customControls = L.control({position: 'topright'});
+        customControls.onAdd = function () {
+            // Vytvoření hlavního boxu (stejný design jako tlačítka + a - v mapě)
+            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+
+            // 1. Tlačítko Zvětšit / Zmenšit (vykreslí se, jen když to v App.js povolíme)
+            if (${showExpandButton}) {
+                var expandBtn = L.DomUtil.create('a', '', div);
+                expandBtn.href = '#';
+                expandBtn.title = ${isExpanded ? "'Zmenšit mapu'" : "'Zvětšit mapu'"};
+                expandBtn.style.display = 'flex';
+                expandBtn.style.alignItems = 'center';
+                expandBtn.style.justifyContent = 'center';
+                expandBtn.style.color = 'black';
+                expandBtn.innerHTML = '<i class="fa-solid ${isExpanded ? "fa-compress" : "fa-expand"}" style="font-size: 16px;"></i>';
+                expandBtn.onclick = function(e){
+                    e.preventDefault(); // Zabrání přeskočení stránky nahoru
+                    window.parent.postMessage(${isExpanded ? "'CONTRACT_MAP'" : "'EXPAND_MAP'"}, '*'); // Pošle signál do aplikace
+                };
+            }
+
+            // 2. Tlačítko Moje Poloha (vykreslí se rovnou pod to zvětšovací do stejného bloku)
+            var locateBtn = L.DomUtil.create('a', '', div);
+            locateBtn.href = '#';
+            locateBtn.title = 'Ukaž moji polohu';
+            locateBtn.style.display = 'flex';
+            locateBtn.style.alignItems = 'center';
+            locateBtn.style.justifyContent = 'center';
+            locateBtn.style.color = 'black';
+            locateBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs" style="font-size: 16px;"></i>';
+            locateBtn.onclick = function(e){
+                e.preventDefault();
+                userClickedLocate = true; // Zaznamenáme, že jsi ručně kliknul
+                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
+            };
+
             return div;
         };
-        locateControl.addTo(map);
+        customControls.addTo(map);
 
     </script>
 </body>
@@ -190,6 +222,7 @@ export default function App() {
   const [mapFocus, setMapFocus] = useState(null);
   const [rozbaleno, setRozbaleno] = useState(null);
   const [detailAkce, setDetailAkce] = useState(null);
+  const [homeMapaZvetsena, setHomeMapaZvetsena] = useState(false); // Nový stav pro zvětšení mapy na Home
 
   const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
 
@@ -229,6 +262,14 @@ export default function App() {
       
       document.body.style.backgroundColor = '#F3F4F6';
       document.documentElement.style.backgroundColor = '#F3F4F6';
+
+      // 👇 Přijímání signálů z tlačítek uvnitř mapy (HTML)
+      const handleMapMessage = (event) => {
+        if (event.data === 'EXPAND_MAP') setHomeMapaZvetsena(true);
+        if (event.data === 'CONTRACT_MAP') setHomeMapaZvetsena(false);
+      };
+      window.addEventListener('message', handleMapMessage);
+      return () => window.removeEventListener('message', handleMapMessage);
     }
   }, []);
 
@@ -599,7 +640,6 @@ export default function App() {
                     <>
                       <Text style={styles.desktopCardTime}> | </Text>
                       <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                        {/* Zde bylo smazáno {textDecorationLine: 'underline'} */}
                         <Text style={styles.desktopCardTime}>{mistoText}</Text>
                       </TouchableOpacity>
                     </>
@@ -695,7 +735,6 @@ export default function App() {
                     <>
                       <Text style={styles.desktopCardTime}> | </Text>
                       <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                        {/* Zde bylo smazáno {textDecorationLine: 'underline'} */}
                         <Text style={styles.desktopCardTime}>{mistoText}</Text>
                       </TouchableOpacity>
                     </>
@@ -981,7 +1020,7 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        {/* 👇 ODDĚLENÁ DESKTOPOVÁ A MOBILNÍ HLAVIČKA PRO BEZPEČNOU ÚPRAVU 👇 */}
+        {/* 👇 ODDĚLENÁ DESKTOPOVÁ A MOBILNÍ HLAVIČKA 👇 */}
         <View style={isDesktop ? styles.desktopHeader : styles.header}>
           {isDesktop ? (
             <View style={styles.desktopHeaderInner}>
@@ -1001,7 +1040,7 @@ export default function App() {
                 <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Home'); }}>
                   <Text style={[styles.desktopMenuText, aktivniTab === 'Home' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
+                <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
                   <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}>
@@ -1032,6 +1071,7 @@ export default function App() {
           
           {/* 👇 ÚVODNÍ STRÁNKA POUZE PRO POČÍTAČ 👇 */}
           {aktivniTab === 'Home' && isDesktop && !detailAkce && (
+            <>
              <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
                
                <View style={styles.homeHeroContainer}>
@@ -1062,23 +1102,23 @@ export default function App() {
                    <View style={styles.desktopGrid}>
                      {highlightAkce.map(vykresliKartu)}
                    </View>
-                   {/* 👇 Tady je vrácený odkaz na další akce 👇 */}
                    <TouchableOpacity onPress={() => setAktivniTab('Program')} style={{ marginTop: 20 }}>
-                     <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 18, color: '#333', }}>
+                     <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 18, color: '#333' }}>
                        Další akce v sekci program...
                      </Text>
                    </TouchableOpacity>
                  </View>
                )}
 
-               {/* 👇 MAPA PŘIDANÁ PŘÍMO NA HOME SCREEN - UPRAVENO NA VELIKOST 600px 👇 */}
+               {/* 👇 NÁHLEDOVÁ MAPA PŘÍMO NA HOME SCREEN 👇 */}
                <View style={[styles.homeContentSection, { paddingTop: 80, paddingBottom: 60 }]}>
                  <Text style={styles.homeSectionTitle}>MAPA</Text>
                  <View style={{ width: '100%', height: 600, borderRadius: 0, overflow: 'hidden', backgroundColor: '#E5E7EB' }}>
                     {Platform.OS === 'web' ? (
+                      // Předáváme "true" pro zobrazení tlačítka a "false" protože mapa ještě není zvětšená
                       <iframe 
                         key="home-map" 
-                        srcDoc={generateMapHtml(null, null, null, themeColor)} 
+                        srcDoc={generateMapHtml(null, null, null, themeColor, true, false)} 
                         style={{ width: '100%', height: '100%', border: 'none', display: 'block' }} 
                         allow="geolocation" 
                         title="Mapa DŽKO"
@@ -1091,13 +1131,33 @@ export default function App() {
                
                <View style={{ height: 100 }} />
              </ScrollView>
+
+             {/* 👇 VRSTVA ZVĚTŠENÉ MAPY - Překrývá obsah pod lištou! 👇 */}
+             {homeMapaZvetsena && (
+               <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, backgroundColor: '#F3F4F6' }}>
+                  {Platform.OS === 'web' ? (
+                    // Předáváme "true" (chceme tlačítko) a "true" (mapa je zvětšená, ukáže se zmenšovací šipka)
+                    <iframe 
+                      key="fullscreen-home-map" 
+                      srcDoc={generateMapHtml(null, null, null, themeColor, true, true)} 
+                      style={{ width: '100%', height: '100%', border: 'none' }} 
+                      allow="geolocation" 
+                      title="Mapa DŽKO Fullscreen"
+                    />
+                  ) : (
+                    <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
+                  )}
+               </View>
+             )}
+            </>
           )}
 
           {aktivniTab === 'Mapa' && (
             <View style={{ flex: 1 }}>
               {Platform.OS === 'web' ? (
+                // Zde v normální záložce Mapa zvětšovací tlačítko nechceme (předáváme false)
                 <iframe 
-                  srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor)} 
+                  srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor, false, false)} 
                   style={{ width: '100%', height: '100%', border: 'none' }} 
                   allow="geolocation" 
                 />
@@ -1112,7 +1172,7 @@ export default function App() {
               {aktivniTab === 'Program' && (
                 <View style={isDesktop ? styles.desktopContainer : null}>
                   <View style={styles.pageTitleContainer}>
-                    <TouchableOpacity onPress={() => { setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
+                    <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                       <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
@@ -1120,15 +1180,11 @@ export default function App() {
                     </TouchableOpacity>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer]}>
-                    <TouchableOpacity style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor }]}
-                      onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
-                      <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
-                    </TouchableOpacity>
                     {dny.map((den, index) => {
                       const isActive = (vybranyDen === den && !vybranyTag);
                       return (
                         <TouchableOpacity key={index} style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
-                          onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
+                          onPress={() => { setVybranyDen(isActive ? 'VŠE' : den); setVybranyTag(null); }}>
                           <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
                         </TouchableOpacity>
                       )
@@ -1162,19 +1218,17 @@ export default function App() {
               {aktivniTab === 'Oblíbené' && (
                 <View style={[isDesktop ? styles.desktopContainer : null, { paddingBottom: 20 }]}>
                   <View style={styles.pageTitleContainer}>
-                    <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
+                    <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
+                      <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
+                    </TouchableOpacity>
                   </View>
                   
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer]}>
-                    <TouchableOpacity style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && { backgroundColor: themeColor }]}
-                      onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }}>
-                      <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, vybranyDen === 'VŠE' && !vybranyTag && styles.dayTextActive]}>VŠE</Text>
-                    </TouchableOpacity>
                     {dny.map((den, index) => {
                       const isActive = (vybranyDen === den && !vybranyTag);
                       return (
                         <TouchableOpacity key={index} style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
-                          onPress={() => { setVybranyDen(den); setVybranyTag(null); }}>
+                          onPress={() => { setVybranyDen(isActive ? 'VŠE' : den); setVybranyTag(null); }}>
                           <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
                         </TouchableOpacity>
                       )
@@ -1265,7 +1319,7 @@ export default function App() {
 
           {!isDesktop && (
             <View style={styles.bottomNav}>
-              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen(ziskejVychoziDen()); setVybranyTag(null); setDetailAkce(null); }}>
+              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
                 <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? themeColor : 'black'} />
                 <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? themeColor : 'black' }]}>Program</Text>
               </TouchableOpacity>
@@ -1322,7 +1376,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1.5,
   },
-  // 👇 Hlavní kontejner pro úvodní obrazovku zarovnaný na stejnou linii
   homeContentSection: {
     width: '100%',
     maxWidth: 1240, 
@@ -1365,7 +1418,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular', fontSize: 13, fontWeight: '600'
   },
 
-  // 👇 Kontejner detailu akce zarovnaný s hlavičkou
   desktopDetailScrollView: {
     flex: 1, 
     width: '100%',
@@ -1504,7 +1556,6 @@ const styles = StyleSheet.create({
     elevation: 5, 
     zIndex: 10,
   },
-  // 👇 Hlavička se nyní lícovat s Programem přesně na 1240px
   desktopHeaderInner: {
     width: '100%',
     maxWidth: 1240, 
@@ -1529,7 +1580,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // 👇 Centrální kontejner (obal) pro sekci Program a Oblíbené (PC verze)
   desktopContainer: {
     width: '100%',
     maxWidth: 1240,
@@ -1556,7 +1606,6 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 15 },
   mapTabContainer: { flex: 1, paddingHorizontal: 15 },
 
-  // 👇 Upravené styly programu (Zvětšený nadpis, změněné "Pilulky" filtrů a nadpisy dnů) 👇
   pageTitleContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, marginBottom: 15 },
   pageTitle: { fontFamily: 'Inter_400Regular', fontSize: 32, letterSpacing: 1 },
 
@@ -1571,13 +1620,11 @@ const styles = StyleSheet.create({
   favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 20, color: '#000', marginBottom: 15, marginTop: 15 }, 
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
-  // 👇 ZÁKLADNÍ (MOBILNÍ) STYLY PRO DNY - Vráceno na původní malou velikost
   daysContainer: { flexDirection: 'row', marginBottom: 20 },
   dayPill: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   dayText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   
-  // 👇 DESKTOPOVÉ STYLY PRO DNY - Pevná velikost pro přesné lícování s kartami
   desktopDaysContainer: { marginBottom: 30 },
   desktopDayPill: { width: 86, height: 36, borderRadius: 18, marginRight: 16, paddingVertical: 0, paddingHorizontal: 0 },
   desktopDayText: { fontSize: 14 },
@@ -1587,10 +1634,10 @@ const styles = StyleSheet.create({
     borderRadius: 10, 
     marginBottom: 15, 
     shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, // 👈 Posunuto o kousek víc dolů
-    shadowOpacity: 0.12,                   // 👈 Nepatrně tmavší
-    shadowRadius: 8,                       // 👈 Větší rozmazání, aby stín zůstal měkký
-    elevation: 5                           // 👈 Adekvátní zvětšení pro Android
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.12,                   
+    shadowRadius: 8,                       
+    elevation: 5                           
   },
   cardContent: { padding: 15 },
   cardImage: { width: '100%', height: 160, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: '#E5E7EB' },
