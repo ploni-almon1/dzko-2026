@@ -1888,7 +1888,8 @@ const styles = StyleSheet.create({
   
   socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
-  customSocialIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover' },
+  // 👇 Obrázek zmenšíme a změníme na 'contain', aby seděl uvnitř černého kolečka 👇
+  customSocialIcon: { width: 20, height: 20, resizeMode: 'contain' },
   
   colorPickerContainer: { marginTop: 25, padding: 15, backgroundColor: 'white', borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB' },
   colorPickerTitle: { fontFamily: 'Inter_400Regular', fontSize: 16, marginBottom: 10, color: '#111827', fontWeight: 'bold' },
