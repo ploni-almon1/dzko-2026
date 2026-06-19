@@ -113,7 +113,7 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandB
             if (!userMarker) {
                 var userIcon = L.divIcon({
                     className: 'dzko-user-pin',
-                    html: '<div style="background-color: #3B82F6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>',
+                    html: '<div style="background-color: #3A24DC; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>',
                     iconSize: [22, 22],
                     iconAnchor: [11, 11]
                 });
