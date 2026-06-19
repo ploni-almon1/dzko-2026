@@ -22,7 +22,6 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandB
         body { padding: 0; margin: 0; }
         html, body, #map { height: 100%; width: 100%; background-color: #F3F4F6; }
         
-        /* ODBARVENÍ PRO VŠECHNY PROHLÍŽEČE VČETNĚ MOBILŮ */
         .leaflet-tile-pane {
             -webkit-filter: grayscale(95%) brightness(1.1) contrast(0.9);
             filter: grayscale(95%) brightness(1.1) contrast(0.9);
@@ -127,8 +126,8 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandB
             }
         });
 
-        // SLOUČENÝ OVLÁDACÍ BLOK PRO TLAČÍTKA V MAPĚ
-        var customControls = L.control({position: 'topright'});
+        // Tlačítko pro polohu (a zvětšení) umístěné do LEVÉHO HORNÍHO ROHU hned pod +/-
+        var customControls = L.control({position: 'topleft'});
         customControls.onAdd = function () {
             var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
 
@@ -206,13 +205,20 @@ export default function App() {
   const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
   
   const [oblibeneIds, setOblibeneIds] = useState([]);
+  
+  // 👇 Paměť pro režim prohlížení sdíleného cizího výběru 👇
+  const [sdilenyVyberIds, setSdilenyVyberIds] = useState(null); 
+  
   const [mojeRezervace, setMojeRezervace] = useState([]);
   const [vybranyTag, setVybranyTag] = useState(null);
   const [mapFocus, setMapFocus] = useState(null);
   const [rozbaleno, setRozbaleno] = useState(null);
+  
   const [detailAkce, setDetailAkce] = useState(null);
+  const [historieAkce, setHistorieAkce] = useState(null); // Paměť pro mobilní tlačítko Zpět
+  const [mapaModalVisible, setMapaModalVisible] = useState(false); // Spínač pro PC okno s mapou
+  
   const [homeMapaZvetsena, setHomeMapaZvetsena] = useState(false);
-
   const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
 
   const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
@@ -351,15 +357,32 @@ export default function App() {
 
         setPrednaskyVsechny(upravenaData);
 
-        // 👇 NOVÉ: KONTROLA PARAMETRU ?akce= V URL ADRESE A AUTOMATICKÉ OTEVŘENÍ DETAILU 👇
+        // ČTENÍ URL PARAMETRŮ PŘI STARTU
         if (Platform.OS === 'web') {
           const urlParams = new URLSearchParams(window.location.search);
+          
+          // 1. Čtení jedné sdílené akce
           const sdileneId = urlParams.get('akce');
           if (sdileneId) {
             const nalezenaAkce = upravenaData.find(a => a.id === sdileneId);
             if (nalezenaAkce) {
               setDetailAkce(nalezenaAkce);
               setAktivniTab('Program');
+            }
+          }
+          
+          // 2. Čtení sdíleného seznamu oblíbených (režim PROHLÍŽENÍ cizího výběru)
+          const sdileneOblibene = urlParams.get('oblibene');
+          if (sdileneOblibene) {
+            const sdileneIds = sdileneOblibene.split(',');
+            const platneSdileneIds = sdileneIds.filter(id => upravenaData.some(a => a.id === id));
+            
+            if (platneSdileneIds.length > 0) {
+              // Uloží se jen do dočasné proměnné, neukládá se do paměti telefonu!
+              setSdilenyVyberIds(platneSdileneIds); 
+              setAktivniTab('Oblíbené');
+              setVybranyDen('VŠE');
+              setVybranyTag(null);
             }
           }
         }
@@ -450,16 +473,25 @@ export default function App() {
     ? prednaskyVsechny.filter(item => item.tag && item.tag.includes(vybranyTag))
     : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
 
-  const oblibeneZobrazeni = prednaskyVsechny.filter(item => oblibeneIds.includes(item.id));
+  // 👇 Změněno: Pro záložku Oblíbené se rozhodujeme, co zrovna ukazujeme (sdílený výběr NEBO vlastní)
+  const aktivniOblibeneIds = sdilenyVyberIds ? sdilenyVyberIds : oblibeneIds;
+  const oblibeneZobrazeni = prednaskyVsechny.filter(item => aktivniOblibeneIds.includes(item.id));
   
   const highlightAkce = prednaskyVsechny.filter(item => item.highlight).slice(0, 4);
 
+  // Chytře rozdělená logika prokliků na lokaci místa
   const handleLocationClick = (mistoText) => {
     const coords = mapaLokace[mistoText];
-    if (coords) setMapFocus(coords); 
-    else setMapFocus(null);
-    setDetailAkce(null);
-    setAktivniTab('Mapa');
+    if (coords) {
+      setMapFocus(coords); 
+      if (isDesktop) {
+        setMapaModalVisible(true); // PC = luxusní AFO okno s rozmazaným sklem
+      } else {
+        if (detailAkce) setHistorieAkce(detailAkce); // Mobil = nativní záložka s pamětí Zpět
+        setDetailAkce(null);
+        setAktivniTab('Mapa');
+      }
+    }
   };
 
   const handleMenuPress = (nazev, type, content) => {
@@ -489,13 +521,10 @@ export default function App() {
     setDetailAkce(null);
   };
 
- // 👇 NOVÁ FUNKCE PRO PROCES SDÍLENÍ AKCE (KOPÍROVÁNÍ LINKU NEBO SYSTÉMOVÉ SDÍLENÍ) 👇
   const sdiletAkci = async (item) => {
     try {
       if (Platform.OS === 'web') {
         const shareUrl = window.location.origin + window.location.pathname + '?akce=' + item.id;
-        
-        // Zkusíme zavolat hezké nativní okno (Web Share API)
         if (navigator.share) {
           await navigator.share({
             title: 'Dny židovské kultury Olomouc',
@@ -503,20 +532,48 @@ export default function App() {
             url: shareUrl,
           });
         } else {
-          // Záložní řešení: Pokud to prohlížeč neumí, jen to zkopírujeme
           await navigator.clipboard.writeText(shareUrl);
           window.alert('Zkopírováno!\n\nOdkaz na tuto akci byl zkopírován do schránky. Můžeš ho poslat kamarádovi (vložit zkratkou Ctrl+V nebo Cmd+V).');
         }
       } else {
-        // Nativní sdílení, když z toho bude reálná mobilní aplikace (z Google Play / App Store)
         const shareUrl = 'https://muo.cz/central/dzko-2025/?akce=' + item.id;
         await Share.share({
           message: `Dny židovské kultury Olomouc - Podívej se na akci: ${item.nazev}\n${shareUrl}`,
         });
       }
     } catch (error) {
-      // Ignorujeme chybu, která vznikne, když uživatel vyskakovací okno prostě zavře křížkem
-      console.log('Sdílení zrušeno nebo selhalo.');
+      console.log('Sdílení zrušeno.');
+    }
+  };
+
+  // FUNKCE: SDÍLENÍ CELÉHO SEZNAMU OBLÍBENÝCH NAJEDNOU
+  const sdiletOblibene = async () => {
+    if (oblibeneIds.length === 0) {
+      window.alert('Nemáš v oblíbených žádné akce, které bys mohl sdílet.');
+      return;
+    }
+    try {
+      const idsString = oblibeneIds.join(',');
+      if (Platform.OS === 'web') {
+        const shareUrl = window.location.origin + window.location.pathname + '?oblibene=' + idsString;
+        if (navigator.share) {
+          await navigator.share({
+            title: 'Můj festivalový výběr - DŽKO',
+            text: 'Podívej se na akce, které jsem si vybral z festivalu Dny židovské kultury Olomouc a pojď se mnou!',
+            url: shareUrl,
+          });
+        } else {
+          await navigator.clipboard.writeText(shareUrl);
+          window.alert('Zkopírováno!\n\nOdkaz na tvůj kompletní výběr oblíbených akcí byl zkopírován. Můžeš ho poslat kamarádovi (Ctrl+V / Cmd+V).');
+        }
+      } else {
+        const shareUrl = 'https://muo.cz/central/dzko-2025/?oblibene=' + idsString;
+        await Share.share({
+          message: `Podívej se na akce, které jsem si vybral z festivalu Dny židovské kultury Olomouc a pojď se mnou!\n${shareUrl}`,
+        });
+      }
+    } catch (error) {
+      console.log('Sdílení výběru zrušeno.');
     }
   };
 
@@ -669,7 +726,6 @@ export default function App() {
           onPress={() => otevriDetail(item)} 
           activeOpacity={0.7}
         >
-          {/* OBRÁZEK */}
           {item.image ? (
             <Image 
               source={{ uri: item.image }} 
@@ -691,7 +747,6 @@ export default function App() {
             </View>
           )}
 
-          {/* OBSAH KARTY */}
           <View style={[styles.cardContent, !isGrid && isDesktop && { flex: 1, paddingHorizontal: 25, paddingVertical: 20 }]}>
             <View style={styles.timeLocationRow}>
               <Text style={styles.cardTime}>{timeText}</Text>
@@ -705,19 +760,16 @@ export default function App() {
               )}
             </View>
             
-            {/* Limitován počet řádků nadpisu v list view */}
             <Text style={[styles.cardTitle, !isGrid && isDesktop && { fontSize: 22, marginTop: 5 }]} numberOfLines={isGrid ? undefined : 2}>{item.nazev}</Text>
             
             {item.host !== '' && <Text style={styles.cardHost} numberOfLines={isGrid ? undefined : 1}>{item.roleHosta}: {item.host}</Text>}
             
-            {/* ANOTACE */}
             {!isGrid && item.popis && (
               <Text style={styles.listAnnotation} numberOfLines={3}>
                 {item.popis}
               </Text>
             )}
             
-            {/* TAGY A SRDÍČKO */}
             <View style={[styles.cardBottomRow, !isGrid && isDesktop && { marginTop: 'auto', paddingTop: 10 }]}>
               <View style={styles.tagsContainer}>
                 {item.tag && item.tag.map((t, index) => (
@@ -764,35 +816,28 @@ export default function App() {
     );
   };
 
-  // 👇 NOVÁ FUNKCE PRO SPODNÍ ČERNOU LIŠTU (FOOTER) 👇
   const vykresliPaticku = () => (
     <View style={styles.footerContainer}>
-      {/* 👇 Přidáno alignItems: 'flex-start' pro mobily, aby texty zůstaly vlevo */}
       <View style={[styles.footerInner, !isDesktop && { flexDirection: 'column', alignItems: 'flex-start' }]}>
         
-        {/* Sloupec 1: Logo a název */}
         <View style={[styles.footerLogoCol, !isDesktop && { marginBottom: 35 }]}>
           <Image source={require('./assets/star.png')} style={[styles.footerLogo, { tintColor: '#FFFFFF' }]} />
           <Text style={styles.footerTitleText}>DNY{'\n'}ŽIDOVSKÉ{'\n'}KULTURY{'\n'}OLOMOUC</Text>
         </View>
 
-        {/* Sloupec 2: Produkce */}
         <View style={[styles.footerTextCol, !isDesktop && { marginBottom: 30 }]}>
           <Text style={styles.footerLabel}>PRODUKCE FESTIVALU</Text>
           <Text style={styles.footerText}>Alexandr Jeništa{'\n'}jenista@muo.cz{'\n'}+420 770 147 527</Text>
         </View>
 
-        {/* Sloupec 3: Pokladna */}
         <View style={[styles.footerTextCol, !isDesktop && { marginBottom: 30 }]}>
           <Text style={styles.footerLabel}>POKLADNA MUO | CENTRAL</Text>
           <Text style={styles.footerText}>+420 585 514 241{'\n'}pokladna@muo.cz{'\n'}út–ne 10-18 hodin</Text>
         </View>
 
-        {/* Sloupec 4: Sociální sítě */}
         <View style={[styles.footerSocialCol, !isDesktop && { justifyContent: 'flex-start' }]}>
           {Platform.OS === 'web' ? (
             <>
-              {/* Odkazy pro web s tagem <a>, aby se zobrazoval stavový řádek vlevo dole */}
               <a href="https://muo.cz/central/dzko-2025/" target="_blank" style={{...styles.footerSocialBtn, textDecoration: 'none'}}>
                 <Image source={require('./assets/muo2-icon.png')} style={styles.footerSocialIconImg} />
               </a>
@@ -805,7 +850,6 @@ export default function App() {
             </>
           ) : (
             <>
-              {/* Klasická dotyková tlačítka pro mobilní aplikaci */}
               <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
                 <Image source={require('./assets/muo2-icon.png')} style={styles.footerSocialIconImg} />
               </TouchableOpacity>
@@ -823,7 +867,7 @@ export default function App() {
     </View>
   );
 
-const vykresliDetail = () => {
+  const vykresliDetail = () => {
     const item = detailAkce;
     const casParts = item.cas.split(' | ');
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
@@ -834,10 +878,8 @@ const vykresliDetail = () => {
 
     return (
       <>
-        {/* ScrollView natažen do stran */}
         <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
           
-          {/* Vnitřní obal udržující šířku 1270px */}
           <View style={isDesktop ? styles.desktopDetailScrollView : styles.content}>
 
           {isDesktop ? (
@@ -859,7 +901,7 @@ const vykresliDetail = () => {
               {/* LEVÝ SLOUPEC (BÍLÁ KARTA) - DESKTOP */}
               <View style={styles.desktopDetailLeftCard}>
                 
-                {/* 👇 ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET (DESKTOP) 👇 */}
+                {/* ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET (DESKTOP) */}
                 <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={styles.desktopCardTime}>{timeText}</Text>
@@ -991,7 +1033,6 @@ const vykresliDetail = () => {
 
               {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
 
-              {/* 👇 ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET PRO MOBIL 👇 */}
               <View style={[styles.detailTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
                   <Text style={styles.cardTime}>{timeText}</Text>
@@ -1129,7 +1170,7 @@ const vykresliDetail = () => {
           )}
 
           <View style={{ height: 40 }} />
-          </View> {/* 👈 ZDE SE UZAVÍRÁ OMEZOVAČ 1270px */}
+          </View> 
 
           {/* VLOŽENÁ PATIČKA NA CELOU ŠÍŘKU POUZE NA POČÍTAČI */}
           {isDesktop && vykresliPaticku()}
@@ -1159,6 +1200,8 @@ const vykresliDetail = () => {
       </>
     );
   };
+
+  if (!fontsLoaded || loading) return <ActivityIndicator size="large" color={themeColor} style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
   if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
 
   return (
@@ -1237,7 +1280,7 @@ const vykresliDetail = () => {
                  <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
                  <Text style={styles.homeText}>
                    Termín festivalu: 12.–18. října 2026{'\n\n'}
-                   19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky and otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
+                   19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
                  </Text>
                </View>
 
@@ -1246,7 +1289,6 @@ const vykresliDetail = () => {
                  <View style={[styles.homeContentSection, { paddingTop: 80, paddingBottom: 20 }]}>
                    <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
                    <View style={styles.desktopGrid}>
-                     {/* Vynutíme zobrazení mřížky na hlavní stránce parametrem "true" */}
                      {highlightAkce.map(item => vykresliKartu(item, true))}
                    </View>
                    <TouchableOpacity onPress={() => setAktivniTab('Program')} style={{ marginTop: 20 }}>
@@ -1275,11 +1317,9 @@ const vykresliDetail = () => {
                  </View>
                </View>
                
-               {/* VLOŽENÁ PATIČKA */}
-               {vykresliPaticku()}
+               {isDesktop && vykresliPaticku()}
              </ScrollView>
 
-             {/* VRSTVA ZVĚTŠENÉ MAPY - Překrývá obsah pod lištou */}
              {homeMapaZvetsena && (
                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, backgroundColor: '#F3F4F6' }}>
                   {Platform.OS === 'web' ? (
@@ -1298,12 +1338,31 @@ const vykresliDetail = () => {
             </>
           )}
 
+          {/* MOBILNÍ ZÁLOŽKA MAPA (S tlačítkem zpět z detailu) */}
           {aktivniTab === 'Mapa' && (
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+              
+              {!isDesktop && historieAkce && (
+                <View style={{ paddingHorizontal: 15 }}>
+                  <TouchableOpacity 
+                    style={[styles.backBtn, { marginTop: 15, marginBottom: 15 }]} 
+                    onPress={() => {
+                      setDetailAkce(historieAkce);
+                      setAktivniTab('Program');
+                      setHistorieAkce(null);
+                    }}
+                    activeOpacity={0.6}
+                  >
+                    <Ionicons name="arrow-back" size={20} color={themeColor} />
+                    <Text style={[styles.backBtnText, { color: themeColor }]}>Zpět na detail akce</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
               {Platform.OS === 'web' ? (
                 <iframe 
                   srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor, false, false)} 
-                  style={{ width: '100%', height: '100%', border: 'none' }} 
+                  style={{ width: '100%', flex: 1, border: 'none' }} 
                   allow="geolocation" 
                 />
               ) : (
@@ -1363,11 +1422,34 @@ const vykresliDetail = () => {
                 
                 {aktivniTab === 'Oblíbené' && (
                   <View style={[isDesktop ? styles.desktopContainer : null, { paddingBottom: 20 }]}>
+                    
+                    {/* HORNÍ LIŠTA ZÁLOŽKY OBLÍBENÉ */}
                     <View style={styles.pageTitleContainer}>
                       <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
-                        <Text style={styles.pageTitle}>OBLÍBENÉ</Text>
+                        {/* Dynamický nápis podle toho, co prohlížíme */}
+                        <Text style={styles.pageTitle}>{sdilenyVyberIds ? 'SDÍLENÝ VÝBĚR' : 'OBLÍBENÉ'}</Text>
                       </TouchableOpacity>
+                      
+                      {/* Tlačítko pro sdílení - Schová se, když si zrovna prohlížíme cizí seznam */}
+                      {!sdilenyVyberIds && oblibeneIds.length > 0 && (
+                        <TouchableOpacity onPress={sdiletOblibene} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: themeColor, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20 }} activeOpacity={0.7}>
+                          <Ionicons name="share-social-outline" size={16} color="white" />
+                          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, marginLeft: 6, color: 'white', fontWeight: 'bold' }}>Sdílet výběr</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
+
+                    {/* 👇 INFORMAČNÍ PANEL O PROHLÍŽENÍ SDÍLENÉHO VÝBĚRU 👇 */}
+                    {sdilenyVyberIds && (
+                      <View style={{ backgroundColor: '#E0E7FF', padding: 15, borderRadius: 10, marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontFamily: 'Inter_400Regular', color: themeColor, flex: 1, paddingRight: 10, lineHeight: 20 }}>
+                          Prohlížíš si sdílený výběr akcí. Tvoje vlastní oblíbené akce zůstaly nedotčeny.
+                        </Text>
+                        <TouchableOpacity onPress={() => setSdilenyVyberIds(null)} style={{ backgroundColor: themeColor, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}>
+                          <Text style={{ color: 'white', fontFamily: 'Inter_400Regular', fontWeight: 'bold' }}>Zavřít</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
                     
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer]}>
                       {dny.map((den, index) => {
@@ -1418,28 +1500,21 @@ const vykresliDetail = () => {
                       {vykresliPolozkuMenu('Pořadatelé', 'expand', [
                         { label: 'Muzeum umění Olomouc', url: 'https://muo.cz/' },
                         { label: 'Židovská obec Olomouc', url: 'https://kehila-olomouc.cz/rs/' },
-                        { label: 'Centrum judaistických studií', url: 'https://judaistika_upol.cz/' }
+                        { label: 'Centrum judaistických studií', url: 'https://judaistika.upol.cz/' }
                       ])}
                       {vykresliPolozkuMenu('Kontakt', 'expand', 'Produkce festivalu\nAlexandr Jeništa\njenista@muo.cz\n+420 770 147 527\n\nPokladna MUO | CENTRAL\n+420 585 514 241\npokladna@muo.cz\nút–ne 10-18 hodin\n\nMuzeum umění Olomouc\nDenisova 47, 771 11 Olomouc\n+420 585 514 111\ninfo@muo.cz')}
                     </View>
 
                     <View style={styles.socialContainer}>
-                      
-                      {/* MUO Ikonka - tvůj obrázek oříznutý do kulata */}
                       <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')} activeOpacity={0.7}>
                         <Image source={require('./assets/muo-icon.png')} style={styles.customSocialIcon} />
                       </TouchableOpacity>
-                      
-                      {/* Facebook Ikonka - tvůj černý čtverec oříznutý do kulata */}
                       <TouchableOpacity onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')} activeOpacity={0.7}>
-                        <Image source={require('./assets/facebook-icon.png')} style={styles.customSocialIcon} />
+                        <Image source={require('./assets/facebook-icon.png')} style={styles.customFacebookIconImg} />
                       </TouchableOpacity>
-                      
-                      {/* Instagram zůstává jako systémová vektorová ikona */}
                       <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                         <Ionicons name="logo-instagram" size={20} color="white" />
                       </TouchableOpacity>
-                      
                       <TouchableOpacity style={styles.socialCircleBtn} onPress={() => {
                           if (!zobrazitNastaveniBarvy) setNovaBarvaInput(themeColor);
                           setZobrazitNastaveniBarvy(!zobrazitNastaveniBarvy);
@@ -1486,7 +1561,7 @@ const vykresliDetail = () => {
                 <Text style={[styles.navText, { color: aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : 'black' }]}>Oblíbené</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Mapa'); setMapFocus(null); setDetailAkce(null); }}>
+              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Mapa'); setMapFocus(null); setDetailAkce(null); setHistorieAkce(null); }}>
                 <Ionicons name={aktivniTab === 'Mapa' ? "map" : "map-outline"} size={24} color={aktivniTab === 'Mapa' ? themeColor : 'black'} />
                 <Text style={[styles.navText, { color: aktivniTab === 'Mapa' ? themeColor : 'black' }]}>Mapa</Text>
               </TouchableOpacity>
@@ -1498,6 +1573,35 @@ const vykresliDetail = () => {
             </View>
           )}
         </View>
+
+        {/* VYSKAKOVACÍ OKNO PRO MAPU (AFO STYLE - BEZ HORNÍ LIŠTY) */}
+        <Modal
+          visible={mapaModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setMapaModalVisible(false)}
+        >
+          <View style={styles.mapModalOverlay}>
+            <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setMapaModalVisible(false)} />
+            
+            <View style={styles.mapModalContent}>
+              <TouchableOpacity style={styles.mapModalCloseBtn} onPress={() => setMapaModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#000" />
+              </TouchableOpacity>
+              
+              {Platform.OS === 'web' ? (
+                <iframe 
+                  srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor, false, false)} 
+                  style={{ width: '100%', height: '100%', border: 'none', borderRadius: 16 }} 
+                  allow="geolocation" 
+                  title="Mapa detailu"
+                />
+              ) : (
+                <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
+              )}
+            </View>
+          </View>
+        </Modal>
 
       </SafeAreaView>
     </View>
@@ -1893,8 +1997,8 @@ const styles = StyleSheet.create({
   
   socialContainer: { flexDirection: 'row', gap: 15, marginTop: 10 },
   socialCircleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },
-  // 👇 Obrázek zmenšíme a změníme na 'contain', aby seděl uvnitř černého kolečka 👇
-  customSocialIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover'},
+  customSocialIcon: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover' },
+  customFacebookIconImg: { width: 36, height: 36, borderRadius: 18, resizeMode: 'cover' },
   
   colorPickerContainer: { marginTop: 25, padding: 15, backgroundColor: 'white', borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB' },
   colorPickerTitle: { fontFamily: 'Inter_400Regular', fontSize: 16, marginBottom: 10, color: '#111827', fontWeight: 'bold' },
@@ -1946,7 +2050,48 @@ const styles = StyleSheet.create({
     lineHeight: 22
   },
   
-  // NOVÉ LAYOUT STYLY PRO SEZNAM/ŘÁDKY
+  // STYLY PRO VYSKAKOVACÍ MAPU
+  mapModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}), 
+  },
+  mapModalContent: {
+    width: '100%',
+    maxWidth: 900,
+    height: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 40,
+    elevation: 10,
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#E5E7EB'
+  },
+  mapModalCloseBtn: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    backgroundColor: 'white',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999, 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 5,
+    elevation: 5
+  },
+
   listCardImageDesktop: {
     width: 360,
     height: 270,
@@ -1963,11 +2108,10 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
 
- // 👇 STYLY PRO ČERNOU PATIČKU 👇
   footerContainer: {
     backgroundColor: '#000000',
     width: '100%',
-    paddingVertical: 25, // 👈 Sníženo z 50 na 25 (užší lišta)
+    paddingVertical: 25, 
     alignItems: 'center',
     marginTop: 60,
   },
@@ -1977,7 +2121,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center', // 👈 Změněno na 'center' pro vertikální zarovnání obsahů vůči sobě
+    alignItems: 'center', 
   },
   footerLogoCol: {
     flexDirection: 'row',
@@ -2023,7 +2167,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    display: 'flex', // 👈 Přidáno pro správné formátování HTML odkazu
+    display: 'flex', 
   },
   footerSocialIconImg: {
     width: 40,
