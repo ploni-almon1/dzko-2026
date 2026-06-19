@@ -489,22 +489,34 @@ export default function App() {
     setDetailAkce(null);
   };
 
-  // 👇 NOVÁ FUNKCE PRO PROCES SDÍLENÍ AKCE (KOPÍROVÁNÍ LINKU NEBO SYSTÉMOVÉ SDÍLENÍ) 👇
+ // 👇 NOVÁ FUNKCE PRO PROCES SDÍLENÍ AKCE (KOPÍROVÁNÍ LINKU NEBO SYSTÉMOVÉ SDÍLENÍ) 👇
   const sdiletAkci = async (item) => {
     try {
       if (Platform.OS === 'web') {
         const shareUrl = window.location.origin + window.location.pathname + '?akce=' + item.id;
-        await navigator.clipboard.writeText(shareUrl);
-        // Nativní prohlížečový alert funguje na webu 100%
-        window.alert('Zkopírováno!\n\nOdkaz na tuto akci byl zkopírován do schránky.');
+        
+        // Zkusíme zavolat hezké nativní okno (Web Share API)
+        if (navigator.share) {
+          await navigator.share({
+            title: 'Dny židovské kultury Olomouc',
+            text: `Podívej se na tuto akci: ${item.nazev}`,
+            url: shareUrl,
+          });
+        } else {
+          // Záložní řešení: Pokud to prohlížeč neumí, jen to zkopírujeme
+          await navigator.clipboard.writeText(shareUrl);
+          window.alert('Zkopírováno!\n\nOdkaz na tuto akci byl zkopírován do schránky. Můžeš ho poslat kamarádovi (vložit zkratkou Ctrl+V nebo Cmd+V).');
+        }
       } else {
+        // Nativní sdílení, když z toho bude reálná mobilní aplikace (z Google Play / App Store)
         const shareUrl = 'https://muo.cz/central/dzko-2025/?akce=' + item.id;
         await Share.share({
           message: `Dny židovské kultury Olomouc - Podívej se na akci: ${item.nazev}\n${shareUrl}`,
         });
       }
     } catch (error) {
-      console.error('Chyba při sdílení události:', error);
+      // Ignorujeme chybu, která vznikne, když uživatel vyskakovací okno prostě zavře křížkem
+      console.log('Sdílení zrušeno nebo selhalo.');
     }
   };
 
@@ -811,7 +823,7 @@ export default function App() {
     </View>
   );
 
-  const vykresliDetail = () => {
+const vykresliDetail = () => {
     const item = detailAkce;
     const casParts = item.cas.split(' | ');
     const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
@@ -822,10 +834,10 @@ export default function App() {
 
     return (
       <>
-        {/* 👇 ScrollView je teď roztáhnutý naplno do krajů */}
+        {/* ScrollView natažen do stran */}
         <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
           
-          {/* 👇 Až tento View drží obsah uvnitř hranice 1270px */}
+          {/* Vnitřní obal udržující šířku 1270px */}
           <View style={isDesktop ? styles.desktopDetailScrollView : styles.content}>
 
           {isDesktop ? (
@@ -847,10 +859,8 @@ export default function App() {
               {/* LEVÝ SLOUPEC (BÍLÁ KARTA) - DESKTOP */}
               <View style={styles.desktopDetailLeftCard}>
                 
-                {/* 👇 ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET (ROZTAŽENO DO STRAN) 👇 */}
+                {/* 👇 ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET (DESKTOP) 👇 */}
                 <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
-                  
-                  {/* Levá část (Čas a Místo) */}
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={styles.desktopCardTime}>{timeText}</Text>
                     {mistoText && (
@@ -862,13 +872,10 @@ export default function App() {
                       </>
                     )}
                   </View>
-                  
-                  {/* Pravá část (Tlačítko Sdílet) */}
                   <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15 }} activeOpacity={0.6}>
                     <Ionicons name="share-social-outline" size={16} color="black" />
                     <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
                   </TouchableOpacity>
-
                 </View>
                 
                 <Text style={styles.desktopDetailMainTitle}>{item.nazev}</Text>
@@ -986,8 +993,6 @@ export default function App() {
 
               {/* 👇 ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET PRO MOBIL 👇 */}
               <View style={[styles.detailTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
-                
-                {/* Levá část (Čas a Místo) */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
                   <Text style={styles.cardTime}>{timeText}</Text>
                   {mistoText && (
@@ -999,13 +1004,10 @@ export default function App() {
                     </>
                   )}
                 </View>
-                
-                {/* Pravá část (Tlačítko Sdílet) */}
                 <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2, marginLeft: 10 }} activeOpacity={0.6}>
                   <Ionicons name="share-social-outline" size={16} color="black" />
                   <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
                 </TouchableOpacity>
-
               </View>
 
               {item.image && (
@@ -1127,10 +1129,9 @@ export default function App() {
           )}
 
           <View style={{ height: 40 }} />
-          
-          </View> {/* 👈 ZDE ZAVÍRÁME OMEZOVAČ 1270px */}
+          </View> {/* 👈 ZDE SE UZAVÍRÁ OMEZOVAČ 1270px */}
 
-          {/* 👇 PATIČKA JE NYNÍ VOLNÁ A NATÁHNE SE AŽ DO KRAJŮ */}
+          {/* VLOŽENÁ PATIČKA NA CELOU ŠÍŘKU DO DETAILU AKCE NA POČÍTAČI/MOBILU */}
           {vykresliPaticku()}
         </ScrollView>
 
@@ -1158,8 +1159,6 @@ export default function App() {
       </>
     );
   };
-
-  if (!fontsLoaded || loading) return <ActivityIndicator size="large" color={themeColor} style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
   if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
 
   return (
