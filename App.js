@@ -922,70 +922,83 @@ export default function App() {
 
           {isDesktop ? (
             <View style={styles.desktopDetailLayout}>
-              {/* LEVÝ SLOUPEC (BÍLÁ KARTA) - DESKTOP */}
-              <View style={styles.desktopDetailLeftCard}>
+              
+              {/* 👇 LEVÝ SLOUPEC - DESKTOP (Rozdělený na více bílých karet) 👇 */}
+              <View style={{ flex: 1, marginRight: 20 }}>
                 
-                {/* ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET (DESKTOP) */}
-                <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={styles.desktopCardTime}>{timeText}</Text>
-                    {mistoText && (
-                      <>
-                        <Text style={styles.desktopCardTime}> | </Text>
-                        <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                          <Text style={styles.desktopCardTime}>{mistoText}</Text>
+                {/* 1. BÍLÁ KARTA: ANOTACE A KAPACITA */}
+                <View style={styles.desktopDetailCard}>
+                  
+                  {/* ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET (DESKTOP) */}
+                  <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={styles.desktopCardTime}>{timeText}</Text>
+                      {mistoText && (
+                        <>
+                          <Text style={styles.desktopCardTime}> | </Text>
+                          <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                            <Text style={styles.desktopCardTime}>{mistoText}</Text>
+                          </TouchableOpacity>
+                        </>
+                      )}
+                    </View>
+                    <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15 }} activeOpacity={0.6}>
+                      <Ionicons name="share-social-outline" size={16} color="black" />
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <Text style={styles.desktopDetailMainTitle}>{item.nazev}</Text>
+                  {item.host !== '' && <Text style={styles.desktopDetailHost}>{item.roleHosta}: {item.host}</Text>}
+
+                  <Text style={styles.desktopDetailDescription}>
+                    {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
+                  </Text>
+
+                  <View style={styles.detailTagsWrapper}>
+                    <View style={styles.tagsContainer}>
+                      {item.tag && item.tag.map((t, index) => (
+                        <TouchableOpacity key={index} style={[styles.detailTagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                          <Text style={styles.detailTagText}>{t}</Text>
                         </TouchableOpacity>
-                      </>
-                    )}
-                  </View>
-                  <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15 }} activeOpacity={0.6}>
-                    <Ionicons name="share-social-outline" size={16} color="black" />
-                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
-                  </TouchableOpacity>
-                </View>
-                
-                <Text style={styles.desktopDetailMainTitle}>{item.nazev}</Text>
-                {item.host !== '' && <Text style={styles.desktopDetailHost}>{item.roleHosta}: {item.host}</Text>}
-
-                <Text style={styles.desktopDetailDescription}>
-                  {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
-                </Text>
-
-                <View style={styles.detailTagsWrapper}>
-                  <View style={styles.tagsContainer}>
-                    {item.tag && item.tag.map((t, index) => (
-                      <TouchableOpacity key={index} style={[styles.detailTagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                        <Text style={styles.detailTagText}>{t}</Text>
-                      </TouchableOpacity>
-                    ))}
-                    
-                    {item.odkaz && (
-                      <TouchableOpacity style={[styles.detailTagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                        <Text style={[styles.detailTagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
-                      </TouchableOpacity>
-                    )}
-                    {item.rezervace && (
-                      <View style={[
-                        styles.detailTagPillOutline, 
-                        { borderColor: themeColor }, 
-                        maRezervaci && !jePlno && styles.tagPillRezervovano,
-                        jePlno && styles.tagPillPlno
-                      ]}>
-                        <Text style={[
-                          styles.detailTagTextOutline, 
-                          { color: themeColor }, 
-                          maRezervaci && !jePlno && styles.tagTextRezervovano,
-                          jePlno && styles.tagTextPlno
+                      ))}
+                      
+                      {item.odkaz && (
+                        <TouchableOpacity style={[styles.detailTagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                          <Text style={[styles.detailTagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                        </TouchableOpacity>
+                      )}
+                      {item.rezervace && (
+                        <View style={[
+                          styles.detailTagPillOutline, 
+                          { borderColor: themeColor }, 
+                          maRezervaci && !jePlno && styles.tagPillRezervovano,
+                          jePlno && styles.tagPillPlno
                         ]}>
-                          {jePlno ? 'OBSAZENO' : (maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE')}
-                        </Text>
-                      </View>
-                    )}
+                          <Text style={[
+                            styles.detailTagTextOutline, 
+                            { color: themeColor }, 
+                            maRezervaci && !jePlno && styles.tagTextRezervovano,
+                            jePlno && styles.tagTextPlno
+                          ]}>
+                            {jePlno ? 'OBSAZENO' : (maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE')}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
+
+                  {/* KAPACITA ČISTĚ POD TAGY S JEMNÝM ODSADENÍM */}
+                  {item.rezervace && (
+                    <View style={{ marginTop: 5 }}>
+                      {getKapacitaText()}
+                    </View>
+                  )}
                 </View>
 
+                {/* 2. BÍLÁ KARTA: REZERVACE (FORMULÁŘ) JAKO SAMOSTATNÝ BOX */}
                 {item.rezervace && (
-                  <View style={[styles.formContainer, {marginTop: 20, marginBottom: 0, padding: 0, borderWidth: 0, shadowOpacity: 0, elevation: 0}]}>
+                  <View style={styles.desktopDetailCard}>
                     <Text style={styles.formTitle}>Rezervace</Text>
                     
                     {jePlno ? (
@@ -1009,6 +1022,7 @@ export default function App() {
                   </View>
                 )}
               </View>
+              {/* Konec levého sloupce */}
 
               {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) - DESKTOP */}
               <View style={styles.desktopDetailRightColumn}>
@@ -1020,12 +1034,8 @@ export default function App() {
                   </View>
                 )}
                 
-                {/* 👇 NOVÁ PODRUŽNÁ LIŠTA S KAPACITOU A SRDÍČKEM PRO POČÍTAČ 👇 */}
-                <View style={[styles.desktopDetailBottomActions, { justifyContent: 'space-between', width: '100%', alignItems: 'flex-start', marginTop: 10 }]}>
-                  <View style={styles.detailCapacityWrapper}>
-                     {getKapacitaText()}
-                  </View>
-
+                {/* SRDÍČKO ZAROVNÁNO DOPRAVA */}
+                <View style={[styles.desktopDetailBottomActions, { justifyContent: 'flex-end', width: '100%', alignItems: 'flex-start', marginTop: 10 }]}>
                   <View style={styles.detailHeartWrapper}>
                     <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
                       <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
@@ -1039,7 +1049,7 @@ export default function App() {
               </View>
             </View>
           ) : (
-            /* MOBILNÍ LAYOUT */
+            /* MOBILNÍ LAYOUT - ZŮSTÁVÁ ZCELA BEZE ZMĚN */
             <>
               <View style={styles.detailTitleRow}>
                 <Text style={styles.detailMainTitle}>{item.nazev}</Text>
@@ -1106,14 +1116,14 @@ export default function App() {
                 </View>
               </View>
 
-              {/* 👇 NOVÁ SPODNÍ LIŠTA S KAPACITOU A SRDÍČKEM PRO MOBIL 👇 */}
+              {/* MOBILNÍ KAPACITA A SRDÍČKO */}
               <View style={styles.detailBottomRowInfo}>
                 <View style={styles.detailCapacityWrapper}>
                   {getKapacitaText()}
                 </View>
 
                 <View style={styles.detailHeartWrapper}>
-                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
+                  <TouchableOpacity style={styles.detailHeartIconBtn} onPress={() => prepniOblibene(item.id)}>
                     <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
                   </TouchableOpacity>
                   {item.pocetOblibenych > 0 && (
@@ -1684,18 +1694,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
   },
-  desktopDetailLeftCard: {
-    flex: 1,
+  
+  // 👇 NOVÝ STYL PRO ROZDĚLENÍ KARET V LEVÉM SLOUPCI NA POČÍTAČI 👇
+  desktopDetailCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 30,
-    marginRight: 20, 
+    marginBottom: 20, // Tímto se vytvoří mezera mezi první a druhou kartou
     shadowColor: '#000', 
     shadowOffset: { width: 0, height: 2 }, 
     shadowOpacity: 0.05, 
     shadowRadius: 6, 
     elevation: 2
   },
+
   desktopTimeLocationRow: {
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -1744,17 +1756,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 
-  // 👇 NOVÉ STYLY PRO KAPACITU A SRDÍČKO 👇
   detailBottomRowInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start', // 👇 Zarovnáno s horním okrajem
+    alignItems: 'flex-start', 
     marginBottom: 30,
   },
   detailCapacityWrapper: {
     flex: 1,
     justifyContent: 'flex-start',
-    paddingTop: 4, // 👇 Jemné odsazení, aby text perfektně navazoval na horní obloučky srdíčka
+    paddingTop: 4, 
   },
   capacityText: {
     fontFamily: 'Inter_400Regular',
@@ -1923,8 +1934,8 @@ const styles = StyleSheet.create({
   tagPillOutline: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 15, marginRight: 6, marginTop: 6, borderWidth: 1 },
   tagTextOutline: { fontFamily: 'Inter_400Regular', fontSize: 11, fontWeight: '600' },
   
-  tagPillRezervovano: { backgroundColor: '#1ad67c', borderColor: '#1ad67c' },
-  tagTextRezervovano: { color: '#000' },
+  tagPillRezervovano: { backgroundColor: 'transparent', borderColor: '#10B981' },
+  tagTextRezervovano: { color: '#10B981' },
   tagPillPlno: { backgroundColor: '#D1D5DB', borderColor: '#D1D5DB' },
   tagTextPlno: { color: '#4B5563' },
 
