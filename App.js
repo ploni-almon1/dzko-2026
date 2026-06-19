@@ -25,8 +25,8 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor) => `
         
         /* 👇 ODBARVENÍ PRO VŠECHNY PROHLÍŽEČE VČETNĚ MOBILŮ 👇 */
         .leaflet-tile-pane {
-            -webkit-filter: grayscale(100%) brightness(1.1) contrast(0.9);
-            filter: grayscale(100%) brightness(1.1) contrast(0.9);
+            -webkit-filter: grayscale(95%) brightness(1.1) contrast(0.9);
+            filter: grayscale(95%) brightness(1.1) contrast(0.9);
         }
         
         .dzko-pin-wrapper { background: transparent; border: none; }
@@ -1571,21 +1571,27 @@ const styles = StyleSheet.create({
   favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 20, color: '#000', marginBottom: 15, marginTop: 15 }, 
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
-  daysContainer: { flexDirection: 'row', marginBottom: 30 },
-  dayPill: { 
-    width: 89,             // 👈 Tímto trefíme přesnou šířku, aby 3 dny vyšly na 1 kartu
-    height: 36,            // 👈 Zmenšení výšky zpět na decentní velikost
-    borderRadius: 18, 
-    borderWidth: 1, 
-    marginRight: 16,       // 👈 Přesně 16px mezera (stejná jako mezera v gridu karet)
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  dayText: { fontFamily: 'Inter_400Regular', fontSize: 14 },
+  // 👇 ZÁKLADNÍ (MOBILNÍ) STYLY PRO DNY - Vráceno na původní malou velikost
+  daysContainer: { flexDirection: 'row', marginBottom: 20 },
+  dayPill: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  dayText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   
-  card: { backgroundColor: '#FFFFFF', borderRadius: 10, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
+  // 👇 DESKTOPOVÉ STYLY PRO DNY - Pevná velikost pro přesné lícování s kartami
+  desktopDaysContainer: { marginBottom: 30 },
+  desktopDayPill: { width: 86, height: 36, borderRadius: 18, marginRight: 16, paddingVertical: 0, paddingHorizontal: 0 },
+  desktopDayText: { fontSize: 14 },
+  
+  card: { 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 10, 
+    marginBottom: 15, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, // 👈 Posunuto o kousek víc dolů
+    shadowOpacity: 0.12,                   // 👈 Nepatrně tmavší
+    shadowRadius: 8,                       // 👈 Větší rozmazání, aby stín zůstal měkký
+    elevation: 5                           // 👈 Adekvátní zvětšení pro Android
+  },
   cardContent: { padding: 15 },
   cardImage: { width: '100%', height: 160, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: '#E5E7EB' },
   
