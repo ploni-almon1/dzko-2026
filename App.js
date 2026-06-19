@@ -206,7 +206,7 @@ export default function App() {
   
   const [oblibeneIds, setOblibeneIds] = useState([]);
   
-  // 👇 Paměť pro režim prohlížení sdíleného cizího výběru 👇
+  // Paměť pro režim prohlížení sdíleného cizího výběru
   const [sdilenyVyberIds, setSdilenyVyberIds] = useState(null); 
   
   const [mojeRezervace, setMojeRezervace] = useState([]);
@@ -235,7 +235,6 @@ export default function App() {
   const [odesilaRezervaci, setOdesilaRezervaci] = useState(false);
   const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
   const [rezervaceChyba, setRezervaceChyba] = useState(null); 
-  const [infoRezervaceVisible, setInfoRezervaceVisible] = useState(false);
 
   const detailScrollViewRef = useRef(null);
 
@@ -473,7 +472,7 @@ export default function App() {
     ? prednaskyVsechny.filter(item => item.tag && item.tag.includes(vybranyTag))
     : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
 
-  // 👇 Změněno: Pro záložku Oblíbené se rozhodujeme, co zrovna ukazujeme (sdílený výběr NEBO vlastní)
+  // Pro záložku Oblíbené se rozhodujeme, co zrovna ukazujeme (sdílený výběr NEBO vlastní)
   const aktivniOblibeneIds = sdilenyVyberIds ? sdilenyVyberIds : oblibeneIds;
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => aktivniOblibeneIds.includes(item.id));
   
@@ -876,6 +875,31 @@ export default function App() {
     
     const jePlno = item.kapacita && item.pocetRezervaci >= item.kapacita;
 
+    // 👇 NOVÁ LOGIKA PRO VÝPOČET A ZOBRAZENÍ KAPACITY 👇
+    const getKapacitaText = () => {
+      if (!item.rezervace) return null;
+      if (item.kapacita) {
+        const volnaMista = Math.max(0, item.kapacita - (item.pocetRezervaci || 0));
+        let mistoSlovo = 'volných míst';
+        if (volnaMista === 1) mistoSlovo = 'volné místo';
+        else if (volnaMista >= 2 && volnaMista <= 4) mistoSlovo = 'volná místa';
+
+        return (
+          <Text style={styles.capacityText}>
+            <Text style={styles.capacityBold}>{volnaMista} {mistoSlovo}</Text>
+            <Text style={styles.capacityLight}> / kapacita {item.kapacita}</Text>
+          </Text>
+        );
+      } else {
+        return (
+          <Text style={styles.capacityText}>
+            <Text style={styles.capacityLight}>Počet rezervací: </Text>
+            <Text style={styles.capacityBold}>{item.pocetRezervaci || 0}</Text>
+          </Text>
+        );
+      }
+    };
+
     return (
       <>
         <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
@@ -996,33 +1020,23 @@ export default function App() {
                   </View>
                 )}
                 
-                <View style={styles.desktopDetailBottomActions}>
-                  {item.rezervace && (
-                    <View style={styles.detailStatItemHorizontal}>
-                      <TouchableOpacity style={styles.detailIconBtn} onPress={() => setInfoRezervaceVisible(true)}>
-                        <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                          <Ionicons name="checkmark-sharp" size={15} color={styles.tagTextRezervovano.color} />
-                        </View>
-                      </TouchableOpacity>
-                      {item.pocetRezervaci > 0 && (
-                        <Text style={styles.detailStatCountHorizontal}>
-                          {item.pocetRezervaci}{item.kapacita ? ` / ${item.kapacita}` : ''}
-                        </Text>
-                      )}
-                    </View>
-                  )}
+                {/* 👇 NOVÁ PODRUŽNÁ LIŠTA S KAPACITOU A SRDÍČKEM PRO POČÍTAČ 👇 */}
+                <View style={[styles.desktopDetailBottomActions, { justifyContent: 'space-between', width: '100%', alignItems: 'flex-end', marginTop: 10 }]}>
+                  <View style={styles.detailCapacityWrapper}>
+                     {getKapacitaText()}
+                  </View>
 
-                  <View style={styles.detailStatItemHorizontal}>
-                    <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                      <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
+                  <View style={styles.detailHeartWrapper}>
+                    <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
+                      <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
                     </TouchableOpacity>
                     {item.pocetOblibenych > 0 && (
-                      <Text style={styles.detailStatCountHorizontal}>{item.pocetOblibenych}</Text>
+                      <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
                     )}
                   </View>
                 </View>
-              </View>
 
+              </View>
             </View>
           ) : (
             /* MOBILNÍ LAYOUT */
@@ -1092,31 +1106,18 @@ export default function App() {
                 </View>
               </View>
 
-              <View style={styles.detailStatsBottomContainer}>
-                {item.rezervace && (
-                  <View style={[styles.statItem, { marginRight: 15 }]}>
-                    <TouchableOpacity 
-                      style={styles.detailIconBtn}
-                      onPress={() => setInfoRezervaceVisible(true)}
-                    >
-                      <View style={[styles.tagPillRezervovano, styles.detailRezervaceKolecko]}>
-                        <Ionicons name="checkmark-sharp" size={15} color={styles.tagTextRezervovano.color} />
-                      </View>
-                    </TouchableOpacity>
-                    {item.pocetRezervaci > 0 && (
-                      <Text style={styles.detailStatCount}>
-                        {item.pocetRezervaci}{item.kapacita ? ` / ${item.kapacita}` : ''}
-                      </Text>
-                    )}
-                  </View>
-                )}
+              {/* 👇 NOVÁ SPODNÍ LIŠTA S KAPACITOU A SRDÍČKEM PRO MOBIL 👇 */}
+              <View style={styles.detailBottomRowInfo}>
+                <View style={styles.detailCapacityWrapper}>
+                  {getKapacitaText()}
+                </View>
 
-                <View style={styles.statItem}>
-                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailIconBtn}>
-                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={26} color="black" />
+                <View style={styles.detailHeartWrapper}>
+                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
+                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
                   </TouchableOpacity>
                   {item.pocetOblibenych > 0 && (
-                    <Text style={styles.detailStatCount}>{item.pocetOblibenych}</Text>
+                    <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
                   )}
                 </View>
               </View>
@@ -1175,28 +1176,6 @@ export default function App() {
           {/* VLOŽENÁ PATIČKA NA CELOU ŠÍŘKU POUZE NA POČÍTAČI */}
           {isDesktop && vykresliPaticku()}
         </ScrollView>
-
-        <Modal
-          visible={infoRezervaceVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setInfoRezervaceVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setInfoRezervaceVisible(false)} />
-            <View style={styles.modalContent}>
-              <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setInfoRezervaceVisible(false)}>
-                <Ionicons name="close" size={24} color="#4B5563" />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Rezervace</Text>
-              <Text style={styles.modalText}>
-                {item.kapacita 
-                  ? `Zobrazený počet ukazuje aktuální stav ze stávající kapacity ${item.kapacita} míst.` 
-                  : `Toto číslo ukazuje počet aktuálních rezervací na tuto akci.`}
-              </Text>
-            </View>
-          </View>
-        </Modal>
       </>
     );
   };
@@ -1426,11 +1405,9 @@ export default function App() {
                     {/* HORNÍ LIŠTA ZÁLOŽKY OBLÍBENÉ */}
                     <View style={styles.pageTitleContainer}>
                       <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
-                        {/* Dynamický nápis podle toho, co prohlížíme */}
                         <Text style={styles.pageTitle}>{sdilenyVyberIds ? 'SDÍLENÝ VÝBĚR' : 'OBLÍBENÉ'}</Text>
                       </TouchableOpacity>
                       
-                      {/* Tlačítko pro sdílení - Schová se, když si zrovna prohlížíme cizí seznam */}
                       {!sdilenyVyberIds && oblibeneIds.length > 0 && (
                         <TouchableOpacity onPress={sdiletOblibene} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: themeColor, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20 }} activeOpacity={0.7}>
                           <Ionicons name="share-social-outline" size={16} color="white" />
@@ -1439,7 +1416,7 @@ export default function App() {
                       )}
                     </View>
 
-                    {/* 👇 INFORMAČNÍ PANEL O PROHLÍŽENÍ SDÍLENÉHO VÝBĚRU 👇 */}
+                    {/* INFORMAČNÍ PANEL O PROHLÍŽENÍ SDÍLENÉHO VÝBĚRU */}
                     {sdilenyVyberIds && (
                       <View style={{ backgroundColor: '#E0E7FF', padding: 15, borderRadius: 10, marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Text style={{ fontFamily: 'Inter_400Regular', color: themeColor, flex: 1, paddingRight: 10, lineHeight: 20 }}>
@@ -1542,7 +1519,6 @@ export default function App() {
                 )}
               </View>
               
-              {/* VLOŽENÁ PATIČKA POUZE PRO POČÍTAČ */}
               {isDesktop && vykresliPaticku()}
             </ScrollView>
           )}
@@ -1767,16 +1743,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
   },
-  detailStatItemHorizontal: {
+
+  // 👇 NOVÉ STYLY PRO KAPACITU A SRDÍČKO 👇
+  detailBottomRowInfo: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 20,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 30,
   },
-  detailStatCountHorizontal: {
-    fontFamily: 'Inter_400Regular', 
-    fontSize: 16,
-    color: '#4B5563', 
-    marginLeft: 8,
+  detailCapacityWrapper: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 4, 
+  },
+  capacityText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#4B5563',
+  },
+  capacityBold: {
+    fontWeight: 'bold',
+    color: '#000000',
+  },
+  capacityLight: {
+    color: '#6B7280',
+  },
+  detailHeartWrapper: {
+    alignItems: 'center',
+    minWidth: 40,
+  },
+  detailHeartIconBtn: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  detailHeartCount: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#4B5563',
+    marginTop: 4,
   },
 
   desktopHeaderFavBtn: {
@@ -1941,40 +1945,6 @@ const styles = StyleSheet.create({
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 15 },
   
   detailTagsWrapper: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 25 },
-  
-  detailStatsBottomContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-start',
-    marginBottom: 30,
-  },
-  
-  statItem: { 
-    alignItems: 'center',
-    minWidth: 44,
-  },
-  detailIconBtn: { 
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  detailStatCount: { 
-    fontFamily: 'Inter_400Regular', 
-    fontSize: 15,
-    color: '#4B5563', 
-  },
-  
-  detailRezervaceKolecko: { 
-    width: 22,
-    height: 22, 
-    borderRadius: 11, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    borderWidth: 0,
-    paddingHorizontal: 0,
-    paddingVertical: 0
-  },
   
   formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
   formTitle: { fontFamily: 'Inter_400Regular', fontSize: 18, marginBottom: 15, color: '#111827', fontWeight: 'bold' },
