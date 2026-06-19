@@ -1425,9 +1425,11 @@ const vykresliDetail = () => {
 
                     <View style={styles.socialContainer}>
                       <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
+                        {/* 👇 Zde vracíme původní muo-icon.png 👇 */}
                         <Image source={require('./assets/muo-icon.png')} style={[styles.customSocialIcon, { tintColor: 'white' }]} />
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')}>
+                        {/* 👇 Zde vracíme původní facebook-icon.png 👇 */}
                         <Image source={require('./assets/facebook-icon.png')} style={[styles.customSocialIcon, { tintColor: 'white' }]} />
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
