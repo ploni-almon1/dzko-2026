@@ -1021,7 +1021,7 @@ export default function App() {
                 )}
                 
                 {/* 👇 NOVÁ PODRUŽNÁ LIŠTA S KAPACITOU A SRDÍČKEM PRO POČÍTAČ 👇 */}
-                <View style={[styles.desktopDetailBottomActions, { justifyContent: 'space-between', width: '100%', alignItems: 'center', marginTop: 10 }]}>
+                <View style={[styles.desktopDetailBottomActions, { justifyContent: 'space-between', width: '100%', alignItems: 'flex-start', marginTop: 10 }]}>
                   <View style={styles.detailCapacityWrapper}>
                      {getKapacitaText()}
                   </View>
@@ -1748,13 +1748,13 @@ const styles = StyleSheet.create({
   detailBottomRowInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center', // 👇 Změněno na střed
+    alignItems: 'flex-start', // 👇 Zarovnáno s horním okrajem
     marginBottom: 30,
   },
   detailCapacityWrapper: {
     flex: 1,
-    justifyContent: 'center', // 👇 Změněno na střed
-    paddingBottom: 0, // 👇 Odstraněno odsazení
+    justifyContent: 'flex-start',
+    paddingTop: 4, // 👇 Jemné odsazení, aby text perfektně navazoval na horní obloučky srdíčka
   },
   capacityText: {
     fontFamily: 'Inter_400Regular',
