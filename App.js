@@ -1743,7 +1743,7 @@ export default function App() {
                       
                       {hasActiveFilters && (
                         <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15 }}>
-                          <Text style={{ fontFamily: 'Inter_400Regular', color: '#EF4444', fontSize: 13, textDecorationLine: 'underline' }}>Zrušit filtry</Text>
+                          <Text style={{ fontFamily: 'Inter_400Regular', color: '#6B7280', fontSize: 13 }}>Zrušit filtry</Text>
                         </TouchableOpacity>
                       )}
                     </View>
