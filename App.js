@@ -332,7 +332,8 @@ export default function App() {
       .catch((err) => console.log('Obrázek pro Home se nenačetl nebo tabulka neexistuje:', err));
 
     // NAČÍTÁNÍ PARTNERŮ
-    fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}`, {
+    // NAČÍTÁNÍ PARTNERŮ
+fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?view=Grid%20view`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -1582,7 +1583,7 @@ export default function App() {
                               setSpeakerModalVisible(true);
                             }}
                           >
-                            <View style={{ width: '100%', aspectRatio: 1.5, backgroundColor: h.fotka ? 'transparent' : themeColor, borderTopLeftRadius: 10, borderTopRightRadius: 10, overflow: 'hidden' }}>
+                            <View style={{ width: '100%', aspectRatio: 4/3, backgroundColor: h.fotka ? 'transparent' : themeColor, borderTopLeftRadius: 10, borderTopRightRadius: 10, overflow: 'hidden' }}>
                               {h.fotka ? (
                                 <Image source={{ uri: h.fotka }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                               ) : null}
@@ -1619,24 +1620,25 @@ export default function App() {
                     <View key={kat} style={{ marginBottom: 60 }}>
                       <Text style={{ 
                         fontFamily: 'Inter_400Regular', 
-                        fontSize: 24, 
+                        fontSize: 32, 
                         textTransform: 'uppercase', 
-                        marginBottom: 30, 
+                        marginBottom: 40, 
                         color: '#000', 
                         letterSpacing: 1 
                       }}>
                         {kat}
                       </Text>
 
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -15 }}>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -15, rowGap: 40 }}>
                         {partneriProKategorii.map(p => (
                           <TouchableOpacity 
                             key={p.id} 
                             style={{ 
                               width: isDesktop ? '25%' : '50%', 
-                              paddingHorizontal: 20, 
-                              paddingVertical: 10,
-                              height: 120, 
+                              paddingHorizontal: 25, 
+                              paddingVertical: 15,
+                              height: 160, 
+                              marginBottom: 40,
                               justifyContent: 'center', 
                               alignItems: 'center' 
                             }}
@@ -1860,7 +1862,7 @@ export default function App() {
                         {/* 👇 KARTA PRO PŘECHOD NA AKCI (PC) 👇 */}
                         {speakerEvents.length > 0 && !detailAkce && (
                           <View style={styles.speakerEventsSection}>
-                            <Text style={styles.speakerEventsLabel}>Program</Text>
+                            <Text style={styles.mobileSpeakerModalJob}>Program</Text>
                             {speakerEvents.map(ev => (
                               <TouchableOpacity key={ev.id} style={styles.speakerEventCard} activeOpacity={0.7} onPress={() => prejitNaAkciHost(ev)}>
                                 <Text style={styles.speakerEventTime}>{ev.cas}</Text>
@@ -2018,8 +2020,8 @@ const styles = StyleSheet.create({
   },
   homeSectionTitle: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 32,
+    letterSpacing: 1,
     marginBottom: 20,
     color: '#000',
   },
@@ -2319,7 +2321,7 @@ const styles = StyleSheet.create({
   card: { 
     backgroundColor: '#FFFFFF', 
     borderRadius: 10, 
-    marginBottom: 15, 
+    marginBottom: 0, 
     ...Platform.select({
       web: { boxShadow: '0px 4px 8px rgba(0,0,0,0.12)' },
       default: { elevation: 5 }
@@ -2374,7 +2376,7 @@ const styles = StyleSheet.create({
   errorText: { color: '#EF4444', fontFamily: 'Inter_400Regular', fontSize: 13, marginBottom: 12, lineHeight: 18 }, 
 
   dalsiContainer: { paddingTop: 20, paddingBottom: 40 },
-  dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 26, color: '#000', marginBottom: 30, lineHeight: 34 },
+  dalsiHlavniNadpis: { fontFamily: 'Inter_400Regular', fontSize: 32, letterSpacing: 1, color: '#000', marginBottom: 30, lineHeight: 38 },
   menuList: { marginBottom: 30 },
   menuItemWrapper: { marginBottom: 15 },
   menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
