@@ -1084,11 +1084,11 @@ export default function App() {
                 <Text style={styles.detailMainTitle}>{item.nazev}</Text>
               </View>
 
-              {/* 👇 ZDE JE NOVĚ KLIKACÍ JMÉNO HOSTA (Mobil) 👇 */}
+              {/* 👇 ZDE JE KLIKACÍ JMÉNO HOSTA V TMAVÉ BARVĚ (Mobil) 👇 */}
               {item.host !== '' && (
                 <TouchableOpacity activeOpacity={0.7} onPress={() => setSpeakerModalVisible(true)}>
                   <Text style={styles.detailHost}>
-                    {item.roleHosta}: <Text style={{ color: themeColor }}>{item.host}</Text>
+                    {item.roleHosta}: <Text>{item.host}</Text>
                   </Text>
                 </TouchableOpacity>
               )}
