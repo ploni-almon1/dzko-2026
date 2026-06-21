@@ -173,6 +173,7 @@ const ziskejVychoziDen = () => {
   const rok = dnes.getFullYear();
   const mesic = dnes.getMonth(); 
   const den = dnes.getDate();
+
   if (rok === 2026 && mesic === 9) {
     switch (den) {
       case 12: return 'PO 12';
@@ -214,6 +215,9 @@ export default function App() {
   const [historieAkce, setHistorieAkce] = useState(null); 
   const [mapaModalVisible, setMapaModalVisible] = useState(false); 
   
+  // 👇 STAV PRO OTEVŘENÍ DETAILU ŘEČNÍKA NA MOBILU 👇
+  const [speakerModalVisible, setSpeakerModalVisible] = useState(false);
+  
   const [homeMapaZvetsena, setHomeMapaZvetsena] = useState(false);
   const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
 
@@ -232,7 +236,6 @@ export default function App() {
   const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
   const [rezervaceChyba, setRezervaceChyba] = useState(null); 
   
-  // 👇 STAV PRO OPAKOVANOU REZERVACI 👇
   const [chciDalsiRezervaci, setChciDalsiRezervaci] = useState(false);
 
   const detailScrollViewRef = useRef(null);
@@ -501,7 +504,8 @@ export default function App() {
     setOdesilaRezervaci(false);
     setRezervaceOdeslana(false);
     setRezervaceChyba(null);
-    setChciDalsiRezervaci(false); // Vyresetujeme i požadavek na další rezervaci
+    setChciDalsiRezervaci(false); 
+    setSpeakerModalVisible(false); // Resetujeme okno hosta
 
     if (scrollNaRezervaci && !isDesktop) {
       setTimeout(() => {
@@ -634,7 +638,7 @@ export default function App() {
       }
       
       setRezervaceOdeslana(true);
-      setChciDalsiRezervaci(false); // Po úspěchu schováme formulář a ukážeme znovu zprávu
+      setChciDalsiRezervaci(false); 
       
       const noveRezervace = [...new Set([...mojeRezervace, detailAkce.id])];
       setMojeRezervace(noveRezervace);
@@ -1003,7 +1007,6 @@ export default function App() {
                              onPress={() => {
                                setChciDalsiRezervaci(true);
                                setRezervaceJmeno(''); 
-                               // Email záměrně neschováváme, ať se to při další rezervaci rychleji vyplní!
                              }}
                            >
                              <Text style={{ color: 'white', fontFamily: 'Inter_400Regular', fontSize: 13, fontWeight: 'bold' }}>Vytvořit další rezervaci</Text>
@@ -1149,21 +1152,23 @@ export default function App() {
                 </View>
               )}
 
+              {/* 👇 KARTA PŘEDNÁŠEJÍCÍHO PRO MOBIL (TLAČÍTKO PRO OTEVŘENÍ MODALU) 👇 */}
               {(item.fotkaHosta || item.popisHosta !== '' || item.profeseHosta !== '') && (
                 <View style={{ width: '100%', marginTop: 25, marginBottom: 15 }}>
                   <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
                     {item.roleHosta}
                   </Text>
-                  <View style={styles.speakerCard}>
-                    <View style={[styles.speakerImageContainerMobile, !item.fotkaHosta && { backgroundColor: themeColor }]}>
+                  <TouchableOpacity style={styles.mobileSpeakerTrigger} onPress={() => setSpeakerModalVisible(true)} activeOpacity={0.7}>
+                    <View style={[styles.mobileSpeakerTriggerAvatar, !item.fotkaHosta && { backgroundColor: themeColor }]}>
                       {item.fotkaHosta && <Image source={{ uri: item.fotkaHosta }} style={styles.speakerImage} resizeMode="cover" />}
                     </View>
-                    <View style={styles.speakerInfo}>
+                    <View style={{ flex: 1, paddingLeft: 15, justifyContent: 'center' }}>
                       <Text style={styles.speakerName}>{item.host}</Text>
-                      {item.profeseHosta !== '' && <Text style={styles.speakerJob}>{item.profeseHosta}</Text>}
-                      {item.popisHosta !== '' && <Text style={styles.speakerDesc}>{item.popisHosta}</Text>}
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: themeColor, fontWeight: 'bold', marginTop: 4 }}>
+                        Zobrazit profil
+                      </Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -1593,6 +1598,27 @@ export default function App() {
           )}
 
           {detailAkce && vykresliDetail()}
+
+          {/* 👇 VYSKAKOVACÍ OKNO PŘEDNÁŠEJÍCÍHO PRO MOBIL (OVERLAY) 👇 */}
+          {speakerModalVisible && !isDesktop && detailAkce && (
+            <View style={styles.mobileSpeakerOverlay}>
+              <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setSpeakerModalVisible(false)} />
+              
+              <View style={styles.mobileSpeakerModalContent}>
+                <View style={[styles.mobileSpeakerModalImageContainer, !detailAkce.fotkaHosta && { backgroundColor: themeColor }]}>
+                  {detailAkce.fotkaHosta && <Image source={{ uri: detailAkce.fotkaHosta }} style={styles.speakerImage} resizeMode="cover" />}
+                  <TouchableOpacity style={styles.mobileSpeakerCloseBtn} onPress={() => setSpeakerModalVisible(false)}>
+                    <Ionicons name="close" size={20} color="#000" />
+                  </TouchableOpacity>
+                </View>
+                <ScrollView style={{flexShrink: 1}} contentContainerStyle={styles.mobileSpeakerModalInfo}>
+                  <Text style={styles.mobileSpeakerModalName}>{detailAkce.host}</Text>
+                  {detailAkce.profeseHosta !== '' && <Text style={styles.mobileSpeakerModalJob}>{detailAkce.profeseHosta}</Text>}
+                  {detailAkce.popisHosta !== '' && <Text style={styles.mobileSpeakerModalDesc}>{detailAkce.popisHosta}</Text>}
+                </ScrollView>
+              </View>
+            </View>
+          )}
 
           {!isDesktop && (
             <View style={styles.bottomNav}>
@@ -2213,7 +2239,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
 
-  // STYLY PRO KARTU ŘEČNÍKA
+  // STYLY PRO KARTU ŘEČNÍKA NA PC (BEZE ZMĚNY)
   speakerCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -2225,9 +2251,6 @@ const styles = StyleSheet.create({
   },
   speakerImageContainer: {
     width: 200, 
-  },
-  speakerImageContainerMobile: {
-    width: 120, 
   },
   speakerImage: {
     width: '100%',
@@ -2247,14 +2270,101 @@ const styles = StyleSheet.create({
   },
   speakerJob: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 16,
+    fontSize: 14,
     color: '#6B7280',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   speakerDesc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 15,
     color: '#374151',
     lineHeight: 22,
+  },
+
+  // 👇 NOVÉ STYLY PRO VYSKAKOVACÍ KARTU ŘEČNÍKA NA MOBILU 👇
+  mobileSpeakerTrigger: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+  },
+  mobileSpeakerTriggerAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    overflow: 'hidden',
+  },
+  mobileSpeakerOverlay: {
+    position: 'absolute',
+    top: 0, 
+    bottom: 0, 
+    left: 0, 
+    right: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    zIndex: 1000,
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}), 
+  },
+  mobileSpeakerModalContent: {
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 40,
+    elevation: 10,
+  },
+  mobileSpeakerModalImageContainer: {
+    width: '100%',
+    height: 250,
+    position: 'relative',
+  },
+  mobileSpeakerCloseBtn: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    backgroundColor: 'white',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  mobileSpeakerModalInfo: {
+    padding: 25,
+  },
+  mobileSpeakerModalName: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 6,
+  },
+  mobileSpeakerModalJob: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  mobileSpeakerModalDesc: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
   }
 });
