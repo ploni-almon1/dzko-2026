@@ -1282,7 +1282,7 @@ export default function App() {
                       <View style={{ flex: 1, paddingLeft: 15, justifyContent: 'center' }}>
                         <Text style={styles.speakerName}>{h.jmeno}</Text>
                         <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: themeColor, fontWeight: 'bold', marginTop: 4 }}>
-                          Zobrazit více
+                          Zobrazit profil
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -1566,7 +1566,7 @@ export default function App() {
             </View>
           )}
 
-          {/* 👇 MŘÍŽKA S HOSTY (NA PC ZPĚT NA 4 SLOUPEČKY JAKO PROGRAM) 👇 */}
+          {/* 👇 MŘÍŽKA S HOSTY 👇 */}
           {aktivniTab === 'Hoste' && !detailAkce && (
             <ScrollView style={{ flex: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15, paddingTop: 10 }}>
@@ -1736,7 +1736,6 @@ export default function App() {
                   <View style={styles.dalsiContainer}>
                     <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
                     
-                    {/* 👇 O FESTIVALU PRVNÍ A HOSTÉ DRUZÍ (MOBIL) 👇 */}
                     <View style={styles.menuList}>
                       {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.')}
                       {!isDesktop && vykresliPolozkuMenu('Hosté', 'action', () => setAktivniTab('Hoste'))}
@@ -1844,7 +1843,7 @@ export default function App() {
                       {aktivniSelectedSpeaker.popis !== '' && <Text style={styles.mobileSpeakerModalDesc}>{aktivniSelectedSpeaker.popis}</Text>}
 
                       {/* 👇 KARTA PRO PŘECHOD NA AKCI (MOBIL) 👇 */}
-                      {speakerEvents.length > 0 && (
+                      {speakerEvents.length > 0 && !detailAkce && (
                         <View style={styles.speakerEventsSection}>
                           <Text style={styles.speakerEventsLabel}>Program</Text>
                           {speakerEvents.map(ev => (
@@ -2641,7 +2640,7 @@ const styles = StyleSheet.create({
   },
   mobileSpeakerModalJob: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 16,
+    fontSize: 15,
     color: '#6B7280',
     marginBottom: 15,
   },
@@ -2658,7 +2657,7 @@ const styles = StyleSheet.create({
   },
   speakerEventsLabel: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 16,
+    fontSize: 15,
     color: '#6B7280',
     marginBottom: 8,
   },
