@@ -173,7 +173,6 @@ const ziskejVychoziDen = () => {
   const rok = dnes.getFullYear();
   const mesic = dnes.getMonth(); 
   const den = dnes.getDate();
-
   if (rok === 2026 && mesic === 9) {
     switch (den) {
       case 12: return 'PO 12';
@@ -215,9 +214,6 @@ export default function App() {
   const [historieAkce, setHistorieAkce] = useState(null); 
   const [mapaModalVisible, setMapaModalVisible] = useState(false); 
   
-  // 👇 STAV PRO OTEVŘENÍ DETAILU ŘEČNÍKA NA MOBILU 👇
-  const [speakerModalVisible, setSpeakerModalVisible] = useState(false);
-  
   const [homeMapaZvetsena, setHomeMapaZvetsena] = useState(false);
   const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
 
@@ -237,6 +233,7 @@ export default function App() {
   const [rezervaceChyba, setRezervaceChyba] = useState(null); 
   
   const [chciDalsiRezervaci, setChciDalsiRezervaci] = useState(false);
+  const [speakerModalVisible, setSpeakerModalVisible] = useState(false);
 
   const detailScrollViewRef = useRef(null);
 
@@ -505,7 +502,7 @@ export default function App() {
     setRezervaceOdeslana(false);
     setRezervaceChyba(null);
     setChciDalsiRezervaci(false); 
-    setSpeakerModalVisible(false); // Resetujeme okno hosta
+    setSpeakerModalVisible(false);
 
     if (scrollNaRezervaci && !isDesktop) {
       setTimeout(() => {
@@ -921,10 +918,8 @@ export default function App() {
           {isDesktop ? (
             <View style={styles.desktopDetailLayout}>
               
-              {/* LEVÝ SLOUPEC - DESKTOP */}
               <View style={{ flex: 1, marginRight: 20 }}>
                 
-                {/* 1. BÍLÁ KARTA: ANOTACE A KAPACITA */}
                 <View style={styles.desktopDetailCard}>
                   
                   <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
@@ -991,7 +986,6 @@ export default function App() {
                   )}
                 </View>
 
-                {/* 2. BÍLÁ KARTA: REZERVACE */}
                 {item.rezervace && (
                   <View style={[styles.desktopDetailCard, { backgroundColor: '#F9FAFB', padding: 20 }]}>
                     <Text style={styles.formTitle}>Rezervace</Text>
@@ -1039,7 +1033,6 @@ export default function App() {
                 )}
               </View>
 
-              {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) - DESKTOP */}
               <View style={styles.desktopDetailRightColumn}>
                 {item.image ? (
                   <Image source={{ uri: item.image }} style={styles.desktopDetailImage} resizeMode="cover" />
@@ -1152,7 +1145,6 @@ export default function App() {
                 </View>
               )}
 
-              {/* 👇 KARTA PŘEDNÁŠEJÍCÍHO PRO MOBIL (TLAČÍTKO PRO OTEVŘENÍ MODALU) 👇 */}
               {(item.fotkaHosta || item.popisHosta !== '' || item.profeseHosta !== '') && (
                 <View style={{ width: '100%', marginTop: 25, marginBottom: 15 }}>
                   <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
@@ -1165,7 +1157,7 @@ export default function App() {
                     <View style={{ flex: 1, paddingLeft: 15, justifyContent: 'center' }}>
                       <Text style={styles.speakerName}>{item.host}</Text>
                       <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: themeColor, fontWeight: 'bold', marginTop: 4 }}>
-                        Zobrazit více
+                        Zobrazit profil
                       </Text>
                     </View>
                   </TouchableOpacity>
@@ -2239,7 +2231,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
 
-  // STYLY PRO KARTU ŘEČNÍKA NA PC (BEZE ZMĚNY)
+  // STYLY PRO KARTU ŘEČNÍKA NA PC
   speakerCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -2270,9 +2262,9 @@ const styles = StyleSheet.create({
   },
   speakerJob: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    fontSize: 16,
     color: '#6B7280',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   speakerDesc: {
     fontFamily: 'Inter_400Regular',
@@ -2304,16 +2296,16 @@ const styles = StyleSheet.create({
     left: 0, 
     right: 0,
     backgroundColor: 'rgba(255, 255, 255, 0.4)', 
-    justifyContent: 'center',
+    justifyContent: 'center', // Centruje okno doprostřed
     alignItems: 'center',
-    padding: 20,
+    padding: 25, // Zajistí přesnou a stejnou mezeru od horní i spodní lišty
     zIndex: 1000,
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}), 
   },
   mobileSpeakerModalContent: {
     width: '100%',
     maxWidth: 400,
-    maxHeight: '90%',
+    maxHeight: '100%', // Dovolí oknu využít všechen prostor, který mu dává padding
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -2325,7 +2317,7 @@ const styles = StyleSheet.create({
   },
   mobileSpeakerModalImageContainer: {
     width: '100%',
-    height: 250,
+    aspectRatio: 1, // 🔥 Tímto uděláme z fotky dokonalý čtverec 1:1
     position: 'relative',
   },
   mobileSpeakerCloseBtn: {
