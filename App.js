@@ -1815,7 +1815,7 @@ export default function App() {
                         {aktivniSelectedSpeaker.popis !== '' && <Text style={styles.mobileSpeakerModalDesc}>{aktivniSelectedSpeaker.popis}</Text>}
 
                         {/* 👇 KARTA PRO PŘECHOD NA AKCI (PC) 👇 */}
-                        {speakerEvents.length > 0 && (
+                        {speakerEvents.length > 0 && !detailAkce && (
                           <View style={styles.speakerEventsSection}>
                             <Text style={styles.speakerEventsLabel}>Program</Text>
                             {speakerEvents.map(ev => (
