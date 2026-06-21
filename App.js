@@ -215,12 +215,19 @@ export default function App() {
   const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
   
   const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
+  const [vybranyTag, setVybranyTag] = useState(null);
+
+  // 👇 NOVÉ STAVY PRO POKROČILÝ FILTR 👇
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filterSubModalVisible, setFilterSubModalVisible] = useState(null);
+  const vychoziFiltry = { den: [], typ: [], misto: [], hoste: [] };
+  const [activeFilters, setActiveFilters] = useState(vychoziFiltry);
+  const [tempFilters, setTempFilters] = useState(vychoziFiltry);
   
   const [oblibeneIds, setOblibeneIds] = useState([]);
   const [sdilenyVyberIds, setSdilenyVyberIds] = useState(null); 
   
   const [mojeRezervace, setMojeRezervace] = useState([]);
-  const [vybranyTag, setVybranyTag] = useState(null);
   const [mapFocus, setMapFocus] = useState(null);
   const [rozbaleno, setRozbaleno] = useState(null);
   
@@ -331,9 +338,7 @@ export default function App() {
       })
       .catch((err) => console.log('Obrázek pro Home se nenačetl nebo tabulka neexistuje:', err));
 
-    // NAČÍTÁNÍ PARTNERŮ
-    // NAČÍTÁNÍ PARTNERŮ
-fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?view=Grid%20view`, {
+    fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?view=Grid%20view`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -475,6 +480,7 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
               setAktivniTab('Oblíbené');
               setVybranyDen('VŠE');
               setVybranyTag(null);
+              setActiveFilters(vychoziFiltry);
             }
           }
         }
@@ -494,6 +500,30 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
         setLoading(false);
       });
   }, []); 
+
+  // 👇 LOGIKA PRO EXTRAKCI DAT DO FILTRŮ 👇
+  const dostupneTypy = [...new Set(prednaskyVsechny.flatMap(p => p.tag || []))].sort();
+  const dostupnaMista = [...new Set(prednaskyVsechny.map(p => {
+    const parts = p.cas.split(' | ');
+    return parts.length > 2 ? parts[2] : null;
+  }).filter(Boolean))].sort();
+  const dostupniHoste = hosteVsechny.map(h => h.jmeno).sort();
+
+  const filterOptions = {
+    den: dny,
+    typ: dostupneTypy,
+    misto: dostupnaMista,
+    hoste: dostupniHoste
+  };
+
+  const filterLabels = {
+    den: 'Den',
+    typ: 'Typ',
+    misto: 'Místo',
+    hoste: 'Hosté'
+  };
+
+  const hasActiveFilters = activeFilters.den.length > 0 || activeFilters.typ.length > 0 || activeFilters.misto.length > 0 || activeFilters.hoste.length > 0;
 
   const prepniObrazky = async () => {
     const novyStav = !zobrazitObrazky;
@@ -561,9 +591,23 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
     'Sladovna Holice': { lat: 49.5695, lng: 17.2912, title: 'Sladovna Holice' }
   };
 
-  const zobrazenePrednasky = vybranyTag
-    ? prednaskyVsechny.filter(item => item.tag && item.tag.includes(vybranyTag))
-    : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
+  // 👇 AKTUALIZOVANÁ LOGIKA PRO FILTROVÁNÍ 👇
+  const zobrazenePrednasky = prednaskyVsechny.filter(item => {
+    if (hasActiveFilters) {
+      const mistoMatch = item.cas.split(' | ')[2];
+      const hosteMatch = item.hoste.map(h => h.jmeno);
+
+      const passDen = activeFilters.den.length === 0 || activeFilters.den.includes(item.den);
+      const passTyp = activeFilters.typ.length === 0 || activeFilters.typ.some(t => item.tag?.includes(t));
+      const passMisto = activeFilters.misto.length === 0 || activeFilters.misto.includes(mistoMatch);
+      const passHoste = activeFilters.hoste.length === 0 || activeFilters.hoste.some(h => hosteMatch.includes(h));
+
+      return passDen && passTyp && passMisto && passHoste;
+    } else {
+      if (vybranyTag) return item.tag && item.tag.includes(vybranyTag);
+      return vybranyDen === 'VŠE' ? true : item.den === vybranyDen;
+    }
+  });
 
   const aktivniOblibeneIds = sdilenyVyberIds ? sdilenyVyberIds : oblibeneIds;
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => aktivniOblibeneIds.includes(item.id));
@@ -614,6 +658,7 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
   const clickTagNaProgram = (tag) => {
     setVybranyTag(tag);
     setVybranyDen('VŠE');
+    setActiveFilters(vychoziFiltry);
     setAktivniTab('Program');
     setDetailAkce(null);
   };
@@ -1421,7 +1466,7 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
                   onMouseLeave={() => setProgramDropdownVisible(false)}
                   style={{ position: 'relative', height: '100%', justifyContent: 'center' }}
                 >
-                  <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
+                  <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setActiveFilters(vychoziFiltry); setDetailAkce(null); }}>
                     <Text style={[styles.desktopMenuText, (aktivniTab === 'Program' || aktivniTab === 'Hoste') && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
                   </TouchableOpacity>
 
@@ -1431,7 +1476,7 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
                         style={styles.dropdownItem}
                         onMouseEnter={() => setHoveredMenuItem('Program')}
                         onMouseLeave={() => setHoveredMenuItem(null)}
-                        onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); setProgramDropdownVisible(false); }}
+                        onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setActiveFilters(vychoziFiltry); setDetailAkce(null); setProgramDropdownVisible(false); }}
                       >
                         <Text style={[styles.dropdownItemText, hoveredMenuItem === 'Program' && { color: 'black', fontWeight: 'bold' }]}>PROGRAM</Text>
                       </TouchableOpacity>
@@ -1583,7 +1628,7 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
                               setSpeakerModalVisible(true);
                             }}
                           >
-                            <View style={{ width: '100%', aspectRatio: 4/3, backgroundColor: h.fotka ? 'transparent' : themeColor, borderTopLeftRadius: 10, borderTopRightRadius: 10, overflow: 'hidden' }}>
+                            <View style={{ width: '100%', aspectRatio: 3/4, backgroundColor: h.fotka ? 'transparent' : themeColor, borderTopLeftRadius: 10, borderTopRightRadius: 10, overflow: 'hidden' }}>
                               {h.fotka ? (
                                 <Image source={{ uri: h.fotka }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                               ) : null}
@@ -1607,7 +1652,6 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
             </ScrollView>
           )}
 
-          {/* 👇 NOVÁ ZÁLOŽKA PRO PARTNERY 👇 */}
           {aktivniTab === 'Partneri' && !detailAkce && (
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15, paddingTop: 40 }}>
@@ -1636,9 +1680,9 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
                             style={{ 
                               width: isDesktop ? '25%' : '50%', 
                               paddingHorizontal: 25, 
-                              paddingVertical: 15,
-                              height: 160, 
-                              marginBottom: 40,
+                              paddingVertical: 15, 
+                              height: 120,        
+                              marginBottom: 40,   
                               justifyContent: 'center', 
                               alignItems: 'center' 
                             }}
@@ -1666,29 +1710,49 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={isDesktop ? styles.desktopContainer : null}>
                     <View style={styles.pageTitleContainer}>
-                      <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
+                      <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); setActiveFilters(vychoziFiltry); }} activeOpacity={0.7} style={{ flex: 1 }}>
                         <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
                         <Ionicons name={zobrazitObrazky ? "reorder-three-outline" : "grid-outline"} size={24} color="black" />
                       </TouchableOpacity>
                     </View>
+                    
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer]}>
                       {dny.map((den, index) => {
-                        const isActive = (vybranyDen === den && !vybranyTag);
+                        const isActive = (vybranyDen === den && !vybranyTag && !hasActiveFilters);
                         return (
                           <TouchableOpacity key={index} style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
-                            onPress={() => { setVybranyDen(isActive ? 'VŠE' : den); setVybranyTag(null); }}>
+                            onPress={() => { setVybranyDen(isActive ? 'VŠE' : den); setVybranyTag(null); setActiveFilters(vychoziFiltry); }}>
                             <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
                           </TouchableOpacity>
                         )
                       })}
                     </ScrollView>
+
+                    {/* 👇 TLAČÍTKO PRO OTEVŘENÍ FILTRU 👇 */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                      <TouchableOpacity 
+                        onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} 
+                        style={styles.filterTriggerBtn}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="filter" size={16} color={themeColor} />
+                        <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
+                      </TouchableOpacity>
+                      
+                      {hasActiveFilters && (
+                        <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15 }}>
+                          <Text style={{ fontFamily: 'Inter_400Regular', color: '#EF4444', fontSize: 13, textDecorationLine: 'underline' }}>Zrušit filtry</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                     
                     <View style={{ paddingBottom: 20 }}>
                       {zobrazenePrednasky.length > 0 ? (
                         dny.map((den, index) => {
-                          if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
+                          // Pokud se nefiltruje složitě přes nový filtr a je vybrán konkrétní den, ukaž jen ten
+                          if (!hasActiveFilters && vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
 
                           const akceDne = zobrazenePrednasky.filter(item => item.den === den);
                           if (akceDne.length === 0) return null;
@@ -1703,7 +1767,7 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
                           );
                         })
                       ) : (
-                        <Text style={styles.emptyText}>Pro tento den zatím není program.</Text>
+                        <Text style={styles.emptyText}>Zvoleným filtrům neodpovídá žádný program.</Text>
                       )}
                     </View>
                   </View>
@@ -1891,7 +1955,7 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
                       {/* 👇 KARTA PRO PŘECHOD NA AKCI (MOBIL) 👇 */}
                       {speakerEvents.length > 0 && !detailAkce && (
                         <View style={styles.speakerEventsSection}>
-                          <Text style={styles.speakerEventsLabel}>Program</Text>
+                          <Text style={styles.mobileSpeakerModalJob}>Program</Text>
                           {speakerEvents.map(ev => (
                             <TouchableOpacity key={ev.id} style={styles.speakerEventCard} activeOpacity={0.7} onPress={() => prejitNaAkciHost(ev)}>
                               <Text style={styles.speakerEventTime}>{ev.cas}</Text>
@@ -1908,9 +1972,135 @@ fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?
             </View>
           )}
 
+          {/* 👇 HLAVNÍ VYSKAKOVACÍ OKNO FILTRU 👇 */}
+          <Modal visible={filterModalVisible} transparent={true} animationType="fade" onRequestClose={() => setFilterModalVisible(false)}>
+            <View style={styles.filterModalOverlay}>
+              <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setFilterModalVisible(false)} />
+              
+              <View style={styles.filterModalContent}>
+                <View style={styles.filterHeaderRow}>
+                  <Text style={styles.filterMainTitle}>Filtrovat</Text>
+                  <TouchableOpacity onPress={() => setTempFilters(vychoziFiltry)} style={styles.filterResetBtn}>
+                    <Text style={styles.filterResetText}>reset</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {['den', 'typ', 'misto', 'hoste'].map(filterKey => {
+                  if (filterOptions[filterKey].length === 0) return null;
+                  
+                  const vybranePocet = tempFilters[filterKey].length;
+                  const labelText = vybranePocet > 0 ? `Vybráno (${vybranePocet})` : '';
+
+                  return (
+                    <View key={filterKey} style={styles.filterFieldWrapper}>
+                      <Text style={styles.filterFieldLabel}>{filterLabels[filterKey]}</Text>
+                      <TouchableOpacity 
+                        style={styles.filterFieldBox} 
+                        activeOpacity={0.7}
+                        onPress={() => setFilterSubModalVisible(filterKey)}
+                      >
+                        <Text style={[styles.filterFieldText, vybranePocet > 0 && { color: themeColor, fontWeight: 'bold' }]}>
+                          {labelText}
+                        </Text>
+                        <Ionicons name="chevron-down" size={20} color="#111827" />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+
+                <TouchableOpacity 
+                  style={[styles.filterConfirmBtn, { backgroundColor: themeColor }]}
+                  onPress={() => {
+                    setActiveFilters(tempFilters);
+                    setVybranyDen('VŠE');
+                    setVybranyTag(null);
+                    setFilterModalVisible(false);
+                  }}
+                >
+                  <Text style={styles.filterConfirmBtnText}>Potvrdit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          {/* 👇 SUB-MODAL PRO VÝBĚR KONKRÉTNÍCH POLOŽEK VE FILTRU 👇 */}
+          <Modal visible={!!filterSubModalVisible} transparent={true} animationType="fade" onRequestClose={() => setFilterSubModalVisible(null)}>
+            <View style={styles.filterModalOverlay}>
+              <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setFilterSubModalVisible(null)} />
+              
+              <View style={[styles.filterModalContent, { paddingHorizontal: 0, paddingBottom: 25 }]}>
+                <ScrollView style={{ maxHeight: 400 }} contentContainerStyle={{ paddingHorizontal: 25, paddingTop: 20 }}>
+                  
+                  {filterSubModalVisible && (() => {
+                    const currentOptions = filterOptions[filterSubModalVisible];
+                    const selectedOptions = tempFilters[filterSubModalVisible];
+                    const isAllSelected = selectedOptions.length === currentOptions.length;
+
+                    return (
+                      <>
+                        <TouchableOpacity 
+                          style={styles.filterCheckboxRow}
+                          onPress={() => {
+                            if (isAllSelected) {
+                              setTempFilters({ ...tempFilters, [filterSubModalVisible]: [] });
+                            } else {
+                              setTempFilters({ ...tempFilters, [filterSubModalVisible]: [...currentOptions] });
+                            }
+                          }}
+                        >
+                          <Ionicons name={isAllSelected ? "checkmark-circle" : "ellipse-outline"} size={22} color={isAllSelected ? themeColor : "#D1D5DB"} />
+                          <Text style={styles.filterCheckboxText}>OZNAČIT VŠE</Text>
+                        </TouchableOpacity>
+                        
+                        <View style={{ height: 1, backgroundColor: '#E5E7EB', marginVertical: 10 }} />
+
+                        {currentOptions.map((option, idx) => {
+                          const isSelected = selectedOptions.includes(option);
+                          return (
+                            <TouchableOpacity 
+                              key={idx} 
+                              style={styles.filterCheckboxRow}
+                              onPress={() => {
+                                if (isSelected) {
+                                  setTempFilters({ ...tempFilters, [filterSubModalVisible]: selectedOptions.filter(o => o !== option) });
+                                } else {
+                                  setTempFilters({ ...tempFilters, [filterSubModalVisible]: [...selectedOptions, option] });
+                                }
+                              }}
+                            >
+                              <Ionicons name={isSelected ? "checkmark-circle" : "ellipse-outline"} size={22} color={isSelected ? themeColor : "#D1D5DB"} />
+                              <Text style={[styles.filterCheckboxText, isSelected && { fontWeight: 'bold', color: '#000' }]}>{option}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </>
+                    );
+                  })()}
+
+                </ScrollView>
+
+                <View style={styles.filterSubModalActions}>
+                  <TouchableOpacity 
+                    style={[styles.filterSubConfirmBtn, { backgroundColor: themeColor }]}
+                    onPress={() => setFilterSubModalVisible(null)}
+                  >
+                    <Text style={styles.filterConfirmBtnText}>Potvrdit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.filterSubCancelBtn}
+                    onPress={() => setFilterSubModalVisible(null)}
+                  >
+                    <Text style={styles.filterSubCancelText}>Zrušit</Text>
+                  </TouchableOpacity>
+                </View>
+
+              </View>
+            </View>
+          </Modal>
+
           {!isDesktop && (
             <View style={styles.bottomNav}>
-              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
+              <TouchableOpacity style={styles.navItem} onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setActiveFilters(vychoziFiltry); setDetailAkce(null); }}>
                 <Ionicons name={aktivniTab === 'Program' && !detailAkce ? "calendar" : "calendar-outline"} size={24} color={aktivniTab === 'Program' && !detailAkce ? themeColor : 'black'} />
                 <Text style={[styles.navText, { color: aktivniTab === 'Program' && !detailAkce ? themeColor : 'black' }]}>Program</Text>
               </TouchableOpacity>
@@ -2735,5 +2925,134 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: '#111827',
+  },
+
+  // 👇 STYLY PRO FILTR MODAL 👇
+  filterTriggerBtn: {
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#E0E7FF', 
+    paddingVertical: 8, 
+    paddingHorizontal: 12, 
+    borderRadius: 20,
+    alignSelf: 'flex-start'
+  },
+  filterTriggerText: {
+    fontFamily: 'Inter_400Regular', 
+    marginLeft: 6, 
+    fontWeight: 'bold', 
+    fontSize: 13
+  },
+  filterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(5px)' } : {}), 
+  },
+  filterModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 25,
+    width: '100%',
+    maxWidth: 400,
+    ...Platform.select({ web: { boxShadow: '0px 4px 15px rgba(0,0,0,0.1)' }, default: { elevation: 8 } })
+  },
+  filterHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  filterMainTitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 22,
+    color: '#000',
+    fontWeight: 'bold'
+  },
+  filterResetBtn: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 12
+  },
+  filterResetText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    color: '#4B5563'
+  },
+  filterFieldWrapper: {
+    marginBottom: 20
+  },
+  filterFieldLabel: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#000',
+    marginBottom: 8
+  },
+  filterFieldBox: {
+    backgroundColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  filterFieldText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#6B7280'
+  },
+  filterConfirmBtn: {
+    paddingVertical: 14,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 30
+  },
+  filterConfirmBtnText: {
+    fontFamily: 'Inter_400Regular',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 15
+  },
+  filterCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12
+  },
+  filterCheckboxText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#374151',
+    marginLeft: 10
+  },
+  filterSubModalActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderColor: '#E5E7EB'
+  },
+  filterSubConfirmBtn: {
+    paddingVertical: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+    paddingHorizontal: 25,
+    marginRight: 15
+  },
+  filterSubCancelBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 15
+  },
+  filterSubCancelText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#000'
   }
 });
