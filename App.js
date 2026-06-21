@@ -918,8 +918,10 @@ export default function App() {
           {isDesktop ? (
             <View style={styles.desktopDetailLayout}>
               
+              {/* LEVÝ SLOUPEC - DESKTOP */}
               <View style={{ flex: 1, marginRight: 20 }}>
                 
+                {/* 1. BÍLÁ KARTA: ANOTACE A KAPACITA */}
                 <View style={styles.desktopDetailCard}>
                   
                   <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
@@ -986,6 +988,7 @@ export default function App() {
                   )}
                 </View>
 
+                {/* 2. BÍLÁ KARTA: REZERVACE */}
                 {item.rezervace && (
                   <View style={[styles.desktopDetailCard, { backgroundColor: '#F9FAFB', padding: 20 }]}>
                     <Text style={styles.formTitle}>Rezervace</Text>
@@ -1033,6 +1036,7 @@ export default function App() {
                 )}
               </View>
 
+              {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) - DESKTOP */}
               <View style={styles.desktopDetailRightColumn}>
                 {item.image ? (
                   <Image source={{ uri: item.image }} style={styles.desktopDetailImage} resizeMode="cover" />
@@ -1080,7 +1084,14 @@ export default function App() {
                 <Text style={styles.detailMainTitle}>{item.nazev}</Text>
               </View>
 
-              {item.host !== '' && <Text style={styles.detailHost}>{item.roleHosta}: {item.host}</Text>}
+              {/* 👇 ZDE JE NOVĚ KLIKACÍ JMÉNO HOSTA (Mobil) 👇 */}
+              {item.host !== '' && (
+                <TouchableOpacity activeOpacity={0.7} onPress={() => setSpeakerModalVisible(true)}>
+                  <Text style={styles.detailHost}>
+                    {item.roleHosta}: <Text style={{ color: themeColor }}>{item.host}</Text>
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               <View style={[styles.detailTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
@@ -1139,14 +1150,24 @@ export default function App() {
                 </View>
               </View>
 
-              {item.rezervace && (
-                <View style={{ marginBottom: 5 }}>
+              {/* 👇 Kapacita a Srdíčko opět u sebe na jednom řádku 👇 */}
+              <View style={[styles.detailBottomRowInfo, { alignItems: 'flex-start', marginTop: 10, marginBottom: 25 }]}>
+                <View style={styles.detailCapacityWrapper}>
                   {getKapacitaText()}
                 </View>
-              )}
+                <View style={styles.detailHeartWrapper}>
+                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
+                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
+                  </TouchableOpacity>
+                  {item.pocetOblibenych > 0 && (
+                    <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
+                  )}
+                </View>
+              </View>
 
+              {/* 👇 KARTA PŘEDNÁŠEJÍCÍHO PRO MOBIL (TLAČÍTKO PRO OTEVŘENÍ MODALU PŘESUNUTO SEM) 👇 */}
               {(item.fotkaHosta || item.popisHosta !== '' || item.profeseHosta !== '') && (
-                <View style={{ width: '100%', marginTop: 25, marginBottom: 15 }}>
+                <View style={{ width: '100%', marginBottom: 25 }}>
                   <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
                     {item.roleHosta}
                   </Text>
@@ -1163,17 +1184,6 @@ export default function App() {
                   </TouchableOpacity>
                 </View>
               )}
-
-              <View style={[styles.detailBottomRowInfo, { justifyContent: 'flex-end', marginTop: 10, marginBottom: 25 }]}>
-                <View style={styles.detailHeartWrapper}>
-                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
-                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
-                  </TouchableOpacity>
-                  {item.pocetOblibenych > 0 && (
-                    <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
-                  )}
-                </View>
-              </View>
 
               {item.rezervace && (
                 <View style={styles.formContainer}>
@@ -2273,7 +2283,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // 👇 NOVÉ STYLY PRO VYSKAKOVACÍ KARTU ŘEČNÍKA NA MOBILU 👇
+  // NOVÉ STYLY PRO VYSKAKOVACÍ KARTU ŘEČNÍKA NA MOBILU
   mobileSpeakerTrigger: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
@@ -2296,16 +2306,16 @@ const styles = StyleSheet.create({
     left: 0, 
     right: 0,
     backgroundColor: 'rgba(255, 255, 255, 0.4)', 
-    justifyContent: 'center', // Centruje okno doprostřed
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 25, // Zajistí přesnou a stejnou mezeru od horní i spodní lišty
+    padding: 25, 
     zIndex: 1000,
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}), 
   },
   mobileSpeakerModalContent: {
     width: '100%',
     maxWidth: 400,
-    maxHeight: '100%', // Dovolí oknu využít všechen prostor, který mu dává padding
+    maxHeight: '100%', 
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -2317,7 +2327,7 @@ const styles = StyleSheet.create({
   },
   mobileSpeakerModalImageContainer: {
     width: '100%',
-    aspectRatio: 1, // 🔥 Tímto uděláme z fotky dokonalý čtverec 1:1
+    aspectRatio: 1, 
     position: 'relative',
   },
   mobileSpeakerCloseBtn: {
