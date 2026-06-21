@@ -237,6 +237,7 @@ export default function App() {
 
   const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
   const [hosteVsechny, setHosteVsechny] = useState([]); 
+  const [partneri, setPartneri] = useState([]);
 
   const [heroImage, setHeroImage] = useState(null); 
   const [loading, setLoading] = useState(true);
@@ -329,6 +330,31 @@ export default function App() {
         }
       })
       .catch((err) => console.log('Obrázek pro Home se nenačetl nebo tabulka neexistuje:', err));
+
+    // NAČÍTÁNÍ PARTNERŮ
+    fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        if (data && data.records) {
+          const upraveniPartneri = data.records.map(record => {
+            const f = record.fields;
+            return {
+              id: record.id,
+              nazev: safeString(f['Název']),
+              odkaz: safeString(f['Odkaz']),
+              kategorie: safeString(f['Kategorie']),
+              logo: safeImage(f['Logo'])
+            };
+          });
+          setPartneri(upraveniPartneri);
+        }
+      })
+      .catch((err) => console.log('Chyba při načítání partnerů:', err));
 
     fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -1423,8 +1449,8 @@ export default function App() {
                 <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}>
                   <Text style={styles.desktopMenuText}>ARCHIV</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Další'); setRozbaleno('Pořadatelé'); }}>
-                  <Text style={[styles.desktopMenuText, aktivniTab === 'Další' && rozbaleno === 'Pořadatelé' && { color: themeColor, fontWeight: 'bold' }]}>POŘADATELÉ</Text>
+                <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Partneri'); }}>
+                  <Text style={[styles.desktopMenuText, aktivniTab === 'Partneri' && { color: themeColor, fontWeight: 'bold' }]}>POŘADATELÉ</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.desktopHeaderFavBtn} onPress={() => { setDetailAkce(null); setAktivniTab('Oblíbené'); }}>
                   <Ionicons name={oblibeneIds.length > 0 || (aktivniTab === 'Oblíbené' && !detailAkce) ? "heart" : "heart-outline"} size={24} color={aktivniTab === 'Oblíbené' && !detailAkce ? themeColor : "black"} />
@@ -1580,6 +1606,59 @@ export default function App() {
             </ScrollView>
           )}
 
+          {/* 👇 NOVÁ ZÁLOŽKA PRO PARTNERY 👇 */}
+          {aktivniTab === 'Partneri' && !detailAkce && (
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+              <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15, paddingTop: 40 }}>
+                {['Pořadatelé', 'Podpora', 'Mediální partneři'].map((kat) => {
+                  const partneriProKategorii = partneri.filter(p => p.kategorie && p.kategorie.toLowerCase() === kat.toLowerCase());
+                  
+                  if (partneriProKategorii.length === 0) return null;
+
+                  return (
+                    <View key={kat} style={{ marginBottom: 60 }}>
+                      <Text style={{ 
+                        fontFamily: 'Inter_400Regular', 
+                        fontSize: 24, 
+                        textTransform: 'uppercase', 
+                        marginBottom: 30, 
+                        color: '#000', 
+                        letterSpacing: 1 
+                      }}>
+                        {kat}
+                      </Text>
+
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -15 }}>
+                        {partneriProKategorii.map(p => (
+                          <TouchableOpacity 
+                            key={p.id} 
+                            style={{ 
+                              width: isDesktop ? '25%' : '50%', 
+                              paddingHorizontal: 20, 
+                              paddingVertical: 10,
+                              height: 120, 
+                              justifyContent: 'center', 
+                              alignItems: 'center' 
+                            }}
+                            onPress={() => p.odkaz ? Linking.openURL(p.odkaz) : null}
+                            activeOpacity={p.odkaz ? 0.7 : 1}
+                          >
+                            {p.logo ? (
+                              <Image source={{ uri: p.logo }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                            ) : (
+                              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, textAlign: 'center', color: '#000', fontWeight: 'bold' }}>{p.nazev}</Text>
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+              {isDesktop && vykresliPaticku()}
+            </ScrollView>
+          )}
+
           {aktivniTab === 'Program' && !detailAkce && (
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
@@ -1711,11 +1790,7 @@ export default function App() {
                       {vykresliPolozkuMenu('Archiv', 'link', 'https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}
                       {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
                       {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
-                      {vykresliPolozkuMenu('Pořadatelé', 'expand', [
-                        { label: 'Muzeum umění Olomouc', url: 'https://muo.cz/' },
-                        { label: 'Židovská obec Olomouc', url: 'https://kehila-olomouc.cz/rs/' },
-                        { label: 'Centrum judaistických studií', url: 'https://judaistika.upol.cz/' }
-                      ])}
+                      {vykresliPolozkuMenu('Pořadatelé / Partneři', 'action', () => setAktivniTab('Partneri'))}
                       {vykresliPolozkuMenu('Kontakt', 'expand', 'Produkce festivalu\nAlexandr Jeništa\njenista@muo.cz\n+420 770 147 527\n\nPokladna MUO | CENTRAL\n+420 585 514 241\npokladna@muo.cz\nút–ne 10-18 hodin\n\nMuzeum umění Olomouc\nDenisova 47, 771 11 Olomouc\n+420 585 514 111\ninfo@muo.cz')}
                     </View>
 
@@ -2638,12 +2713,6 @@ const styles = StyleSheet.create({
 
   speakerEventsSection: {
     marginTop: 30,
-  },
-  speakerEventsLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: '#6B7280',
-    marginBottom: 8,
   },
   speakerEventCard: {
     backgroundColor: '#FFFFFF',
