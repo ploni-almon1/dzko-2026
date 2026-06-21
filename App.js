@@ -188,6 +188,20 @@ const ziskejVychoziDen = () => {
   return 'VŠE'; 
 };
 
+// 👇 EXTRÉMNĚ BEZPEČNÉ FUNKCE PRO ZPRACOVÁNÍ AIRTABLE DAT 👇
+const safeString = (val) => {
+  if (val == null) return '';
+  if (Array.isArray(val)) return String(val[0] || '').trim();
+  return String(val).trim();
+};
+
+const safeImage = (val) => {
+  if (Array.isArray(val) && val.length > 0 && val[0].url) {
+    return val[0].url;
+  }
+  return null;
+};
+
 export default function App() {
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -214,14 +228,6 @@ export default function App() {
   const [historieAkce, setHistorieAkce] = useState(null); 
   const [mapaModalVisible, setMapaModalVisible] = useState(false); 
   
-  const [homeMapaZvetsena, setHomeMapaZvetsena] = useState(false);
-  const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
-
-  const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
-  const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
-  const [novaBarvaInput, setNovaBarvaInput] = useState('');
-
-  const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
   const [heroImage, setHeroImage] = useState(null); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -234,6 +240,19 @@ export default function App() {
   
   const [chciDalsiRezervaci, setChciDalsiRezervaci] = useState(false);
   const [speakerModalVisible, setSpeakerModalVisible] = useState(false);
+
+  const [aktivniSelectedSpeaker, setAktivniSelectedSpeaker] = useState(null);
+
+  const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
+  const [hosteVsechny, setHosteVsechny] = useState([]); 
+
+  const [programDropdownVisible, setProgramDropdownVisible] = useState(false);
+  const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
+
+  const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
+  const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
+  const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
+  const [novaBarvaInput, setNovaBarvaInput] = useState('');
 
   const detailScrollViewRef = useRef(null);
 
@@ -326,19 +345,53 @@ export default function App() {
             const mistoText = f['Místo'] || '';
             const slozenyCas = [denText, casText, mistoText].filter(Boolean).join(' | ');
 
+            // 👇 BEZPEČNÉ SESTAVENÍ POLE HOSTŮ (NEZKOALABUJE, KDYŽ PŘIJDE ARRAY Z AIRTABLE) 👇
+            const hosteList = [];
+            
+            const host1 = safeString(f['Host']);
+            if (host1 !== '') {
+              hosteList.push({
+                jmeno: host1,
+                role: safeString(f['Role hosta']) || 'Přednášející',
+                fotka: safeImage(f['Fotka hosta']),
+                popis: safeString(f['Popis hosta']),
+                profese: safeString(f['Profese hosta'])
+              });
+            }
+            
+            const host2 = safeString(f['Host 2']);
+            if (host2 !== '') {
+              hosteList.push({
+                jmeno: host2,
+                role: safeString(f['Role hosta 2']) || 'Přednášející',
+                fotka: safeImage(f['Fotka hosta 2']),
+                popis: safeString(f['Popis hosta 2']),
+                profese: safeString(f['Profese hosta 2'])
+              });
+            }
+
+            const host3 = safeString(f['Host 3']);
+            if (host3 !== '') {
+              hosteList.push({
+                jmeno: host3,
+                role: safeString(f['Role hosta 3']) || 'Přednášející',
+                fotka: safeImage(f['Fotka hosta 3']),
+                popis: safeString(f['Popis hosta 3']),
+                profese: safeString(f['Profese hosta 3'])
+              });
+            }
+
             return {
               id: record.id,
               den: denText,
               cas: slozenyCas,
               nazev: f['Název akce'],
-              host: f['Host'] || '',
-              roleHosta: f['Role hosta'] || 'Přednášející',
-              fotkaHosta: f['Fotka hosta'] && f['Fotka hosta'][0] ? f['Fotka hosta'][0].url : null,
-              popisHosta: f['Popis hosta'] || '',
-              profeseHosta: f['Profese hosta'] || '',
+              hoste: hosteList,
+              host: hosteList.map(h => h.jmeno).join(', '),
+              roleHosta: hosteList.length > 1 ? 'Hosté' : (hosteList.length === 1 ? hosteList[0].role : 'Přednášející'),
               tag: f['Tagy'] || [],
               popis: f['Anotace'] || '',
-              image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
+              image: safeImage(f['Obrázek']),
               odkaz: f['Vstupenky'] || null, 
               rezervace: !!f['Rezervace'],
               pocetOblibenych: f['Počet oblíbených'] || 0,
@@ -357,6 +410,20 @@ export default function App() {
         });
 
         setPrednaskyVsechny(upravenaData);
+
+        const unikatniHosteMap = new Map();
+        for (const item of upravenaData) {
+          for (const h of item.hoste) {
+            if (h.jmeno && h.jmeno.trim() !== '') {
+              if (!unikatniHosteMap.has(h.jmeno)) {
+                unikatniHosteMap.set(h.jmeno, h);
+              }
+            }
+          }
+        }
+        const unikatniHosteList = Array.from(unikatniHosteMap.values());
+        unikatniHosteList.sort((a, b) => a.jmeno.localeCompare(b.jmeno));
+        setHosteVsechny(unikatniHosteList);
 
         if (Platform.OS === 'web') {
           const urlParams = new URLSearchParams(window.location.search);
@@ -490,8 +557,13 @@ export default function App() {
   };
 
   const handleMenuPress = (nazev, type, content) => {
-    if (type === 'link') Linking.openURL(content);
-    else setRozbaleno(rozbaleno === nazev ? null : nazev);
+    if (type === 'action') {
+      content(); 
+    } else if (type === 'link') {
+      Linking.openURL(content);
+    } else {
+      setRozbaleno(rozbaleno === nazev ? null : nazev);
+    }
   };
 
   const otevriDetail = (item, scrollNaRezervaci = false) => {
@@ -943,7 +1015,12 @@ export default function App() {
                   </View>
                   
                   <Text style={styles.desktopDetailMainTitle}>{item.nazev}</Text>
-                  {item.host !== '' && <Text style={styles.desktopDetailHost}>{item.roleHosta}: {item.host}</Text>}
+                  
+                  {item.hoste.length > 0 && (
+                    <Text style={styles.desktopDetailHost}>
+                      {item.hoste.length > 1 ? 'Hosté' : item.hoste[0].role}: {item.hoste.map(h => h.jmeno).join(', ')}
+                    </Text>
+                  )}
 
                   <Text style={styles.desktopDetailDescription}>
                     {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
@@ -1046,23 +1123,33 @@ export default function App() {
                   </View>
                 )}
                 
-                {(item.fotkaHosta || item.popisHosta !== '' || item.profeseHosta !== '') && (
-                  <View style={{ width: '100%', marginTop: 15 }}>
-                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
-                      {item.roleHosta}
-                    </Text>
-                    <View style={styles.speakerCard}>
-                      <View style={[styles.speakerImageContainer, !item.fotkaHosta && { backgroundColor: themeColor }]}>
-                        {item.fotkaHosta && <Image source={{ uri: item.fotkaHosta }} style={styles.speakerImage} resizeMode="cover" />}
-                      </View>
-                      <View style={styles.speakerInfo}>
-                        <Text style={styles.speakerName}>{item.host}</Text>
-                        {item.profeseHosta !== '' && <Text style={styles.speakerJob}>{item.profeseHosta}</Text>}
-                        {item.popisHosta !== '' && <Text style={styles.speakerDesc}>{item.popisHosta}</Text>}
-                      </View>
+                {item.hoste.map((h, idx) => {
+                  if (!h.fotka && h.popis === '' && h.profese === '') return null;
+                  return (
+                    <View key={idx} style={{ width: '100%', marginTop: 15 }}>
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
+                        {h.role}
+                      </Text>
+                      <TouchableOpacity 
+                        activeOpacity={0.9} 
+                        onPress={() => {
+                          setAktivniSelectedSpeaker(h);
+                          setSpeakerModalVisible(true);
+                        }} 
+                        style={styles.speakerCard}
+                      >
+                        <View style={[styles.speakerImageContainer, !h.fotka && { backgroundColor: themeColor }]}>
+                          {h.fotka && <Image source={{ uri: h.fotka }} style={styles.speakerImage} resizeMode="cover" />}
+                        </View>
+                        <View style={styles.speakerInfo}>
+                          <Text style={styles.speakerName}>{h.jmeno}</Text>
+                          {h.profese !== '' && <Text style={styles.speakerJob}>{h.profese}</Text>}
+                          {h.popis !== '' && <Text style={styles.speakerDesc} numberOfLines={3}>{h.popis}</Text>}
+                        </View>
+                      </TouchableOpacity>
                     </View>
-                  </View>
-                )}
+                  );
+                })}
 
                 <View style={[styles.desktopDetailBottomActions, { justifyContent: 'flex-end', width: '100%', alignItems: 'flex-start', marginTop: 25 }]}>
                   <View style={styles.detailHeartWrapper}>
@@ -1084,13 +1171,26 @@ export default function App() {
                 <Text style={styles.detailMainTitle}>{item.nazev}</Text>
               </View>
 
-              {/* 👇 ZDE JE KLIKACÍ JMÉNO HOSTA V TMAVÉ BARVĚ (Mobil) 👇 */}
-              {item.host !== '' && (
-                <TouchableOpacity activeOpacity={0.7} onPress={() => setSpeakerModalVisible(true)}>
+              {item.hoste.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 15, marginTop: -5 }}>
                   <Text style={styles.detailHost}>
-                    {item.roleHosta}: <Text>{item.host}</Text>
+                    {item.hoste.length > 1 ? 'Hosté' : item.hoste[0].role}:{' '}
                   </Text>
-                </TouchableOpacity>
+                  {item.hoste.map((h, hIdx) => (
+                    <TouchableOpacity 
+                      key={hIdx} 
+                      activeOpacity={0.7} 
+                      onPress={() => {
+                        setAktivniSelectedSpeaker(h);
+                        setSpeakerModalVisible(true);
+                      }}
+                    >
+                      <Text style={styles.detailHost}>
+                        {h.jmeno}{hIdx < item.hoste.length - 1 ? ', ' : ''}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               )}
 
               <View style={[styles.detailTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
@@ -1150,7 +1250,6 @@ export default function App() {
                 </View>
               </View>
 
-              {/* 👇 Kapacita a Srdíčko opět u sebe na jednom řádku 👇 */}
               <View style={[styles.detailBottomRowInfo, { alignItems: 'flex-start', marginTop: 10, marginBottom: 25 }]}>
                 <View style={styles.detailCapacityWrapper}>
                   {getKapacitaText()}
@@ -1165,25 +1264,27 @@ export default function App() {
                 </View>
               </View>
 
-              {/* 👇 KARTA PŘEDNÁŠEJÍCÍHO PRO MOBIL (TLAČÍTKO PRO OTEVŘENÍ MODALU PŘESUNUTO SEM) 👇 */}
-              {(item.fotkaHosta || item.popisHosta !== '' || item.profeseHosta !== '') && (
-                <View style={{ width: '100%', marginBottom: 25 }}>
-                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
-                    {item.roleHosta}
-                  </Text>
-                  <TouchableOpacity style={styles.mobileSpeakerTrigger} onPress={() => setSpeakerModalVisible(true)} activeOpacity={0.7}>
-                    <View style={[styles.mobileSpeakerTriggerAvatar, !item.fotkaHosta && { backgroundColor: themeColor }]}>
-                      {item.fotkaHosta && <Image source={{ uri: item.fotkaHosta }} style={styles.speakerImage} resizeMode="cover" />}
-                    </View>
-                    <View style={{ flex: 1, paddingLeft: 15, justifyContent: 'center' }}>
-                      <Text style={styles.speakerName}>{item.host}</Text>
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: themeColor, fontWeight: 'bold', marginTop: 4 }}>
-                        Zobrazit profil
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              )}
+              {item.hoste.map((h, idx) => {
+                if (!h.fotka && h.popis === '' && h.profese === '') return null;
+                return (
+                  <View key={idx} style={{ width: '100%', marginBottom: 25 }}>
+                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
+                      {h.role}
+                    </Text>
+                    <TouchableOpacity style={styles.mobileSpeakerTrigger} onPress={() => { setAktivniSelectedSpeaker(h); setSpeakerModalVisible(true); }} activeOpacity={0.7}>
+                      <View style={[styles.mobileSpeakerTriggerAvatar, !h.fotka && { backgroundColor: themeColor }]}>
+                        {h.fotka && <Image source={{ uri: h.fotka }} style={styles.speakerImage} resizeMode="cover" />}
+                      </View>
+                      <View style={{ flex: 1, paddingLeft: 15, justifyContent: 'center' }}>
+                        <Text style={styles.speakerName}>{h.jmeno}</Text>
+                        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: themeColor, fontWeight: 'bold', marginTop: 4 }}>
+                          Zobrazit profil
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
 
               {item.rezervace && (
                 <View style={styles.formContainer}>
@@ -1290,9 +1391,31 @@ export default function App() {
                 <TouchableOpacity onPress={() => { setDetailAkce(null); setAktivniTab('Home'); }}>
                   <Text style={[styles.desktopMenuText, aktivniTab === 'Home' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
-                  <Text style={[styles.desktopMenuText, aktivniTab === 'Program' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
-                </TouchableOpacity>
+                
+                {/* ROZBALOVACÍ MENU PRO PROGRAM/HOSTÉ (BEZ ONMOUSEENTER) */}
+                <View style={{ position: 'relative', height: '100%', justifyContent: 'center' }}>
+                  <TouchableOpacity onPress={() => setProgramDropdownVisible(!programDropdownVisible)}>
+                    <Text style={[styles.desktopMenuText, (aktivniTab === 'Program' || aktivniTab === 'Hoste') && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM ▼</Text>
+                  </TouchableOpacity>
+
+                  {Platform.OS === 'web' && programDropdownVisible && (
+                    <View style={styles.dropdownContainer}>
+                      <TouchableOpacity 
+                        style={styles.dropdownItem}
+                        onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); setProgramDropdownVisible(false); }}
+                      >
+                        <Text style={styles.dropdownItemText}>PROGRAM</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.dropdownItem}
+                        onPress={() => { setAktivniTab('Hoste'); setDetailAkce(null); setProgramDropdownVisible(false); }}
+                      >
+                        <Text style={styles.dropdownItemText}>HOSTÉ</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+
                 <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}>
                   <Text style={styles.desktopMenuText}>ARCHIV</Text>
                 </TouchableOpacity>
@@ -1428,10 +1551,53 @@ export default function App() {
             </View>
           )}
 
-          {aktivniTab !== 'Mapa' && aktivniTab !== 'Home' && !detailAkce && (
+          {aktivniTab === 'Hoste' && !detailAkce && (
+            <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+              <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15, paddingTop: 10 }}>
+                <View style={styles.pageTitleContainer}>
+                  <Text style={styles.pageTitle}>HOSTÉ</Text>
+                </View>
+                
+                <View style={{ paddingBottom: 20 }}>
+                  {hosteVsechny.length > 0 ? (
+                    <View style={isDesktop ? styles.desktopGrid : undefined}>
+                      {hosteVsechny.map((h, index) => (
+                        <View key={index} style={isDesktop ? styles.desktopCardWrapper : styles.mobileCardWrapper}>
+                          <TouchableOpacity 
+                            style={[styles.card, { height: '100%' }]}
+                            activeOpacity={0.7}
+                            onPress={() => {
+                              setAktivniSelectedSpeaker(h);
+                              setSpeakerModalVisible(true);
+                            }}
+                          >
+                            <View style={{ width: '100%', aspectRatio: 1.5, backgroundColor: h.fotka ? 'transparent' : themeColor, borderTopLeftRadius: 10, borderTopRightRadius: 10, overflow: 'hidden' }}>
+                              {h.fotka ? (
+                                <Image source={{ uri: h.fotka }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                              ) : null}
+                            </View>
+                            <View style={{ padding: 15 }}>
+                              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, fontWeight: 'bold', color: '#111827', marginBottom: 4 }}>{h.jmeno}</Text>
+                              {h.profese !== '' && (
+                                <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: '#6B7280' }}>{h.profese}</Text>
+                              )}
+                            </View>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={styles.emptyText}>Zatím nebyli přidáni žádní hosté.</Text>
+                  )}
+                </View>
+              </View>
+              {isDesktop && vykresliPaticku()}
+            </ScrollView>
+          )}
+
+          {aktivniTab === 'Program' && !detailAkce && (
             <ScrollView style={{ flex: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
-                {aktivniTab === 'Program' && (
                   <View style={isDesktop ? styles.desktopContainer : null}>
                     <View style={styles.pageTitleContainer}>
                       <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
@@ -1457,7 +1623,6 @@ export default function App() {
                       {zobrazenePrednasky.length > 0 ? (
                         dny.map((den, index) => {
                           if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
-
                           const akceDne = zobrazenePrednasky.filter(item => item.den === den);
                           if (akceDne.length === 0) return null;
                           
@@ -1475,9 +1640,14 @@ export default function App() {
                       )}
                     </View>
                   </View>
-                )}
+              </View>
+              {isDesktop && vykresliPaticku()}
+            </ScrollView>
+          )}
                 
-                {aktivniTab === 'Oblíbené' && (
+          {aktivniTab === 'Oblíbené' && !detailAkce && (
+            <ScrollView style={{ flex: 1 }}>
+              <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={[isDesktop ? styles.desktopContainer : null, { paddingBottom: 20 }]}>
                     
                     <View style={styles.pageTitleContainer}>
@@ -1519,7 +1689,6 @@ export default function App() {
                     {oblibeneZobrazeni.length > 0 ? (
                       dny.map((den, index) => {
                         if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
-
                         const akceDne = oblibeneZobrazeni.filter(item => item.den === den);
                         if (akceDne.length === 0) return null;
                         
@@ -1539,13 +1708,19 @@ export default function App() {
                       <Text style={styles.emptyText}>Pro vybraný den nemáte uložené žádné oblíbené akce.</Text>
                     )}
                   </View>
-                )}
+              </View>
+              {isDesktop && vykresliPaticku()}
+            </ScrollView>
+          )}
                 
-                {aktivniTab === 'Další' && (
+          {aktivniTab === 'Další' && !detailAkce && (
+            <ScrollView style={{ flex: 1 }}>
+              <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={styles.dalsiContainer}>
                     <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
                     
                     <View style={styles.menuList}>
+                      {!isDesktop && vykresliPolozkuMenu('Hosté festivalu', 'action', () => setAktivniTab('Hoste'))}
                       {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.')}
                       {vykresliPolozkuMenu('Archiv', 'link', 'https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}
                       {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
@@ -1592,31 +1767,28 @@ export default function App() {
                     )}
 
                   </View>
-                )}
               </View>
-              
               {isDesktop && vykresliPaticku()}
             </ScrollView>
           )}
 
           {detailAkce && vykresliDetail()}
 
-          {/* 👇 VYSKAKOVACÍ OKNO PŘEDNÁŠEJÍCÍHO PRO MOBIL (OVERLAY) 👇 */}
-          {speakerModalVisible && !isDesktop && detailAkce && (
+          {speakerModalVisible && aktivniSelectedSpeaker && (
             <View style={styles.mobileSpeakerOverlay}>
               <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setSpeakerModalVisible(false)} />
               
               <View style={styles.mobileSpeakerModalContent}>
-                <View style={[styles.mobileSpeakerModalImageContainer, !detailAkce.fotkaHosta && { backgroundColor: themeColor }]}>
-                  {detailAkce.fotkaHosta && <Image source={{ uri: detailAkce.fotkaHosta }} style={styles.speakerImage} resizeMode="cover" />}
+                <View style={[styles.mobileSpeakerModalImageContainer, !aktivniSelectedSpeaker.fotka && { backgroundColor: themeColor }]}>
+                  {aktivniSelectedSpeaker.fotka && <Image source={{ uri: aktivniSelectedSpeaker.fotka }} style={styles.speakerImage} resizeMode="cover" />}
                   <TouchableOpacity style={styles.mobileSpeakerCloseBtn} onPress={() => setSpeakerModalVisible(false)}>
                     <Ionicons name="close" size={20} color="#000" />
                   </TouchableOpacity>
                 </View>
                 <ScrollView style={{flexShrink: 1}} contentContainerStyle={styles.mobileSpeakerModalInfo}>
-                  <Text style={styles.mobileSpeakerModalName}>{detailAkce.host}</Text>
-                  {detailAkce.profeseHosta !== '' && <Text style={styles.mobileSpeakerModalJob}>{detailAkce.profeseHosta}</Text>}
-                  {detailAkce.popisHosta !== '' && <Text style={styles.mobileSpeakerModalDesc}>{detailAkce.popisHosta}</Text>}
+                  <Text style={styles.mobileSpeakerModalName}>{aktivniSelectedSpeaker.jmeno}</Text>
+                  {aktivniSelectedSpeaker.profese !== '' && <Text style={styles.mobileSpeakerModalJob}>{aktivniSelectedSpeaker.profese}</Text>}
+                  {aktivniSelectedSpeaker.popis !== '' && <Text style={styles.mobileSpeakerModalDesc}>{aktivniSelectedSpeaker.popis}</Text>}
                 </ScrollView>
               </View>
             </View>
@@ -1899,6 +2071,7 @@ const styles = StyleSheet.create({
   desktopCardWrapper: {
     width: '25%', 
     paddingHorizontal: 8,
+    marginBottom: 20, 
   },
   mobileCardWrapper: {
     width: '100%',
@@ -1941,6 +2114,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000000',
     letterSpacing: 0.5,
+  },
+  
+  dropdownContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: -15,
+    backgroundColor: '#FFFFFF',
+    minWidth: 150,
+    borderRadius: 8,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    zIndex: 100,
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  dropdownItemText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#6B7280',
   },
 
   desktopContainer: {
@@ -2121,7 +2319,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.4)', 
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 25,
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}), 
   },
   mapModalContent: {
@@ -2135,182 +2333,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 40,
     elevation: 10,
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: '#E5E7EB'
-  },
-  mapModalCloseBtn: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    backgroundColor: 'white',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 9999, 
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 5
-  },
-
-  listCardImageDesktop: {
-    width: 360,
-    height: 270,
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-    backgroundColor: '#E5E7EB'
-  },
-  listAnnotation: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: '#4B5563',
-    lineHeight: 22,
-    marginTop: 10,
-    marginBottom: 15,
-  },
-
-  footerContainer: {
-    backgroundColor: '#000000',
-    width: '100%',
-    paddingVertical: 25, 
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  footerInner: {
-    width: '100%',
-    maxWidth: 1270,
-    paddingHorizontal: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center', 
-  },
-  footerLogoCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  footerLogo: {
-    width: 48,
-    height: 48,
-    resizeMode: 'contain',
-    marginRight: 15,
-  },
-  footerTitleText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: '#FFFFFF',
-    lineHeight: 20,
-    letterSpacing: 0.5,
-  },
-  footerTextCol: {
-    justifyContent: 'flex-start',
-  },
-  footerLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: '#FFFFFF',
-    marginBottom: 5,
-  },
-  footerText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: '#FFFFFF',
-    lineHeight: 22,
-  },
-  footerSocialCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
-  },
-  footerSocialBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    display: 'flex', 
-  },
-  footerSocialIconImg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    resizeMode: 'cover',
-  },
-
-  // STYLY PRO KARTU ŘEČNÍKA NA PC
-  speakerCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    minHeight: 220, 
-  },
-  speakerImageContainer: {
-    width: 200, 
-  },
-  speakerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  speakerInfo: {
-    flex: 1,
-    padding: 25,
-    justifyContent: 'flex-start',
-  },
-  speakerName: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000000',
-    marginBottom: 4,
-  },
-  speakerJob: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 8,
-  },
-  speakerDesc: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: '#374151',
-    lineHeight: 22,
-  },
-
-  // NOVÉ STYLY PRO VYSKAKOVACÍ KARTU ŘEČNÍKA NA MOBILU
-  mobileSpeakerTrigger: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-  },
-  mobileSpeakerTriggerAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    overflow: 'hidden',
-  },
-  mobileSpeakerOverlay: {
-    position: 'absolute',
-    top: 0, 
-    bottom: 0, 
-    left: 0, 
-    right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)', 
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 25, 
-    zIndex: 1000,
-    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}), 
   },
   mobileSpeakerModalContent: {
     width: '100%',
@@ -2368,5 +2390,75 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#374151',
     lineHeight: 24,
+  },
+
+  speakerCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    minHeight: 220, 
+  },
+  speakerImageContainer: {
+    width: 200, 
+  },
+  speakerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  speakerInfo: {
+    flex: 1,
+    padding: 25,
+    justifyContent: 'flex-start',
+  },
+  speakerName: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 4,
+  },
+  speakerJob: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  speakerDesc: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#374151',
+    lineHeight: 22,
+  },
+
+  mobileSpeakerTrigger: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+  },
+  mobileSpeakerTriggerAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    overflow: 'hidden',
+  },
+  mobileSpeakerOverlay: {
+    position: 'absolute',
+    top: 0, 
+    bottom: 0, 
+    left: 0, 
+    right: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 25, 
+    zIndex: 1000,
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}), 
   }
 });
