@@ -126,7 +126,6 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandB
             }
         });
 
-        // Tlačítko pro polohu (a zvětšení) umístěné do LEVÉHO HORNÍHO ROHU hned pod +/-
         var customControls = L.control({position: 'topleft'});
         customControls.onAdd = function () {
             var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
@@ -174,7 +173,6 @@ const ziskejVychoziDen = () => {
   const rok = dnes.getFullYear();
   const mesic = dnes.getMonth(); 
   const den = dnes.getDate();
-
   if (rok === 2026 && mesic === 9) {
     switch (den) {
       case 12: return 'PO 12';
@@ -205,8 +203,6 @@ export default function App() {
   const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
   
   const [oblibeneIds, setOblibeneIds] = useState([]);
-  
-  // Paměť pro režim prohlížení sdíleného cizího výběru
   const [sdilenyVyberIds, setSdilenyVyberIds] = useState(null); 
   
   const [mojeRezervace, setMojeRezervace] = useState([]);
@@ -215,8 +211,8 @@ export default function App() {
   const [rozbaleno, setRozbaleno] = useState(null);
   
   const [detailAkce, setDetailAkce] = useState(null);
-  const [historieAkce, setHistorieAkce] = useState(null); // Paměť pro mobilní tlačítko Zpět
-  const [mapaModalVisible, setMapaModalVisible] = useState(false); // Spínač pro PC okno s mapou
+  const [historieAkce, setHistorieAkce] = useState(null); 
+  const [mapaModalVisible, setMapaModalVisible] = useState(false); 
   
   const [homeMapaZvetsena, setHomeMapaZvetsena] = useState(false);
   const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
@@ -235,6 +231,9 @@ export default function App() {
   const [odesilaRezervaci, setOdesilaRezervaci] = useState(false);
   const [rezervaceOdeslana, setRezervaceOdeslana] = useState(false);
   const [rezervaceChyba, setRezervaceChyba] = useState(null); 
+  
+  // 👇 STAV PRO OPAKOVANOU REZERVACI 👇
+  const [chciDalsiRezervaci, setChciDalsiRezervaci] = useState(false);
 
   const detailScrollViewRef = useRef(null);
 
@@ -333,7 +332,10 @@ export default function App() {
               cas: slozenyCas,
               nazev: f['Název akce'],
               host: f['Host'] || '',
-              roleHosta: f['Role hosta'] || 'host',
+              roleHosta: f['Role hosta'] || 'Přednášející',
+              fotkaHosta: f['Fotka hosta'] && f['Fotka hosta'][0] ? f['Fotka hosta'][0].url : null,
+              popisHosta: f['Popis hosta'] || '',
+              profeseHosta: f['Profese hosta'] || '',
               tag: f['Tagy'] || [],
               popis: f['Anotace'] || '',
               image: f['Obrázek'] && f['Obrázek'][0] ? f['Obrázek'][0].url : null,
@@ -356,11 +358,9 @@ export default function App() {
 
         setPrednaskyVsechny(upravenaData);
 
-        // ČTENÍ URL PARAMETRŮ PŘI STARTU
         if (Platform.OS === 'web') {
           const urlParams = new URLSearchParams(window.location.search);
           
-          // 1. Čtení jedné sdílené akce
           const sdileneId = urlParams.get('akce');
           if (sdileneId) {
             const nalezenaAkce = upravenaData.find(a => a.id === sdileneId);
@@ -370,14 +370,12 @@ export default function App() {
             }
           }
           
-          // 2. Čtení sdíleného seznamu oblíbených (režim PROHLÍŽENÍ cizího výběru)
           const sdileneOblibene = urlParams.get('oblibene');
           if (sdileneOblibene) {
             const sdileneIds = sdileneOblibene.split(',');
             const platneSdileneIds = sdileneIds.filter(id => upravenaData.some(a => a.id === id));
             
             if (platneSdileneIds.length > 0) {
-              // Uloží se jen do dočasné proměnné, neukládá se do paměti telefonu!
               setSdilenyVyberIds(platneSdileneIds); 
               setAktivniTab('Oblíbené');
               setVybranyDen('VŠE');
@@ -472,21 +470,19 @@ export default function App() {
     ? prednaskyVsechny.filter(item => item.tag && item.tag.includes(vybranyTag))
     : (vybranyDen === 'VŠE' ? prednaskyVsechny : prednaskyVsechny.filter(item => item.den === vybranyDen));
 
-  // Pro záložku Oblíbené se rozhodujeme, co zrovna ukazujeme (sdílený výběr NEBO vlastní)
   const aktivniOblibeneIds = sdilenyVyberIds ? sdilenyVyberIds : oblibeneIds;
   const oblibeneZobrazeni = prednaskyVsechny.filter(item => aktivniOblibeneIds.includes(item.id));
   
   const highlightAkce = prednaskyVsechny.filter(item => item.highlight).slice(0, 4);
 
-  // Chytře rozdělená logika prokliků na lokaci místa
   const handleLocationClick = (mistoText) => {
     const coords = mapaLokace[mistoText];
     if (coords) {
       setMapFocus(coords); 
       if (isDesktop) {
-        setMapaModalVisible(true); // PC = luxusní AFO okno s rozmazaným sklem
+        setMapaModalVisible(true); 
       } else {
-        if (detailAkce) setHistorieAkce(detailAkce); // Mobil = nativní záložka s pamětí Zpět
+        if (detailAkce) setHistorieAkce(detailAkce); 
         setDetailAkce(null);
         setAktivniTab('Mapa');
       }
@@ -505,6 +501,7 @@ export default function App() {
     setOdesilaRezervaci(false);
     setRezervaceOdeslana(false);
     setRezervaceChyba(null);
+    setChciDalsiRezervaci(false); // Vyresetujeme i požadavek na další rezervaci
 
     if (scrollNaRezervaci && !isDesktop) {
       setTimeout(() => {
@@ -545,7 +542,6 @@ export default function App() {
     }
   };
 
-  // FUNKCE: SDÍLENÍ CELÉHO SEZNAMU OBLÍBENÝCH NAJEDNOU
   const sdiletOblibene = async () => {
     if (oblibeneIds.length === 0) {
       window.alert('Nemáš v oblíbených žádné akce, které bys mohl sdílet.');
@@ -638,6 +634,7 @@ export default function App() {
       }
       
       setRezervaceOdeslana(true);
+      setChciDalsiRezervaci(false); // Po úspěchu schováme formulář a ukážeme znovu zprávu
       
       const noveRezervace = [...new Set([...mojeRezervace, detailAkce.id])];
       setMojeRezervace(noveRezervace);
@@ -788,8 +785,7 @@ export default function App() {
                     style={[
                       styles.tagPillOutline, 
                       { borderColor: themeColor }, 
-                      maRezervaci && !jePlno && styles.tagPillRezervovano,
-                      jePlno && styles.tagPillPlno 
+                      maRezervaci ? styles.tagPillRezervovano : (jePlno ? styles.tagPillPlno : null)
                     ]} 
                     onPress={(e) => { e.stopPropagation?.(); otevriDetail(item, true); }} 
                     activeOpacity={0.7}
@@ -797,10 +793,9 @@ export default function App() {
                     <Text style={[
                       styles.tagTextOutline, 
                       { color: themeColor }, 
-                      maRezervaci && !jePlno && styles.tagTextRezervovano,
-                      jePlno && styles.tagTextPlno
+                      maRezervaci ? styles.tagTextRezervovano : (jePlno ? styles.tagTextPlno : null)
                     ]}>
-                      {jePlno ? 'OBSAZENO' : (maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE')}
+                      {maRezervaci ? 'REZERVOVÁNO' : (jePlno ? 'OBSAZENO' : 'NUTNÁ REZERVACE')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -875,7 +870,6 @@ export default function App() {
     
     const jePlno = item.kapacita && item.pocetRezervaci >= item.kapacita;
 
-    // 👇 NOVÁ LOGIKA PRO VÝPOČET A ZOBRAZENÍ KAPACITY 👇
     const getKapacitaText = () => {
       if (!item.rezervace) return null;
       if (item.kapacita) {
@@ -923,13 +917,12 @@ export default function App() {
           {isDesktop ? (
             <View style={styles.desktopDetailLayout}>
               
-              {/* 👇 LEVÝ SLOUPEC - DESKTOP (Rozdělený na více bílých karet) 👇 */}
+              {/* LEVÝ SLOUPEC - DESKTOP */}
               <View style={{ flex: 1, marginRight: 20 }}>
                 
                 {/* 1. BÍLÁ KARTA: ANOTACE A KAPACITA */}
                 <View style={styles.desktopDetailCard}>
                   
-                  {/* ŘÁDEK S ČASEM A TLAČÍTKEM SDÍLET (DESKTOP) */}
                   <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={styles.desktopCardTime}>{timeText}</Text>
@@ -968,27 +961,25 @@ export default function App() {
                           <Text style={[styles.detailTagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
                         </TouchableOpacity>
                       )}
+
                       {item.rezervace && (
                         <View style={[
                           styles.detailTagPillOutline, 
                           { borderColor: themeColor }, 
-                          maRezervaci && !jePlno && styles.tagPillRezervovano,
-                          jePlno && styles.tagPillPlno
+                          maRezervaci ? styles.tagPillRezervovano : (jePlno ? styles.tagPillPlno : null)
                         ]}>
                           <Text style={[
                             styles.detailTagTextOutline, 
                             { color: themeColor }, 
-                            maRezervaci && !jePlno && styles.tagTextRezervovano,
-                            jePlno && styles.tagTextPlno
+                            maRezervaci ? styles.tagTextRezervovano : (jePlno ? styles.tagTextPlno : null)
                           ]}>
-                            {jePlno ? 'OBSAZENO' : (maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE')}
+                            {maRezervaci ? 'REZERVOVÁNO' : (jePlno ? 'OBSAZENO' : 'NUTNÁ REZERVACE')}
                           </Text>
                         </View>
                       )}
                     </View>
                   </View>
 
-                  {/* KAPACITA ČISTĚ POD TAGY S JEMNÝM ODSADENÍM */}
                   {item.rezervace && (
                     <View style={{ marginTop: 5 }}>
                       {getKapacitaText()}
@@ -996,19 +987,35 @@ export default function App() {
                   )}
                 </View>
 
-                {/* 2. BÍLÁ KARTA: REZERVACE (FORMULÁŘ) JAKO SAMOSTATNÝ BOX */}
+                {/* 2. BÍLÁ KARTA: REZERVACE */}
                 {item.rezervace && (
-                  <View style={styles.desktopDetailCard}>
+                  <View style={[styles.desktopDetailCard, { backgroundColor: '#F9FAFB', padding: 20 }]}>
                     <Text style={styles.formTitle}>Rezervace</Text>
                     
-                    {jePlno ? (
+                    {(maRezervaci || rezervaceOdeslana) && !chciDalsiRezervaci ? (
+                      <View style={{ backgroundColor: '#ECFDF5', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#10B981' }}>
+                         <Text style={{ fontFamily: 'Inter_400Regular', color: '#065F46', textAlign: 'center', fontWeight: 'bold' }}>
+                           Na tuto akci máte úspěšně zajištěnou rezervaci.
+                         </Text>
+                         {!jePlno && (
+                           <TouchableOpacity 
+                             style={{ marginTop: 12, alignSelf: 'center', backgroundColor: '#10B981', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 }}
+                             onPress={() => {
+                               setChciDalsiRezervaci(true);
+                               setRezervaceJmeno(''); 
+                               // Email záměrně neschováváme, ať se to při další rezervaci rychleji vyplní!
+                             }}
+                           >
+                             <Text style={{ color: 'white', fontFamily: 'Inter_400Regular', fontSize: 13, fontWeight: 'bold' }}>Vytvořit další rezervaci</Text>
+                           </TouchableOpacity>
+                         )}
+                      </View>
+                    ) : jePlno ? (
                       <View style={{ backgroundColor: '#F3F4F6', padding: 15, borderRadius: 8 }}>
                          <Text style={{ fontFamily: 'Inter_400Regular', color: '#4B5563', textAlign: 'center' }}>
                            Kapacita této akce již byla naplněna.
                          </Text>
                       </View>
-                    ) : rezervaceOdeslana ? (
-                      <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
                     ) : (
                       <>
                         {rezervaceChyba && <Text style={styles.errorText}>{rezervaceChyba}</Text>}
@@ -1017,12 +1024,17 @@ export default function App() {
                         <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
                           {odesilaRezervaci ? <ActivityIndicator color="white" /> : <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>}
                         </TouchableOpacity>
+
+                        {chciDalsiRezervaci && (
+                          <TouchableOpacity onPress={() => setChciDalsiRezervaci(false)} style={{marginTop: 15, alignSelf: 'center'}}>
+                            <Text style={{color: '#6B7280', fontFamily: 'Inter_400Regular', fontSize: 14}}>Zrušit zadávání další rezervace</Text>
+                          </TouchableOpacity>
+                        )}
                       </>
                     )}
                   </View>
                 )}
               </View>
-              {/* Konec levého sloupce */}
 
               {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) - DESKTOP */}
               <View style={styles.desktopDetailRightColumn}>
@@ -1034,8 +1046,25 @@ export default function App() {
                   </View>
                 )}
                 
-                {/* SRDÍČKO ZAROVNÁNO DOPRAVA */}
-                <View style={[styles.desktopDetailBottomActions, { justifyContent: 'flex-end', width: '100%', alignItems: 'flex-start', marginTop: 10 }]}>
+                {(item.fotkaHosta || item.popisHosta !== '' || item.profeseHosta !== '') && (
+                  <View style={{ width: '100%', marginTop: 15 }}>
+                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
+                      {item.roleHosta}
+                    </Text>
+                    <View style={styles.speakerCard}>
+                      <View style={[styles.speakerImageContainer, !item.fotkaHosta && { backgroundColor: themeColor }]}>
+                        {item.fotkaHosta && <Image source={{ uri: item.fotkaHosta }} style={styles.speakerImage} resizeMode="cover" />}
+                      </View>
+                      <View style={styles.speakerInfo}>
+                        <Text style={styles.speakerName}>{item.host}</Text>
+                        {item.profeseHosta !== '' && <Text style={styles.speakerJob}>{item.profeseHosta}</Text>}
+                        {item.popisHosta !== '' && <Text style={styles.speakerDesc}>{item.popisHosta}</Text>}
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                <View style={[styles.desktopDetailBottomActions, { justifyContent: 'flex-end', width: '100%', alignItems: 'flex-start', marginTop: 25 }]}>
                   <View style={styles.detailHeartWrapper}>
                     <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
                       <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
@@ -1049,7 +1078,7 @@ export default function App() {
               </View>
             </View>
           ) : (
-            /* MOBILNÍ LAYOUT - ZŮSTÁVÁ ZCELA BEZE ZMĚN */
+            /* MOBILNÍ LAYOUT */
             <>
               <View style={styles.detailTitleRow}>
                 <Text style={styles.detailMainTitle}>{item.nazev}</Text>
@@ -1100,30 +1129,47 @@ export default function App() {
                     <View style={[
                       styles.tagPillOutline, 
                       { borderColor: themeColor }, 
-                      maRezervaci && !jePlno && styles.tagPillRezervovano,
-                      jePlno && styles.tagPillPlno
+                      maRezervaci ? styles.tagPillRezervovano : (jePlno ? styles.tagPillPlno : null)
                     ]}>
                       <Text style={[
                         styles.tagTextOutline, 
                         { color: themeColor }, 
-                        maRezervaci && !jePlno && styles.tagTextRezervovano,
-                        jePlno && styles.tagTextPlno
+                        maRezervaci ? styles.tagTextRezervovano : (jePlno ? styles.tagTextPlno : null)
                       ]}>
-                        {jePlno ? 'OBSAZENO' : (maRezervaci ? 'REZERVOVÁNO' : 'NUTNÁ REZERVACE')}
+                        {maRezervaci ? 'REZERVOVÁNO' : (jePlno ? 'OBSAZENO' : 'NUTNÁ REZERVACE')}
                       </Text>
                     </View>
                   )}
                 </View>
               </View>
 
-              {/* MOBILNÍ KAPACITA A SRDÍČKO */}
-              <View style={styles.detailBottomRowInfo}>
-                <View style={styles.detailCapacityWrapper}>
+              {item.rezervace && (
+                <View style={{ marginBottom: 5 }}>
                   {getKapacitaText()}
                 </View>
+              )}
 
+              {(item.fotkaHosta || item.popisHosta !== '' || item.profeseHosta !== '') && (
+                <View style={{ width: '100%', marginTop: 25, marginBottom: 15 }}>
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
+                    {item.roleHosta}
+                  </Text>
+                  <View style={styles.speakerCard}>
+                    <View style={[styles.speakerImageContainerMobile, !item.fotkaHosta && { backgroundColor: themeColor }]}>
+                      {item.fotkaHosta && <Image source={{ uri: item.fotkaHosta }} style={styles.speakerImage} resizeMode="cover" />}
+                    </View>
+                    <View style={styles.speakerInfo}>
+                      <Text style={styles.speakerName}>{item.host}</Text>
+                      {item.profeseHosta !== '' && <Text style={styles.speakerJob}>{item.profeseHosta}</Text>}
+                      {item.popisHosta !== '' && <Text style={styles.speakerDesc}>{item.popisHosta}</Text>}
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              <View style={[styles.detailBottomRowInfo, { justifyContent: 'flex-end', marginTop: 10, marginBottom: 25 }]}>
                 <View style={styles.detailHeartWrapper}>
-                  <TouchableOpacity style={styles.detailHeartIconBtn} onPress={() => prepniOblibene(item.id)}>
+                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
                     <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
                   </TouchableOpacity>
                   {item.pocetOblibenych > 0 && (
@@ -1136,14 +1182,29 @@ export default function App() {
                 <View style={styles.formContainer}>
                   <Text style={styles.formTitle}>Rezervace</Text>
                   
-                  {jePlno ? (
+                  {(maRezervaci || rezervaceOdeslana) && !chciDalsiRezervaci ? (
+                    <View style={{ backgroundColor: '#ECFDF5', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#10B981' }}>
+                       <Text style={{ fontFamily: 'Inter_400Regular', color: '#065F46', textAlign: 'center', fontWeight: 'bold' }}>
+                         Na tuto akci máte úspěšně zajištěnou rezervaci.
+                       </Text>
+                       {!jePlno && (
+                         <TouchableOpacity 
+                           style={{ marginTop: 12, alignSelf: 'center', backgroundColor: '#10B981', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 }}
+                           onPress={() => {
+                             setChciDalsiRezervaci(true);
+                             setRezervaceJmeno(''); 
+                           }}
+                         >
+                           <Text style={{ color: 'white', fontFamily: 'Inter_400Regular', fontSize: 13, fontWeight: 'bold' }}>Vytvořit další rezervaci</Text>
+                         </TouchableOpacity>
+                       )}
+                    </View>
+                  ) : jePlno ? (
                     <View style={{ backgroundColor: '#F3F4F6', padding: 15, borderRadius: 8 }}>
                        <Text style={{ fontFamily: 'Inter_400Regular', color: '#4B5563', textAlign: 'center' }}>
                          Kapacita této akce již byla naplněna.
                        </Text>
                     </View>
-                  ) : rezervaceOdeslana ? (
-                    <Text style={styles.successText}>Rezervace byla úspěšně odeslána!</Text>
                   ) : (
                     <>
                       {rezervaceChyba && (
@@ -1173,6 +1234,12 @@ export default function App() {
                           <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>
                         )}
                       </TouchableOpacity>
+
+                      {chciDalsiRezervaci && (
+                        <TouchableOpacity onPress={() => setChciDalsiRezervaci(false)} style={{marginTop: 15, alignSelf: 'center'}}>
+                          <Text style={{color: '#6B7280', fontFamily: 'Inter_400Regular', fontSize: 14}}>Zrušit zadávání další rezervace</Text>
+                        </TouchableOpacity>
+                      )}
                     </>
                   )}
                 </View>
@@ -1183,7 +1250,6 @@ export default function App() {
           <View style={{ height: 40 }} />
           </View> 
 
-          {/* VLOŽENÁ PATIČKA NA CELOU ŠÍŘKU POUZE NA POČÍTAČI */}
           {isDesktop && vykresliPaticku()}
         </ScrollView>
       </>
@@ -1198,7 +1264,6 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
         
-        {/* HLAVIČKA APLIKACE */}
         <View style={isDesktop ? styles.desktopHeader : styles.header}>
           {isDesktop ? (
             <View style={styles.desktopHeaderInner}>
@@ -1247,7 +1312,6 @@ export default function App() {
 
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
-          {/* ÚVODNÍ STRÁNKA POUZE PRO POČÍTAČ */}
           {aktivniTab === 'Home' && isDesktop && !detailAkce && (
             <>
              <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
@@ -1273,7 +1337,6 @@ export default function App() {
                  </Text>
                </View>
 
-               {/* PROGRAM SEKCE NA DOMOVSKÉ STRÁNCE */}
                {highlightAkce.length > 0 && (
                  <View style={[styles.homeContentSection, { paddingTop: 80, paddingBottom: 20 }]}>
                    <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
@@ -1288,7 +1351,6 @@ export default function App() {
                  </View>
                )}
 
-               {/* NÁHLEDOVÁ MAPA NA HOME SCREEN */}
                <View style={[styles.homeContentSection, { paddingTop: 80, paddingBottom: 60 }]}>
                  <Text style={styles.homeSectionTitle}>MAPA</Text>
                  <View style={{ width: '100%', height: 600, borderRadius: 0, overflow: 'hidden', backgroundColor: '#E5E7EB' }}>
@@ -1327,7 +1389,6 @@ export default function App() {
             </>
           )}
 
-          {/* MOBILNÍ ZÁLOŽKA MAPA (S tlačítkem zpět z detailu) */}
           {aktivniTab === 'Mapa' && (
             <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
               
@@ -1412,7 +1473,6 @@ export default function App() {
                 {aktivniTab === 'Oblíbené' && (
                   <View style={[isDesktop ? styles.desktopContainer : null, { paddingBottom: 20 }]}>
                     
-                    {/* HORNÍ LIŠTA ZÁLOŽKY OBLÍBENÉ */}
                     <View style={styles.pageTitleContainer}>
                       <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                         <Text style={styles.pageTitle}>{sdilenyVyberIds ? 'SDÍLENÝ VÝBĚR' : 'OBLÍBENÉ'}</Text>
@@ -1426,7 +1486,6 @@ export default function App() {
                       )}
                     </View>
 
-                    {/* INFORMAČNÍ PANEL O PROHLÍŽENÍ SDÍLENÉHO VÝBĚRU */}
                     {sdilenyVyberIds && (
                       <View style={{ backgroundColor: '#E0E7FF', padding: 15, borderRadius: 10, marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Text style={{ fontFamily: 'Inter_400Regular', color: themeColor, flex: 1, paddingRight: 10, lineHeight: 20 }}>
@@ -1560,7 +1619,6 @@ export default function App() {
           )}
         </View>
 
-        {/* VYSKAKOVACÍ OKNO PRO MAPU (AFO STYLE - BEZ HORNÍ LIŠTY) */}
         <Modal
           visible={mapaModalVisible}
           transparent={true}
@@ -1695,12 +1753,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   
-  // 👇 NOVÝ STYL PRO ROZDĚLENÍ KARET V LEVÉM SLOUPCI NA POČÍTAČI 👇
   desktopDetailCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 30,
-    marginBottom: 20, // Tímto se vytvoří mezera mezi první a druhou kartou
+    marginBottom: 20, 
     shadowColor: '#000', 
     shadowOffset: { width: 0, height: 2 }, 
     shadowOpacity: 0.05, 
@@ -2031,7 +2088,6 @@ const styles = StyleSheet.create({
     lineHeight: 22
   },
   
-  // STYLY PRO VYSKAKOVACÍ MAPU
   mapModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.4)', 
@@ -2155,5 +2211,50 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     resizeMode: 'cover',
+  },
+
+  // STYLY PRO KARTU ŘEČNÍKA
+  speakerCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    minHeight: 220, 
+  },
+  speakerImageContainer: {
+    width: 200, 
+  },
+  speakerImageContainerMobile: {
+    width: 120, 
+  },
+  speakerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  speakerInfo: {
+    flex: 1,
+    padding: 25,
+    justifyContent: 'flex-start',
+  },
+  speakerName: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 4,
+  },
+  speakerJob: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  speakerDesc: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    color: '#374151',
+    lineHeight: 22,
   }
 });
