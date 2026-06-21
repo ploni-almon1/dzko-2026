@@ -5,7 +5,7 @@ import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 
-// 👇👇👇 ZDE JE TVOJE CENTRÁLNÍ BARVA PRO CELOU APLIKACI 👇👇👇
+// 👇 ZDE JE TVOJE CENTRÁLNÍ BARVA PRO CELOU APLIKACI 👇
 const DEFAULT_THEME_COLOR = '#3A24DC'; 
 
 // --- GENERÁTOR MAPY ---
@@ -188,7 +188,7 @@ const ziskejVychoziDen = () => {
   return 'VŠE'; 
 };
 
-// 👇 EXTRÉMNĚ BEZPEČNÉ FUNKCE PRO ZPRACOVÁNÍ AIRTABLE DAT 👇
+// 👇 BEZPEČNÉ FUNKCE PRO NAČÍTÁNÍ Z DATABÁZE 👇
 const safeString = (val) => {
   if (val == null) return '';
   if (Array.isArray(val)) return String(val[0] || '').trim();
@@ -228,6 +228,16 @@ export default function App() {
   const [historieAkce, setHistorieAkce] = useState(null); 
   const [mapaModalVisible, setMapaModalVisible] = useState(false); 
   
+  const [homeMapaZvetsena, setHomeMapaZvetsena] = useState(false);
+  const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
+
+  const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
+  const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
+  const [novaBarvaInput, setNovaBarvaInput] = useState('');
+
+  const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
+  const [hosteVsechny, setHosteVsechny] = useState([]); 
+
   const [heroImage, setHeroImage] = useState(null); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -243,16 +253,8 @@ export default function App() {
 
   const [aktivniSelectedSpeaker, setAktivniSelectedSpeaker] = useState(null);
 
-  const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
-  const [hosteVsechny, setHosteVsechny] = useState([]); 
-
   const [programDropdownVisible, setProgramDropdownVisible] = useState(false);
   const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
-
-  const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
-  const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
-  const [zobrazitNastaveniBarvy, setZobrazitNastaveniBarvy] = useState(false);
-  const [novaBarvaInput, setNovaBarvaInput] = useState('');
 
   const detailScrollViewRef = useRef(null);
 
@@ -345,7 +347,6 @@ export default function App() {
             const mistoText = f['Místo'] || '';
             const slozenyCas = [denText, casText, mistoText].filter(Boolean).join(' | ');
 
-            // 👇 BEZPEČNÉ SESTAVENÍ POLE HOSTŮ (NEZKOALABUJE, KDYŽ PŘIJDE ARRAY Z AIRTABLE) 👇
             const hosteList = [];
             
             const host1 = safeString(f['Host']);
@@ -1205,7 +1206,7 @@ export default function App() {
                     </>
                   )}
                 </View>
-                <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2, marginLeft: 10 }} activeOpacity={0.6}>
+                <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, PlatformSelectShadow: 1, marginLeft: 10 }} activeOpacity={0.6}>
                   <Ionicons name="share-social-outline" size={16} color="black" />
                   <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
                 </TouchableOpacity>
@@ -1392,25 +1393,32 @@ export default function App() {
                   <Text style={[styles.desktopMenuText, aktivniTab === 'Home' && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>O FESTIVALU</Text>
                 </TouchableOpacity>
                 
-                {/* ROZBALOVACÍ MENU PRO PROGRAM/HOSTÉ (BEZ ONMOUSEENTER) */}
-                <View style={{ position: 'relative', height: '100%', justifyContent: 'center' }}>
-                  <TouchableOpacity onPress={() => setProgramDropdownVisible(!programDropdownVisible)}>
-                    <Text style={[styles.desktopMenuText, (aktivniTab === 'Program' || aktivniTab === 'Hoste') && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM ▼</Text>
+                <View 
+                  onMouseEnter={() => setProgramDropdownVisible(true)}
+                  onMouseLeave={() => setProgramDropdownVisible(false)}
+                  style={{ position: 'relative', height: '100%', justifyContent: 'center' }}
+                >
+                  <TouchableOpacity onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); }}>
+                    <Text style={[styles.desktopMenuText, (aktivniTab === 'Program' || aktivniTab === 'Hoste') && !detailAkce && { color: themeColor, fontWeight: 'bold' }]}>PROGRAM</Text>
                   </TouchableOpacity>
 
                   {Platform.OS === 'web' && programDropdownVisible && (
                     <View style={styles.dropdownContainer}>
                       <TouchableOpacity 
                         style={styles.dropdownItem}
+                        onMouseEnter={() => setHoveredMenuItem('Program')}
+                        onMouseLeave={() => setHoveredMenuItem(null)}
                         onPress={() => { setAktivniTab('Program'); setVybranyDen('VŠE'); setVybranyTag(null); setDetailAkce(null); setProgramDropdownVisible(false); }}
                       >
-                        <Text style={styles.dropdownItemText}>PROGRAM</Text>
+                        <Text style={[styles.dropdownItemText, hoveredMenuItem === 'Program' && { color: 'black', fontWeight: 'bold' }]}>PROGRAM</Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={styles.dropdownItem}
+                        onMouseEnter={() => setHoveredMenuItem('Hoste')}
+                        onMouseLeave={() => setHoveredMenuItem(null)}
                         onPress={() => { setAktivniTab('Hoste'); setDetailAkce(null); setProgramDropdownVisible(false); }}
                       >
-                        <Text style={styles.dropdownItemText}>HOSTÉ</Text>
+                        <Text style={[styles.dropdownItemText, hoveredMenuItem === 'Hoste' && { color: 'black', fontWeight: 'bold' }]}>HOSTÉ</Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -1552,7 +1560,7 @@ export default function App() {
           )}
 
           {aktivniTab === 'Hoste' && !detailAkce && (
-            <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
+            <ScrollView style={{ flex: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15, paddingTop: 10 }}>
                 <View style={styles.pageTitleContainer}>
                   <Text style={styles.pageTitle}>HOSTÉ</Text>
@@ -1623,6 +1631,7 @@ export default function App() {
                       {zobrazenePrednasky.length > 0 ? (
                         dny.map((den, index) => {
                           if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
+
                           const akceDne = zobrazenePrednasky.filter(item => item.den === den);
                           if (akceDne.length === 0) return null;
                           
@@ -1958,11 +1967,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 30,
     marginBottom: 20, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.05, 
-    shadowRadius: 6, 
-    elevation: 2
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 6px rgba(0,0,0,0.05)' },
+      default: { elevation: 2 }
+    })
   },
 
   desktopTimeLocationRow: {
@@ -2075,6 +2083,7 @@ const styles = StyleSheet.create({
   },
   mobileCardWrapper: {
     width: '100%',
+    marginBottom: 15,
   },
 
   desktopHeader: { 
@@ -2084,12 +2093,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 5, 
-    zIndex: 10,
+    zIndex: 50,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.08)' },
+      default: { elevation: 4 }
+    })
   },
   desktopHeaderInner: {
     width: '100%',
@@ -2124,12 +2132,11 @@ const styles = StyleSheet.create({
     minWidth: 150,
     borderRadius: 8,
     paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
     zIndex: 100,
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 15px rgba(0,0,0,0.15)' },
+      default: { elevation: 5 }
+    })
   },
   dropdownItem: {
     paddingVertical: 10,
@@ -2194,11 +2201,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', 
     borderRadius: 10, 
     marginBottom: 15, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.12,                   
-    shadowRadius: 8,                       
-    elevation: 5                           
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 8px rgba(0,0,0,0.12)' },
+      default: { elevation: 5 }
+    })
   },
   cardContent: { padding: 15 },
   cardImage: { width: '100%', height: 160, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: '#E5E7EB' },
@@ -2240,7 +2246,7 @@ const styles = StyleSheet.create({
   
   detailTagsWrapper: { flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 25 },
   
-  formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  formContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 10, marginBottom: 30, borderWidth: 1, borderColor: '#E5E7EB', ...Platform.select({ web: { boxShadow: '0px 1px 2px rgba(0,0,0,0.05)' }, default: { elevation: 1 }}) },
   formTitle: { fontFamily: 'Inter_400Regular', fontSize: 18, marginBottom: 15, color: '#111827', fontWeight: 'bold' },
   input: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, padding: 12, marginBottom: 12, fontFamily: 'Inter_400Regular', fontSize: 14, color: '#111827', backgroundColor: '#F9FAFB' },
   submitBtn: { padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 5 },
@@ -2285,11 +2291,7 @@ const styles = StyleSheet.create({
     width: '85%',
     maxWidth: 340,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 8
+    ...Platform.select({ web: { boxShadow: '0px 4px 10px rgba(0,0,0,0.15)' }, default: { elevation: 8 } })
   },
   modalCloseBtn: {
     position: 'absolute',
@@ -2328,68 +2330,107 @@ const styles = StyleSheet.create({
     height: '80%',
     backgroundColor: '#fff',
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 40,
-    elevation: 10,
-  },
-  mobileSpeakerModalContent: {
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '100%', 
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 40,
-    elevation: 10,
-  },
-  mobileSpeakerModalImageContainer: {
-    width: '100%',
-    aspectRatio: 1, 
     position: 'relative',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    ...Platform.select({ web: { boxShadow: '0px 10px 40px rgba(0,0,0,0.15)' }, default: { elevation: 10 } })
   },
-  mobileSpeakerCloseBtn: {
+  mapModalCloseBtn: {
     position: 'absolute',
     top: 15,
     right: 15,
     backgroundColor: 'white',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
+    zIndex: 9999, 
+    ...Platform.select({ web: { boxShadow: '0px 2px 5px rgba(0,0,0,0.15)' }, default: { elevation: 5 } })
   },
-  mobileSpeakerModalInfo: {
-    padding: 25,
+
+  listCardImageDesktop: {
+    width: 360,
+    height: 270,
+    borderTopLeftRadius: 10,
+    borderBottomLeftRadius: 10,
+    backgroundColor: '#E5E7EB'
   },
-  mobileSpeakerModalName: {
+  listAnnotation: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 6,
+    fontSize: 15,
+    color: '#4B5563',
+    lineHeight: 22,
+    marginTop: 10,
+    marginBottom: 15,
   },
-  mobileSpeakerModalJob: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 12,
+
+  footerContainer: {
+    backgroundColor: '#000000',
+    width: '100%',
+    paddingVertical: 25, 
+    alignItems: 'center',
+    marginTop: 60,
   },
-  mobileSpeakerModalDesc: {
+  footerInner: {
+    width: '100%',
+    maxWidth: 1270,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center', 
+  },
+  footerLogoCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  footerLogo: {
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
+    marginRight: 15,
+  },
+  footerTitleText: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-    color: '#374151',
-    lineHeight: 24,
+    fontSize: 15,
+    color: '#FFFFFF',
+    lineHeight: 20,
+    letterSpacing: 0.5,
+  },
+  footerTextCol: {
+    justifyContent: 'flex-start',
+  },
+  footerLabel: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#FFFFFF',
+    marginBottom: 5,
+  },
+  footerText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#FFFFFF',
+    lineHeight: 22,
+  },
+  footerSocialCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  footerSocialBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    display: 'flex', 
+  },
+  footerSocialIconImg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    resizeMode: 'cover',
   },
 
   speakerCard: {
@@ -2422,7 +2463,7 @@ const styles = StyleSheet.create({
   },
   speakerJob: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    fontSize: 16,
     color: '#6B7280',
     marginBottom: 8,
   },
@@ -2460,5 +2501,54 @@ const styles = StyleSheet.create({
     padding: 25, 
     zIndex: 1000,
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}), 
+  },
+  mobileSpeakerModalContent: {
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '100%', 
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...Platform.select({ web: { boxShadow: '0px 10px 40px rgba(0,0,0,0.15)' }, default: { elevation: 10 } })
+  },
+  mobileSpeakerModalImageContainer: {
+    width: '100%',
+    aspectRatio: 1, 
+    position: 'relative',
+  },
+  mobileSpeakerCloseBtn: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    backgroundColor: 'white',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    ...Platform.select({ web: { boxShadow: '0px 2px 5px rgba(0,0,0,0.2)' }, default: { elevation: 5 } })
+  },
+  mobileSpeakerModalInfo: {
+    padding: 25,
+  },
+  mobileSpeakerModalName: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 6,
+  },
+  mobileSpeakerModalJob: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  mobileSpeakerModalDesc: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
   }
 });
