@@ -1629,7 +1629,7 @@ export default function App() {
                               setSpeakerModalVisible(true);
                             }}
                           >
-                            <View style={{ width: '100%', aspectRatio: 3/4, backgroundColor: h.fotka ? 'transparent' : themeColor, borderTopLeftRadius: 10, borderTopRightRadius: 10, overflow: 'hidden' }}>
+                            <View style={{ width: '100%', aspectRatio: 4/3, backgroundColor: h.fotka ? 'transparent' : themeColor, borderTopLeftRadius: 10, borderTopRightRadius: 10, overflow: 'hidden' }}>
                               {h.fotka ? (
                                 <Image source={{ uri: h.fotka }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                               ) : null}
