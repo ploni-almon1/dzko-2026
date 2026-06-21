@@ -748,6 +748,12 @@ export default function App() {
     }
   };
 
+  const prejitNaAkciHost = (akce) => {
+    setSpeakerModalVisible(false);
+    setAktivniTab('Program');
+    otevriDetail(akce);
+  };
+
   const vykresliPolozkuMenu = (title, type, content) => (
     <View key={title} style={styles.menuItemWrapper}>
       <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress(title, type, content)} activeOpacity={0.6}>
@@ -1124,6 +1130,7 @@ export default function App() {
                   </View>
                 )}
                 
+                {/* 👇 NA POČÍTAČI JSOU NYNÍ TYTO VIZITKY PLNĚ STATICKÉ A OTEVŘENÉ (NEKLIKACÍ) 👇 */}
                 {item.hoste.map((h, idx) => {
                   if (!h.fotka && h.popis === '' && h.profese === '') return null;
                   return (
@@ -1131,23 +1138,17 @@ export default function App() {
                       <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
                         {h.role}
                       </Text>
-                      <TouchableOpacity 
-                        activeOpacity={0.9} 
-                        onPress={() => {
-                          setAktivniSelectedSpeaker(h);
-                          setSpeakerModalVisible(true);
-                        }} 
-                        style={styles.speakerCard}
-                      >
+                      {/* STATICKÝ VIEW MÍSTO TOUCHABLE OPACITY, NEOMEZENÝ TEXT */}
+                      <View style={styles.speakerCard}>
                         <View style={[styles.speakerImageContainer, !h.fotka && { backgroundColor: themeColor }]}>
                           {h.fotka && <Image source={{ uri: h.fotka }} style={styles.speakerImage} resizeMode="cover" />}
                         </View>
                         <View style={styles.speakerInfo}>
                           <Text style={styles.speakerName}>{h.jmeno}</Text>
                           {h.profese !== '' && <Text style={styles.speakerJob}>{h.profese}</Text>}
-                          {h.popis !== '' && <Text style={styles.speakerDesc} numberOfLines={3}>{h.popis}</Text>}
+                          {h.popis !== '' && <Text style={styles.speakerDesc}>{h.popis}</Text>}
                         </View>
-                      </TouchableOpacity>
+                      </View>
                     </View>
                   );
                 })}
@@ -1177,6 +1178,7 @@ export default function App() {
                   <Text style={styles.detailHost}>
                     {item.hoste.length > 1 ? 'Hosté' : item.hoste[0].role}:{' '}
                   </Text>
+                  {/* 👇 NA MOBILU ZŮSTÁVÁ VŠE KLIKACÍ (OTEVÍRÁ MODAL) 👇 */}
                   {item.hoste.map((h, hIdx) => (
                     <TouchableOpacity 
                       key={hIdx} 
@@ -1206,7 +1208,7 @@ export default function App() {
                     </>
                   )}
                 </View>
-                <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, PlatformSelectShadow: 1, marginLeft: 10 }} activeOpacity={0.6}>
+                <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2, marginLeft: 10 }} activeOpacity={0.6}>
                   <Ionicons name="share-social-outline" size={16} color="black" />
                   <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
                 </TouchableOpacity>
@@ -1265,6 +1267,7 @@ export default function App() {
                 </View>
               </View>
 
+              {/* 👇 NA MOBILU VIZITKA ZŮSTÁVÁ KLIKACÍ (OTEVÍRÁ MODAL) 👇 */}
               {item.hoste.map((h, idx) => {
                 if (!h.fotka && h.popis === '' && h.profese === '') return null;
                 return (
@@ -1364,6 +1367,10 @@ export default function App() {
       </>
     );
   };
+
+  const speakerEvents = aktivniSelectedSpeaker 
+    ? prednaskyVsechny.filter(item => item.hoste.some(h => h.jmeno === aktivniSelectedSpeaker.jmeno))
+    : [];
 
   if (!fontsLoaded || loading) return <ActivityIndicator size="large" color={themeColor} style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
   if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
@@ -1559,6 +1566,7 @@ export default function App() {
             </View>
           )}
 
+          {/* 👇 MŘÍŽKA S HOSTY (NA PC ZPĚT NA 4 SLOUPEČKY JAKO PROGRAM) 👇 */}
           {aktivniTab === 'Hoste' && !detailAkce && (
             <ScrollView style={{ flex: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15, paddingTop: 10 }}>
@@ -1728,9 +1736,10 @@ export default function App() {
                   <View style={styles.dalsiContainer}>
                     <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
                     
+                    {/* 👇 O FESTIVALU PRVNÍ A HOSTÉ DRUZÍ (MOBIL) 👇 */}
                     <View style={styles.menuList}>
-                      {!isDesktop && vykresliPolozkuMenu('Hosté festivalu', 'action', () => setAktivniTab('Hoste'))}
                       {vykresliPolozkuMenu('O festivalu', 'expand', 'Termín festivalu: 12.–18. října 2026\n\n19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.')}
+                      {!isDesktop && vykresliPolozkuMenu('Hosté', 'action', () => setAktivniTab('Hoste'))}
                       {vykresliPolozkuMenu('Archiv', 'link', 'https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}
                       {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
                       {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
@@ -1783,23 +1792,74 @@ export default function App() {
 
           {detailAkce && vykresliDetail()}
 
+          {/* 👇 VYSKAKOVACÍ OKNO PROFILE HOSTŮ 👇 */}
           {speakerModalVisible && aktivniSelectedSpeaker && (
             <View style={styles.mobileSpeakerOverlay}>
               <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setSpeakerModalVisible(false)} />
               
-              <View style={styles.mobileSpeakerModalContent}>
-                <View style={[styles.mobileSpeakerModalImageContainer, !aktivniSelectedSpeaker.fotka && { backgroundColor: themeColor }]}>
-                  {aktivniSelectedSpeaker.fotka && <Image source={{ uri: aktivniSelectedSpeaker.fotka }} style={styles.speakerImage} resizeMode="cover" />}
-                  <TouchableOpacity style={styles.mobileSpeakerCloseBtn} onPress={() => setSpeakerModalVisible(false)}>
-                    <Ionicons name="close" size={20} color="#000" />
-                  </TouchableOpacity>
-                </View>
-                <ScrollView style={{flexShrink: 1}} contentContainerStyle={styles.mobileSpeakerModalInfo}>
-                  <Text style={styles.mobileSpeakerModalName}>{aktivniSelectedSpeaker.jmeno}</Text>
-                  {aktivniSelectedSpeaker.profese !== '' && <Text style={styles.mobileSpeakerModalJob}>{aktivniSelectedSpeaker.profese}</Text>}
-                  {aktivniSelectedSpeaker.popis !== '' && <Text style={styles.mobileSpeakerModalDesc}>{aktivniSelectedSpeaker.popis}</Text>}
-                </ScrollView>
+              <View style={isDesktop ? styles.desktopSpeakerModalContent : styles.mobileSpeakerModalContent}>
+                
+                {isDesktop ? (
+                  /* DESKTOP LAYOUT (50:50) */
+                  <>
+                    <View style={[styles.desktopSpeakerModalImageContainer, !aktivniSelectedSpeaker.fotka && { backgroundColor: themeColor }]}>
+                      {aktivniSelectedSpeaker.fotka && <Image source={{ uri: aktivniSelectedSpeaker.fotka }} style={{width: '100%', height: '100%'}} resizeMode="cover" />}
+                    </View>
+                    <View style={styles.desktopSpeakerModalTextContainer}>
+                      <TouchableOpacity style={styles.desktopSpeakerCloseBtn} onPress={() => setSpeakerModalVisible(false)}>
+                        <Ionicons name="close" size={24} color="#000" />
+                      </TouchableOpacity>
+                      <ScrollView style={{flex: 1}} contentContainerStyle={styles.desktopSpeakerModalInfo}>
+                        <Text style={styles.mobileSpeakerModalName}>{aktivniSelectedSpeaker.jmeno}</Text>
+                        {aktivniSelectedSpeaker.profese !== '' && <Text style={styles.mobileSpeakerModalJob}>{aktivniSelectedSpeaker.profese}</Text>}
+                        {aktivniSelectedSpeaker.popis !== '' && <Text style={styles.mobileSpeakerModalDesc}>{aktivniSelectedSpeaker.popis}</Text>}
+
+                        {/* 👇 KARTA PRO PŘECHOD NA AKCI (PC) 👇 */}
+                        {speakerEvents.length > 0 && (
+                          <View style={styles.speakerEventsSection}>
+                            <Text style={styles.speakerEventsLabel}>Program</Text>
+                            {speakerEvents.map(ev => (
+                              <TouchableOpacity key={ev.id} style={styles.speakerEventCard} activeOpacity={0.7} onPress={() => prejitNaAkciHost(ev)}>
+                                <Text style={styles.speakerEventTime}>{ev.cas}</Text>
+                                <Text style={styles.speakerEventTitle}>{ev.nazev}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        )}
+                      </ScrollView>
+                    </View>
+                  </>
+                ) : (
+                  /* MOBILE LAYOUT (Čtverec nahoře, Text dole) */
+                  <>
+                    <View style={[styles.mobileSpeakerModalImageContainer, !aktivniSelectedSpeaker.fotka && { backgroundColor: themeColor }]}>
+                      {aktivniSelectedSpeaker.fotka && <Image source={{ uri: aktivniSelectedSpeaker.fotka }} style={styles.speakerImage} resizeMode="cover" />}
+                      <TouchableOpacity style={styles.mobileSpeakerCloseBtn} onPress={() => setSpeakerModalVisible(false)}>
+                        <Ionicons name="close" size={20} color="#000" />
+                      </TouchableOpacity>
+                    </View>
+                    <ScrollView style={{flexShrink: 1}} contentContainerStyle={styles.mobileSpeakerModalInfo}>
+                      <Text style={styles.mobileSpeakerModalName}>{aktivniSelectedSpeaker.jmeno}</Text>
+                      {aktivniSelectedSpeaker.profese !== '' && <Text style={styles.mobileSpeakerModalJob}>{aktivniSelectedSpeaker.profese}</Text>}
+                      {aktivniSelectedSpeaker.popis !== '' && <Text style={styles.mobileSpeakerModalDesc}>{aktivniSelectedSpeaker.popis}</Text>}
+
+                      {/* 👇 KARTA PRO PŘECHOD NA AKCI (MOBIL) 👇 */}
+                      {speakerEvents.length > 0 && (
+                        <View style={styles.speakerEventsSection}>
+                          <Text style={styles.speakerEventsLabel}>Program</Text>
+                          {speakerEvents.map(ev => (
+                            <TouchableOpacity key={ev.id} style={styles.speakerEventCard} activeOpacity={0.7} onPress={() => prejitNaAkciHost(ev)}>
+                              <Text style={styles.speakerEventTime}>{ev.cas}</Text>
+                              <Text style={styles.speakerEventTitle}>{ev.nazev}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </ScrollView>
+                  </>
+                )}
               </View>
+
             </View>
           )}
 
@@ -2489,6 +2549,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     overflow: 'hidden',
   },
+  
   mobileSpeakerOverlay: {
     position: 'absolute',
     top: 0, 
@@ -2502,6 +2563,45 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}), 
   },
+  desktopSpeakerModalContent: {
+    width: '100%',
+    maxWidth: 1000, 
+    height: 500,    
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    overflow: 'hidden',
+    flexDirection: 'row', 
+    ...Platform.select({ web: { boxShadow: '0px 10px 40px rgba(0,0,0,0.15)' }, default: { elevation: 10 } })
+  },
+  desktopSpeakerModalImageContainer: {
+    flex: 1, 
+    height: '100%',
+  },
+  desktopSpeakerModalTextContainer: {
+    flex: 1, 
+    position: 'relative',
+    backgroundColor: '#fff',
+  },
+  desktopSpeakerCloseBtn: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: 'white',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    ...Platform.select({ web: { boxShadow: '0px 2px 5px rgba(0,0,0,0.2)' }, default: { elevation: 5 } })
+  },
+  desktopSpeakerModalInfo: {
+    padding: 40,
+    paddingTop: 60, 
+    paddingBottom: 40,
+  },
+
+  // Mobilní vyskakovací okno
   mobileSpeakerModalContent: {
     width: '100%',
     maxWidth: 400,
@@ -2534,7 +2634,7 @@ const styles = StyleSheet.create({
   },
   mobileSpeakerModalName: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#111827',
     marginBottom: 6,
@@ -2543,12 +2643,43 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
     color: '#6B7280',
-    marginBottom: 12,
+    marginBottom: 15,
   },
   mobileSpeakerModalDesc: {
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
     color: '#374151',
     lineHeight: 24,
+  },
+
+  // 👇 STYLY PRO KARTY PROGRAMU V OKNĚ HOSTA 👇
+  speakerEventsSection: {
+    marginTop: 30,
+  },
+  speakerEventsLabel: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  speakerEventCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+  },
+  speakerEventTime: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  speakerEventTitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#111827',
   }
 });
