@@ -1282,7 +1282,7 @@ export default function App() {
                       <View style={{ flex: 1, paddingLeft: 15, justifyContent: 'center' }}>
                         <Text style={styles.speakerName}>{h.jmeno}</Text>
                         <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: themeColor, fontWeight: 'bold', marginTop: 4 }}>
-                          Zobrazit profil
+                          Zobrazit více
                         </Text>
                       </View>
                     </TouchableOpacity>
