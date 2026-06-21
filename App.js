@@ -975,106 +975,313 @@ export default function App() {
     };
 
     return (
-      <>
-        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef}>
-          
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" ref={detailScrollViewRef} contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ flex: 1 }}>
           <View style={isDesktop ? styles.desktopDetailScrollView : styles.content}>
-
-          {isDesktop ? (
-            <View style={styles.desktopBreadcrumbsContainer}>
-              <TouchableOpacity onPress={() => setDetailAkce(null)} activeOpacity={0.6}>
-                <Text style={styles.desktopBreadcrumbLink}>PROGRAM</Text>
+            {isDesktop ? (
+              <View style={styles.desktopBreadcrumbsContainer}>
+                <TouchableOpacity onPress={() => setDetailAkce(null)} activeOpacity={0.6}>
+                  <Text style={styles.desktopBreadcrumbLink}>PROGRAM</Text>
+                </TouchableOpacity>
+                <Text style={styles.desktopBreadcrumbText}> &gt; {item.nazev.toUpperCase()}</Text>
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
+                <Ionicons name="arrow-back" size={20} color={themeColor} />
+                <Text style={[styles.backBtnText, { color: themeColor }]}>Zpět</Text>
               </TouchableOpacity>
-              <Text style={styles.desktopBreadcrumbText}> &gt; {item.nazev.toUpperCase()}</Text>
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.backBtn} onPress={() => setDetailAkce(null)}>
-              <Ionicons name="arrow-back" size={20} color={themeColor} />
-              <Text style={[styles.backBtnText, { color: themeColor }]}>Zpět</Text>
-            </TouchableOpacity>
-          )}
+            )}
 
-          {isDesktop ? (
-            <View style={styles.desktopDetailLayout}>
-              
-              {/* LEVÝ SLOUPEC - DESKTOP */}
-              <View style={{ flex: 1, marginRight: 20 }}>
-                
-                {/* 1. BÍLÁ KARTA: ANOTACE A KAPACITA */}
-                <View style={styles.desktopDetailCard}>
-                  
-                  <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={styles.desktopCardTime}>{timeText}</Text>
-                      {mistoText && (
-                        <>
-                          <Text style={styles.desktopCardTime}> | </Text>
-                          <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                            <Text style={styles.desktopCardTime}>{mistoText}</Text>
+            {isDesktop ? (
+              <View style={styles.desktopDetailLayout}>
+                {/* LEVÝ SLOUPEC - DESKTOP */}
+                <View style={{ flex: 1, marginRight: 20 }}>
+                  {/* 1. BÍLÁ KARTA: ANOTACE A KAPACITA */}
+                  <View style={styles.desktopDetailCard}>
+                    <View style={[styles.desktopTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={styles.desktopCardTime}>{timeText}</Text>
+                        {mistoText && (
+                          <>
+                            <Text style={styles.desktopCardTime}> | </Text>
+                            <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                              <Text style={styles.desktopCardTime}>{mistoText}</Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
+                      </View>
+                      <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15 }} activeOpacity={0.6}>
+                        <Ionicons name="share-social-outline" size={16} color="black" />
+                        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <Text style={styles.desktopDetailMainTitle}>{item.nazev}</Text>
+                    
+                    {item.hoste.length > 0 && (
+                      <Text style={styles.desktopDetailHost}>
+                        {item.hoste.length > 1 ? 'Hosté' : item.hoste[0].role}: {item.hoste.map(h => h.jmeno).join(', ')}
+                      </Text>
+                    )}
+
+                    <Text style={styles.desktopDetailDescription}>
+                      {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
+                    </Text>
+
+                    <View style={styles.detailTagsWrapper}>
+                      <View style={styles.tagsContainer}>
+                        {item.tag && item.tag.map((t, index) => (
+                          <TouchableOpacity key={index} style={[styles.detailTagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                            <Text style={styles.detailTagText}>{t}</Text>
                           </TouchableOpacity>
+                        ))}
+                        
+                        {item.odkaz && (
+                          <TouchableOpacity style={[styles.detailTagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                            <Text style={[styles.detailTagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                          </TouchableOpacity>
+                        )}
+
+                        {item.rezervace && (
+                          <View style={[
+                            styles.detailTagPillOutline, 
+                            { borderColor: themeColor }, 
+                            maRezervaci ? styles.tagPillRezervovano : (jePlno ? styles.tagPillPlno : null)
+                          ]}>
+                            <Text style={[
+                              styles.detailTagTextOutline, 
+                              { color: themeColor }, 
+                              maRezervaci ? styles.tagTextRezervovano : (jePlno ? styles.tagTextPlno : null)
+                            ]}>
+                              {maRezervaci ? 'REZERVOVÁNO' : (jePlno ? 'OBSAZENO' : 'NUTNÁ REZERVACE')}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+
+                    {item.rezervace && (
+                      <View style={{ marginTop: 5 }}>
+                        {getKapacitaText()}
+                      </View>
+                    )}
+                  </View>
+
+                  {/* 2. BÍLÁ KARTA: REZERVACE */}
+                  {item.rezervace && (
+                    <View style={[styles.desktopDetailCard, { backgroundColor: '#F9FAFB', padding: 20 }]}>
+                      <Text style={styles.formTitle}>Rezervace</Text>
+                      
+                      {(maRezervaci || rezervaceOdeslana) && !chciDalsiRezervaci ? (
+                        <View style={{ backgroundColor: '#ECFDF5', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#10B981' }}>
+                           <Text style={{ fontFamily: 'Inter_400Regular', color: '#065F46', textAlign: 'center', fontWeight: 'bold' }}>
+                             Na tuto akci máte úspěšně zajištěnou rezervaci.
+                           </Text>
+                           {!jePlno && (
+                             <TouchableOpacity 
+                               style={{ marginTop: 12, alignSelf: 'center', backgroundColor: '#10B981', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 }}
+                               onPress={() => {
+                                 setChciDalsiRezervaci(true);
+                                 setRezervaceJmeno(''); 
+                               }}
+                             >
+                               <Text style={{ color: 'white', fontFamily: 'Inter_400Regular', fontSize: 13, fontWeight: 'bold' }}>Vytvořit další rezervaci</Text>
+                             </TouchableOpacity>
+                           )}
+                        </View>
+                      ) : jePlno ? (
+                        <View style={{ backgroundColor: '#F3F4F6', padding: 15, borderRadius: 8 }}>
+                           <Text style={{ fontFamily: 'Inter_400Regular', color: '#4B5563', textAlign: 'center' }}>
+                             Kapacita této akce již byla naplněna.
+                           </Text>
+                        </View>
+                      ) : (
+                        <>
+                          {rezervaceChyba && <Text style={styles.errorText}>{rezervaceChyba}</Text>}
+                          <TextInput style={styles.input} placeholder="Celé jméno a příjmení" value={rezervaceJmeno} onChangeText={setRezervaceJmeno} placeholderTextColor="#9CA3AF" />
+                          <TextInput style={styles.input} placeholder="E-mail (např. jan.novak@email.cz)" keyboardType="email-address" autoCapitalize="none" value={rezervaceEmail} onChangeText={setRezervaceEmail} placeholderTextColor="#9CA3AF" />
+                          <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
+                            {odesilaRezervaci ? <ActivityIndicator color="white" /> : <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>}
+                          </TouchableOpacity>
+
+                          {chciDalsiRezervaci && (
+                            <TouchableOpacity onPress={() => setChciDalsiRezervaci(false)} style={{marginTop: 15, alignSelf: 'center'}}>
+                              <Text style={{color: '#6B7280', fontFamily: 'Inter_400Regular', fontSize: 14}}>Zrušit zadávání další rezervace</Text>
+                            </TouchableOpacity>
+                          )}
                         </>
                       )}
-                    </View>
-                    <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15 }} activeOpacity={0.6}>
-                      <Ionicons name="share-social-outline" size={16} color="black" />
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <Text style={styles.desktopDetailMainTitle}>{item.nazev}</Text>
-                  
-                  {item.hoste.length > 0 && (
-                    <Text style={styles.desktopDetailHost}>
-                      {item.hoste.length > 1 ? 'Hosté' : item.hoste[0].role}: {item.hoste.map(h => h.jmeno).join(', ')}
-                    </Text>
-                  )}
-
-                  <Text style={styles.desktopDetailDescription}>
-                    {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
-                  </Text>
-
-                  <View style={styles.detailTagsWrapper}>
-                    <View style={styles.tagsContainer}>
-                      {item.tag && item.tag.map((t, index) => (
-                        <TouchableOpacity key={index} style={[styles.detailTagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                          <Text style={styles.detailTagText}>{t}</Text>
-                        </TouchableOpacity>
-                      ))}
-                      
-                      {item.odkaz && (
-                        <TouchableOpacity style={[styles.detailTagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                          <Text style={[styles.detailTagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
-                        </TouchableOpacity>
-                      )}
-
-                      {item.rezervace && (
-                        <View style={[
-                          styles.detailTagPillOutline, 
-                          { borderColor: themeColor }, 
-                          maRezervaci ? styles.tagPillRezervovano : (jePlno ? styles.tagPillPlno : null)
-                        ]}>
-                          <Text style={[
-                            styles.detailTagTextOutline, 
-                            { color: themeColor }, 
-                            maRezervaci ? styles.tagTextRezervovano : (jePlno ? styles.tagTextPlno : null)
-                          ]}>
-                            {maRezervaci ? 'REZERVOVÁNO' : (jePlno ? 'OBSAZENO' : 'NUTNÁ REZERVACE')}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-
-                  {item.rezervace && (
-                    <View style={{ marginTop: 5 }}>
-                      {getKapacitaText()}
                     </View>
                   )}
                 </View>
 
-                {/* 2. BÍLÁ KARTA: REZERVACE */}
+                {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) - DESKTOP */}
+                <View style={styles.desktopDetailRightColumn}>
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={styles.desktopDetailImage} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.desktopDetailImage, {backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center'}]}>
+                      <Text style={{color: '#9CA3AF'}}>Obrázek zatím není</Text>
+                    </View>
+                  )}
+                  
+                  {item.hoste.map((h, idx) => {
+                    if (!h.fotka && h.popis === '' && h.profese === '') return null;
+                    return (
+                      <View key={idx} style={{ width: '100%', marginTop: 15 }}>
+                        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
+                          {h.role}
+                        </Text>
+                        <View style={styles.speakerCard}>
+                          <View style={[styles.speakerImageContainer, !h.fotka && { backgroundColor: themeColor }]}>
+                            {h.fotka && <Image source={{ uri: h.fotka }} style={styles.speakerImage} resizeMode="cover" />}
+                          </View>
+                          <View style={styles.speakerInfo}>
+                            <Text style={styles.speakerName}>{h.jmeno}</Text>
+                            {h.profese !== '' && <Text style={styles.speakerJob}>{h.profese}</Text>}
+                            {h.popis !== '' && <Text style={styles.speakerDesc}>{h.popis}</Text>}
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })}
+
+                  <View style={[styles.desktopDetailBottomActions, { justifyContent: 'flex-end', width: '100%', alignItems: 'flex-start', marginTop: 25 }]}>
+                    <View style={styles.detailHeartWrapper}>
+                      <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
+                        <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
+                      </TouchableOpacity>
+                      {item.pocetOblibenych > 0 && (
+                        <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
+                      )}
+                    </View>
+                  </View>
+                </View>
+              </View>
+            ) : (
+              /* MOBILNÍ LAYOUT */
+              <>
+                <View style={styles.detailTitleRow}>
+                  <Text style={styles.detailMainTitle}>{item.nazev}</Text>
+                </View>
+
+                {item.hoste.length > 0 && (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 15, marginTop: -5 }}>
+                    <Text style={styles.detailHost}>
+                      {item.hoste.length > 1 ? 'Hosté' : item.hoste[0].role}:{' '}
+                    </Text>
+                    {item.hoste.map((h, hIdx) => (
+                      <TouchableOpacity 
+                        key={hIdx} 
+                        activeOpacity={0.7} 
+                        onPress={() => {
+                          setAktivniSelectedSpeaker(h);
+                          setSpeakerModalVisible(true);
+                        }}
+                      >
+                        <Text style={styles.detailHost}>
+                          {h.jmeno}{hIdx < item.hoste.length - 1 ? ', ' : ''}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                <View style={[styles.detailTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
+                    <Text style={styles.cardTime}>{timeText}</Text>
+                    {mistoText && (
+                      <>
+                        <Text style={styles.cardTime}> | </Text>
+                        <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+                          <Text style={styles.locationLink}>{mistoText}</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                  <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2, marginLeft: 10 }} activeOpacity={0.6}>
+                    <Ionicons name="share-social-outline" size={16} color="black" />
+                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {item.image && (
+                  <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
+                )}
+
+                <Text style={styles.detailDescription}>
+                  {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
+                </Text>
+
+                <View style={styles.detailTagsWrapper}>
+                  <View style={styles.tagsContainer}>
+                    {item.tag && item.tag.map((t, index) => (
+                      <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
+                        <Text style={styles.tagText}>{t}</Text>
+                      </TouchableOpacity>
+                    ))}
+                    
+                    {item.odkaz && (
+                      <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
+                        <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
+                      </TouchableOpacity>
+                    )}
+                    {item.rezervace && (
+                      <View style={[
+                        styles.tagPillOutline, 
+                        { borderColor: themeColor }, 
+                        maRezervaci ? styles.tagPillRezervovano : (jePlno ? styles.tagPillPlno : null)
+                      ]}>
+                        <Text style={[
+                          styles.tagTextOutline, 
+                          { color: themeColor }, 
+                          maRezervaci ? styles.tagTextRezervovano : (jePlno ? styles.tagTextPlno : null)
+                        ]}>
+                          {maRezervaci ? 'REZERVOVÁNO' : (jePlno ? 'OBSAZENO' : 'NUTNÁ REZERVACE')}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                <View style={[styles.detailBottomRowInfo, { alignItems: 'flex-start', marginTop: 10, marginBottom: 25 }]}>
+                  <View style={styles.detailCapacityWrapper}>
+                    {getKapacitaText()}
+                  </View>
+                  <View style={styles.detailHeartWrapper}>
+                    <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
+                      <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
+                    </TouchableOpacity>
+                    {item.pocetOblibenych > 0 && (
+                      <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
+                    )}
+                  </View>
+                </View>
+
+                {item.hoste.map((h, idx) => {
+                  if (!h.fotka && h.popis === '' && h.profese === '') return null;
+                  return (
+                    <View key={idx} style={{ width: '100%', marginBottom: 25 }}>
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
+                        {h.role}
+                      </Text>
+                      <TouchableOpacity style={styles.mobileSpeakerTrigger} onPress={() => { setAktivniSelectedSpeaker(h); setSpeakerModalVisible(true); }} activeOpacity={0.7}>
+                        <View style={[styles.mobileSpeakerTriggerAvatar, !h.fotka && { backgroundColor: themeColor }]}>
+                          {h.fotka && <Image source={{ uri: h.fotka }} style={styles.speakerImage} resizeMode="cover" />}
+                        </View>
+                        <View style={{ flex: 1, paddingLeft: 15, justifyContent: 'center' }}>
+                          <Text style={styles.speakerName}>{h.jmeno}</Text>
+                          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: themeColor, fontWeight: 'bold', marginTop: 4 }}>
+                            Zobrazit profil
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+
                 {item.rezervace && (
-                  <View style={[styles.desktopDetailCard, { backgroundColor: '#F9FAFB', padding: 20 }]}>
+                  <View style={styles.formContainer}>
                     <Text style={styles.formTitle}>Rezervace</Text>
                     
                     {(maRezervaci || rezervaceOdeslana) && !chciDalsiRezervaci ? (
@@ -1102,11 +1309,32 @@ export default function App() {
                       </View>
                     ) : (
                       <>
-                        {rezervaceChyba && <Text style={styles.errorText}>{rezervaceChyba}</Text>}
-                        <TextInput style={styles.input} placeholder="Celé jméno a příjmení" value={rezervaceJmeno} onChangeText={setRezervaceJmeno} placeholderTextColor="#9CA3AF" />
-                        <TextInput style={styles.input} placeholder="E-mail (např. jan.novak@email.cz)" keyboardType="email-address" autoCapitalize="none" value={rezervaceEmail} onChangeText={setRezervaceEmail} placeholderTextColor="#9CA3AF" />
+                        {rezervaceChyba && (
+                          <Text style={styles.errorText}>{rezervaceChyba}</Text>
+                        )}
+                        
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Celé jméno a příjmení"
+                          value={rezervaceJmeno}
+                          onChangeText={setRezervaceJmeno}
+                          placeholderTextColor="#9CA3AF"
+                        />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="E-mail (např. jan.novak@email.cz)"
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          value={rezervaceEmail}
+                          onChangeText={setRezervaceEmail}
+                          placeholderTextColor="#9CA3AF"
+                        />
                         <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
-                          {odesilaRezervaci ? <ActivityIndicator color="white" /> : <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>}
+                          {odesilaRezervaci ? (
+                            <ActivityIndicator color="white" />
+                          ) : (
+                            <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>
+                          )}
                         </TouchableOpacity>
 
                         {chciDalsiRezervaci && (
@@ -1118,253 +1346,14 @@ export default function App() {
                     )}
                   </View>
                 )}
-              </View>
+              </>
+            )}
 
-              {/* PRAVÝ SLOUPEC (OBRÁZEK A IKONY) - DESKTOP */}
-              <View style={styles.desktopDetailRightColumn}>
-                {item.image ? (
-                  <Image source={{ uri: item.image }} style={styles.desktopDetailImage} resizeMode="cover" />
-                ) : (
-                  <View style={[styles.desktopDetailImage, {backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center'}]}>
-                    <Text style={{color: '#9CA3AF'}}>Obrázek zatím není</Text>
-                  </View>
-                )}
-                
-                {/* 👇 NA POČÍTAČI JSOU NYNÍ TYTO VIZITKY PLNĚ STATICKÉ A OTEVŘENÉ (NEKLIKACÍ) 👇 */}
-                {item.hoste.map((h, idx) => {
-                  if (!h.fotka && h.popis === '' && h.profese === '') return null;
-                  return (
-                    <View key={idx} style={{ width: '100%', marginTop: 15 }}>
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
-                        {h.role}
-                      </Text>
-                      {/* STATICKÝ VIEW MÍSTO TOUCHABLE OPACITY, NEOMEZENÝ TEXT */}
-                      <View style={styles.speakerCard}>
-                        <View style={[styles.speakerImageContainer, !h.fotka && { backgroundColor: themeColor }]}>
-                          {h.fotka && <Image source={{ uri: h.fotka }} style={styles.speakerImage} resizeMode="cover" />}
-                        </View>
-                        <View style={styles.speakerInfo}>
-                          <Text style={styles.speakerName}>{h.jmeno}</Text>
-                          {h.profese !== '' && <Text style={styles.speakerJob}>{h.profese}</Text>}
-                          {h.popis !== '' && <Text style={styles.speakerDesc}>{h.popis}</Text>}
-                        </View>
-                      </View>
-                    </View>
-                  );
-                })}
-
-                <View style={[styles.desktopDetailBottomActions, { justifyContent: 'flex-end', width: '100%', alignItems: 'flex-start', marginTop: 25 }]}>
-                  <View style={styles.detailHeartWrapper}>
-                    <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
-                      <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
-                    </TouchableOpacity>
-                    {item.pocetOblibenych > 0 && (
-                      <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
-                    )}
-                  </View>
-                </View>
-
-              </View>
-            </View>
-          ) : (
-            /* MOBILNÍ LAYOUT */
-            <>
-              <View style={styles.detailTitleRow}>
-                <Text style={styles.detailMainTitle}>{item.nazev}</Text>
-              </View>
-
-              {item.hoste.length > 0 && (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 15, marginTop: -5 }}>
-                  <Text style={styles.detailHost}>
-                    {item.hoste.length > 1 ? 'Hosté' : item.hoste[0].role}:{' '}
-                  </Text>
-                  {/* 👇 NA MOBILU ZŮSTÁVÁ VŠE KLIKACÍ (OTEVÍRÁ MODAL) 👇 */}
-                  {item.hoste.map((h, hIdx) => (
-                    <TouchableOpacity 
-                      key={hIdx} 
-                      activeOpacity={0.7} 
-                      onPress={() => {
-                        setAktivniSelectedSpeaker(h);
-                        setSpeakerModalVisible(true);
-                      }}
-                    >
-                      <Text style={styles.detailHost}>
-                        {h.jmeno}{hIdx < item.hoste.length - 1 ? ', ' : ''}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-              <View style={[styles.detailTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
-                  <Text style={styles.cardTime}>{timeText}</Text>
-                  {mistoText && (
-                    <>
-                      <Text style={styles.cardTime}> | </Text>
-                      <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                        <Text style={styles.locationLink}>{mistoText}</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
-                <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2, marginLeft: 10 }} activeOpacity={0.6}>
-                  <Ionicons name="share-social-outline" size={16} color="black" />
-                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
-                </TouchableOpacity>
-              </View>
-
-              {item.image && (
-                <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
-              )}
-
-              <Text style={styles.detailDescription}>
-                {item.popis ? item.popis : 'Další informace o této akci připravujeme...'}
-              </Text>
-
-              <View style={styles.detailTagsWrapper}>
-                <View style={styles.tagsContainer}>
-                  {item.tag && item.tag.map((t, index) => (
-                    <TouchableOpacity key={index} style={[styles.tagPill, { backgroundColor: themeColor, borderColor: themeColor }]} onPress={() => clickTagNaProgram(t)} activeOpacity={0.7}>
-                      <Text style={styles.tagText}>{t}</Text>
-                    </TouchableOpacity>
-                  ))}
-                  
-                  {item.odkaz && (
-                    <TouchableOpacity style={[styles.tagPillOutline, { borderColor: themeColor }]} onPress={() => Linking.openURL(item.odkaz)} activeOpacity={0.7}>
-                      <Text style={[styles.tagTextOutline, { color: themeColor }]}>VSTUPENKY</Text>
-                    </TouchableOpacity>
-                  )}
-                  {item.rezervace && (
-                    <View style={[
-                      styles.tagPillOutline, 
-                      { borderColor: themeColor }, 
-                      maRezervaci ? styles.tagPillRezervovano : (jePlno ? styles.tagPillPlno : null)
-                    ]}>
-                      <Text style={[
-                        styles.tagTextOutline, 
-                        { color: themeColor }, 
-                        maRezervaci ? styles.tagTextRezervovano : (jePlno ? styles.tagTextPlno : null)
-                      ]}>
-                        {maRezervaci ? 'REZERVOVÁNO' : (jePlno ? 'OBSAZENO' : 'NUTNÁ REZERVACE')}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-
-              <View style={[styles.detailBottomRowInfo, { alignItems: 'flex-start', marginTop: 10, marginBottom: 25 }]}>
-                <View style={styles.detailCapacityWrapper}>
-                  {getKapacitaText()}
-                </View>
-                <View style={styles.detailHeartWrapper}>
-                  <TouchableOpacity onPress={() => prepniOblibene(item.id)} style={styles.detailHeartIconBtn}>
-                    <Ionicons name={oblibeneIds.includes(item.id) ? "heart" : "heart-outline"} size={28} color="black" />
-                  </TouchableOpacity>
-                  {item.pocetOblibenych > 0 && (
-                    <Text style={styles.detailHeartCount}>{item.pocetOblibenych}</Text>
-                  )}
-                </View>
-              </View>
-
-              {/* 👇 NA MOBILU VIZITKA ZŮSTÁVÁ KLIKACÍ (OTEVÍRÁ MODAL) 👇 */}
-              {item.hoste.map((h, idx) => {
-                if (!h.fotka && h.popis === '' && h.profese === '') return null;
-                return (
-                  <View key={idx} style={{ width: '100%', marginBottom: 25 }}>
-                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#000000', marginBottom: 10, fontWeight: 'bold' }}>
-                      {h.role}
-                    </Text>
-                    <TouchableOpacity style={styles.mobileSpeakerTrigger} onPress={() => { setAktivniSelectedSpeaker(h); setSpeakerModalVisible(true); }} activeOpacity={0.7}>
-                      <View style={[styles.mobileSpeakerTriggerAvatar, !h.fotka && { backgroundColor: themeColor }]}>
-                        {h.fotka && <Image source={{ uri: h.fotka }} style={styles.speakerImage} resizeMode="cover" />}
-                      </View>
-                      <View style={{ flex: 1, paddingLeft: 15, justifyContent: 'center' }}>
-                        <Text style={styles.speakerName}>{h.jmeno}</Text>
-                        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: themeColor, fontWeight: 'bold', marginTop: 4 }}>
-                          Zobrazit profil
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
-                );
-              })}
-
-              {item.rezervace && (
-                <View style={styles.formContainer}>
-                  <Text style={styles.formTitle}>Rezervace</Text>
-                  
-                  {(maRezervaci || rezervaceOdeslana) && !chciDalsiRezervaci ? (
-                    <View style={{ backgroundColor: '#ECFDF5', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#10B981' }}>
-                       <Text style={{ fontFamily: 'Inter_400Regular', color: '#065F46', textAlign: 'center', fontWeight: 'bold' }}>
-                         Na tuto akci máte úspěšně zajištěnou rezervaci.
-                       </Text>
-                       {!jePlno && (
-                         <TouchableOpacity 
-                           style={{ marginTop: 12, alignSelf: 'center', backgroundColor: '#10B981', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 }}
-                           onPress={() => {
-                             setChciDalsiRezervaci(true);
-                             setRezervaceJmeno(''); 
-                           }}
-                         >
-                           <Text style={{ color: 'white', fontFamily: 'Inter_400Regular', fontSize: 13, fontWeight: 'bold' }}>Vytvořit další rezervaci</Text>
-                         </TouchableOpacity>
-                       )}
-                    </View>
-                  ) : jePlno ? (
-                    <View style={{ backgroundColor: '#F3F4F6', padding: 15, borderRadius: 8 }}>
-                       <Text style={{ fontFamily: 'Inter_400Regular', color: '#4B5563', textAlign: 'center' }}>
-                         Kapacita této akce již byla naplněna.
-                       </Text>
-                    </View>
-                  ) : (
-                    <>
-                      {rezervaceChyba && (
-                        <Text style={styles.errorText}>{rezervaceChyba}</Text>
-                      )}
-                      
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Celé jméno a příjmení"
-                        value={rezervaceJmeno}
-                        onChangeText={setRezervaceJmeno}
-                        placeholderTextColor="#9CA3AF"
-                      />
-                      <TextInput
-                        style={styles.input}
-                        placeholder="E-mail (např. jan.novak@email.cz)"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        value={rezervaceEmail}
-                        onChangeText={setRezervaceEmail}
-                        placeholderTextColor="#9CA3AF"
-                      />
-                      <TouchableOpacity style={[styles.submitBtn, { backgroundColor: themeColor }]} onPress={handleOdeslatRezervaci} disabled={odesilaRezervaci}>
-                        {odesilaRezervaci ? (
-                          <ActivityIndicator color="white" />
-                        ) : (
-                          <Text style={styles.submitBtnText}>Odeslat rezervaci</Text>
-                        )}
-                      </TouchableOpacity>
-
-                      {chciDalsiRezervaci && (
-                        <TouchableOpacity onPress={() => setChciDalsiRezervaci(false)} style={{marginTop: 15, alignSelf: 'center'}}>
-                          <Text style={{color: '#6B7280', fontFamily: 'Inter_400Regular', fontSize: 14}}>Zrušit zadávání další rezervace</Text>
-                        </TouchableOpacity>
-                      )}
-                    </>
-                  )}
-                </View>
-              )}
-            </>
-          )}
-
-          <View style={{ height: 40 }} />
+            <View style={{ height: 40 }} />
           </View> 
-
-          {isDesktop && vykresliPaticku()}
-        </ScrollView>
-      </>
+        </View>
+        {isDesktop && vykresliPaticku()}
+      </ScrollView>
     );
   };
 
@@ -1458,85 +1447,66 @@ export default function App() {
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
           {aktivniTab === 'Home' && isDesktop && !detailAkce && (
-            <>
-             <ScrollView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
-               
-               <View style={styles.homeHeroContainer}>
-                 {heroImage ? (
-                   <Image source={{ uri: heroImage }} style={styles.homeHeroImage} resizeMode="cover" />
-                 ) : (
-                   <View style={[styles.homeHeroImage, { backgroundColor: '#333' }]} />
-                 )}
-                 <View style={styles.homeHeroOverlay}>
-                   <TouchableOpacity style={[styles.homeHeroBtn, { borderColor: themeColor }]} onPress={() => setAktivniTab('Program')}>
-                     <Text style={[styles.homeHeroBtnText, { color: themeColor }]}>PROGRAM</Text>
-                   </TouchableOpacity>
-                 </View>
-               </View>
-
-               <View style={styles.homeContentSection}>
-                 <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
-                 <Text style={styles.homeText}>
-                   Termín festivalu: 12.–18. října 2026{'\n\n'}
-                   19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
-                 </Text>
-               </View>
-
-               {highlightAkce.length > 0 && (
-                 <View style={[styles.homeContentSection, { paddingTop: 80, paddingBottom: 20 }]}>
-                   <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
-                   <View style={styles.desktopGrid}>
-                     {highlightAkce.map(item => vykresliKartu(item, true))}
+             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+               <View style={{ flex: 1 }}>
+                 <View style={styles.homeHeroContainer}>
+                   {heroImage ? (
+                     <Image source={{ uri: heroImage }} style={styles.homeHeroImage} resizeMode="cover" />
+                   ) : (
+                     <View style={[styles.homeHeroImage, { backgroundColor: '#333' }]} />
+                   )}
+                   <View style={styles.homeHeroOverlay}>
+                     <TouchableOpacity style={[styles.homeHeroBtn, { borderColor: themeColor }]} onPress={() => setAktivniTab('Program')}>
+                       <Text style={[styles.homeHeroBtnText, { color: themeColor }]}>PROGRAM</Text>
+                     </TouchableOpacity>
                    </View>
-                   <TouchableOpacity onPress={() => setAktivniTab('Program')} style={{ marginTop: 20 }}>
-                     <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 18, color: '#333' }}>
-                       Další akce v sekci program...
-                     </Text>
-                   </TouchableOpacity>
                  </View>
-               )}
 
-               <View style={[styles.homeContentSection, { paddingTop: 80, paddingBottom: 60 }]}>
-                 <Text style={styles.homeSectionTitle}>MAPA</Text>
-                 <View style={{ width: '100%', height: 600, borderRadius: 0, overflow: 'hidden', backgroundColor: '#E5E7EB' }}>
-                    {Platform.OS === 'web' ? (
-                      <iframe 
-                        key="home-map" 
-                        srcDoc={generateMapHtml(null, null, null, themeColor, true, false)} 
-                        style={{ width: '100%', height: '100%', border: 'none', display: 'block' }} 
-                        allow="geolocation" 
-                        title="Mapa DŽKO"
-                      />
-                    ) : (
-                      <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
-                    )}
+                 <View style={styles.homeContentSection}>
+                   <Text style={styles.homeSectionTitle}>O FESTIVALU</Text>
+                   <Text style={styles.homeText}>
+                     Termín festivalu: 12.–18. října 2026{'\n\n'}
+                     19. ročník festivalu Dny židovské kultury Olomouc (12.–18. 10. 2026) se pod názvem „Morava – na periferii, nebo v centru?“ zaměří na historickou a kulturní roli Moravy v rámci židovských dějin. Program nabídne přednášky, koncerty, divadlo, film i komentované prohlídky a otevře diskusi o tom, zda byla Morava spíše periferií židovského světa, nebo svébytným a vlivným centrem. Pozornost bude věnována zásadním osobnostem pocházejícím z moravských židovských obcí, kulturním transferům, migracím a vztahům mezi centrem a periferií.
+                   </Text>
+                 </View>
+
+                 {highlightAkce.length > 0 && (
+                   <View style={[styles.homeContentSection, { paddingTop: 80, paddingBottom: 20 }]}>
+                     <Text style={styles.homeSectionTitle}>TIPY Z PROGRAMU</Text>
+                     <View style={styles.desktopGrid}>
+                       {highlightAkce.map(item => vykresliKartu(item, true))}
+                     </View>
+                     <TouchableOpacity onPress={() => setAktivniTab('Program')} style={{ marginTop: 20 }}>
+                       <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 18, color: '#333' }}>
+                         Další akce v sekci program...
+                       </Text>
+                     </TouchableOpacity>
+                   </View>
+                 )}
+
+                 <View style={[styles.homeContentSection, { paddingTop: 80, paddingBottom: 60 }]}>
+                   <Text style={styles.homeSectionTitle}>MAPA</Text>
+                   <View style={{ width: '100%', height: 600, borderRadius: 0, overflow: 'hidden', backgroundColor: '#E5E7EB' }}>
+                      {Platform.OS === 'web' ? (
+                        <iframe 
+                          key="home-map" 
+                          srcDoc={generateMapHtml(null, null, null, themeColor, true, false)} 
+                          style={{ width: '100%', height: '100%', border: 'none', display: 'block' }} 
+                          allow="geolocation" 
+                          title="Mapa DŽKO"
+                        />
+                      ) : (
+                        <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
+                      )}
+                   </View>
                  </View>
                </View>
-               
                {isDesktop && vykresliPaticku()}
              </ScrollView>
-
-             {homeMapaZvetsena && (
-               <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, backgroundColor: '#F3F4F6' }}>
-                  {Platform.OS === 'web' ? (
-                    <iframe 
-                      key="fullscreen-home-map" 
-                      srcDoc={generateMapHtml(null, null, null, themeColor, true, true)} 
-                      style={{ width: '100%', height: '100%', border: 'none' }} 
-                      allow="geolocation" 
-                      title="Mapa DŽKO Fullscreen"
-                    />
-                  ) : (
-                    <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
-                  )}
-               </View>
-             )}
-            </>
           )}
 
           {aktivniTab === 'Mapa' && (
             <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
-              
               {!isDesktop && historieAkce && (
                 <View style={{ paddingHorizontal: 15 }}>
                   <TouchableOpacity 
@@ -1566,9 +1536,8 @@ export default function App() {
             </View>
           )}
 
-          {/* 👇 MŘÍŽKA S HOSTY 👇 */}
           {aktivniTab === 'Hoste' && !detailAkce && (
-            <ScrollView style={{ flex: 1 }}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15, paddingTop: 10 }}>
                 <View style={styles.pageTitleContainer}>
                   <Text style={styles.pageTitle}>HOSTÉ</Text>
@@ -1612,7 +1581,7 @@ export default function App() {
           )}
 
           {aktivniTab === 'Program' && !detailAkce && (
-            <ScrollView style={{ flex: 1 }}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={isDesktop ? styles.desktopContainer : null}>
                     <View style={styles.pageTitleContainer}>
@@ -1653,7 +1622,7 @@ export default function App() {
                           );
                         })
                       ) : (
-                        <Text style={styles.emptyText}>Pro tento výběr zatím není program.</Text>
+                        <Text style={styles.emptyText}>Pro tento den zatím není program.</Text>
                       )}
                     </View>
                   </View>
@@ -1663,7 +1632,7 @@ export default function App() {
           )}
                 
           {aktivniTab === 'Oblíbené' && !detailAkce && (
-            <ScrollView style={{ flex: 1 }}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={[isDesktop ? styles.desktopContainer : null, { paddingBottom: 20 }]}>
                     
@@ -1731,7 +1700,7 @@ export default function App() {
           )}
                 
           {aktivniTab === 'Další' && !detailAkce && (
-            <ScrollView style={{ flex: 1 }}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={styles.dalsiContainer}>
                     <Text style={styles.dalsiHlavniNadpis}>DNY ŽIDOVSKÉ{'\n'}KULTURY OLOMOUC</Text>
@@ -1886,6 +1855,22 @@ export default function App() {
             </View>
           )}
         </View>
+
+        {homeMapaZvetsena && (
+           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, backgroundColor: '#F3F4F6' }}>
+              {Platform.OS === 'web' ? (
+                <iframe 
+                  key="fullscreen-home-map-2" 
+                  srcDoc={generateMapHtml(null, null, null, themeColor, true, true)} 
+                  style={{ width: '100%', height: '100%', border: 'none' }} 
+                  allow="geolocation" 
+                  title="Mapa DŽKO Fullscreen"
+                />
+              ) : (
+                <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
+              )}
+           </View>
+        )}
 
         <Modal
           visible={mapaModalVisible}
@@ -2651,7 +2636,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 
-  // 👇 STYLY PRO KARTY PROGRAMU V OKNĚ HOSTA 👇
   speakerEventsSection: {
     marginTop: 30,
   },
