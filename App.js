@@ -245,6 +245,7 @@ export default function App() {
   const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
   const [hosteVsechny, setHosteVsechny] = useState([]); 
   const [partneri, setPartneri] = useState([]);
+  const [hoveredPartnerId, setHoveredPartnerId] = useState(null);
 
   const [heroImage, setHeroImage] = useState(null); 
   const [loading, setLoading] = useState(true);
@@ -1674,28 +1675,67 @@ export default function App() {
                       </Text>
 
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -15, rowGap: 40 }}>
-                        {partneriProKategorii.map(p => (
-                          <TouchableOpacity 
-                            key={p.id} 
-                            style={{ 
-                              width: isDesktop ? '25%' : '50%', 
-                              paddingHorizontal: 25, 
-                              paddingVertical: 15, 
-                              height: 120,        
-                              marginBottom: 40,   
-                              justifyContent: 'center', 
-                              alignItems: 'center' 
-                            }}
-                            onPress={() => p.odkaz ? Linking.openURL(p.odkaz) : null}
-                            activeOpacity={p.odkaz ? 0.7 : 1}
-                          >
-                            {p.logo ? (
-                              <Image source={{ uri: p.logo }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
-                            ) : (
-                              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, textAlign: 'center', color: '#000', fontWeight: 'bold' }}>{p.nazev}</Text>
-                            )}
-                          </TouchableOpacity>
-                        ))}
+                        {partneriProKategorii.map(p => {
+                          const isHovered = hoveredPartnerId === p.id;
+                          
+                          // Společný obsah (logo nebo text)
+                          const partnerContent = p.logo ? (
+                            <Image 
+                              source={{ uri: p.logo }} 
+                              style={[
+                                { width: '100%', height: '100%' },
+                                isHovered && { tintColor: themeColor }
+                              ]} 
+                              resizeMode="contain" 
+                            />
+                          ) : (
+                            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, textAlign: 'center', color: isHovered ? themeColor : '#000', fontWeight: 'bold' }}>{p.nazev}</Text>
+                          );
+
+                          // Společné styly pro obal loga
+                          const partnerStyle = { 
+                            width: isDesktop ? '25%' : '50%', 
+                            paddingHorizontal: 25, 
+                            paddingVertical: 15, 
+                            height: 120,        
+                            marginBottom: 40,   
+                            justifyContent: 'center', 
+                            alignItems: 'center',
+                            textDecoration: 'none', // Důležité pro <a> tag, aby text nebyl podtržený
+                            display: 'flex' 
+                          };
+
+                          // Pokud jsme na webu a partner má odkaz, použijeme klasický <a> tag (ukáže URL vlevo dole)
+                          if (Platform.OS === 'web' && p.odkaz) {
+                            return (
+                              <a 
+                                key={p.id}
+                                href={p.odkaz}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={partnerStyle}
+                                onMouseEnter={() => setHoveredPartnerId(p.id)}
+                                onMouseLeave={() => setHoveredPartnerId(null)}
+                              >
+                                {partnerContent}
+                              </a>
+                            );
+                          }
+
+                          // Pro mobily (nebo partnery bez vyplněného odkazu) použijeme původní TouchableOpacity
+                          return (
+                            <TouchableOpacity 
+                              key={p.id} 
+                              style={partnerStyle}
+                              onPress={() => p.odkaz ? Linking.openURL(p.odkaz) : null}
+                              activeOpacity={p.odkaz ? 0.7 : 1}
+                              onMouseEnter={() => setHoveredPartnerId(p.id)}
+                              onMouseLeave={() => setHoveredPartnerId(null)}
+                            >
+                              {partnerContent}
+                            </TouchableOpacity>
+                          );
+                        })}
                       </View>
                     </View>
                   );
