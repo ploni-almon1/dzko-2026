@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert, Modal, useWindowDimensions, Share } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert, Modal, useWindowDimensions, Share, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -217,7 +217,7 @@ export default function App() {
   const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
   const [vybranyTag, setVybranyTag] = useState(null);
 
-  // 👇 NOVÉ STAVY PRO POKROČILÝ FILTR 👇
+  // 👇 STAVY PRO POKROČILÝ FILTR 👇
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filterSubModalVisible, setFilterSubModalVisible] = useState(null);
   const vychoziFiltry = { den: [], typ: [], misto: [], hoste: [] };
@@ -245,6 +245,8 @@ export default function App() {
   const [prednaskyVsechny, setPrednaskyVsechny] = useState([]);
   const [hosteVsechny, setHosteVsechny] = useState([]); 
   const [partneri, setPartneri] = useState([]);
+
+  // 👇 STAV PRO ODKAZY LOG 👇
   const [hoveredPartnerId, setHoveredPartnerId] = useState(null);
 
   const [heroImage, setHeroImage] = useState(null); 
@@ -266,8 +268,19 @@ export default function App() {
   const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
 
   const detailScrollViewRef = useRef(null);
-  // 👇 NOVÉ STAVY PRO POKROČILÝ FILTR 👇
+
+  // Animace načítání
   const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 2000,
+        useNativeDriver: false,
+      })
+    ).start();
+  }, [spinValue]);
 
   useEffect(() => {
     if (!isDesktop && aktivniTab === 'Home') {
@@ -594,7 +607,6 @@ export default function App() {
     'Sladovna Holice': { lat: 49.5695, lng: 17.2912, title: 'Sladovna Holice' }
   };
 
-  // 👇 AKTUALIZOVANÁ LOGIKA PRO FILTROVÁNÍ 👇
   const zobrazenePrednasky = prednaskyVsechny.filter(item => {
     if (hasActiveFilters) {
       const mistoMatch = item.cas.split(' | ')[2];
@@ -1436,7 +1448,28 @@ export default function App() {
     ? prednaskyVsechny.filter(item => item.hoste.some(h => h.jmeno === aktivniSelectedSpeaker.jmeno))
     : [];
 
-  if (!fontsLoaded || loading) return <ActivityIndicator size="large" color={themeColor} style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
+  if (!fontsLoaded || loading) {
+    const spin = spinValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg']
+    });
+
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }}>
+        <Animated.View style={{ transform: [{ rotate: spin }] }}>
+          <Image 
+            source={require('./assets/star.png')} 
+            style={{ width: 70, height: 70, tintColor: themeColor }} 
+            resizeMode="contain" 
+          />
+        </Animated.View>
+        <Text style={{ marginTop: 20, fontSize: 14, color: themeColor, fontWeight: 'bold', letterSpacing: 2 }}>
+          NAČÍTÁNÍ PROGRAMU...
+        </Text>
+      </View>
+    );
+  }
+
   if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
 
   return (
@@ -1631,7 +1664,7 @@ export default function App() {
                               setSpeakerModalVisible(true);
                             }}
                           >
-                            <View style={{ width: '100%', aspectRatio: 4/3, backgroundColor: h.fotka ? 'transparent' : themeColor, borderTopLeftRadius: 10, borderTopRightRadius: 10, overflow: 'hidden' }}>
+                            <View style={{ width: '100%', aspectRatio: 3/4, backgroundColor: h.fotka ? 'transparent' : themeColor, borderTopLeftRadius: 10, borderTopRightRadius: 10, overflow: 'hidden' }}>
                               {h.fotka ? (
                                 <Image source={{ uri: h.fotka }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                               ) : null}
@@ -1676,11 +1709,10 @@ export default function App() {
                         {kat}
                       </Text>
 
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -15, rowGap: 40 }}>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 40 }}>
                         {partneriProKategorii.map(p => {
                           const isHovered = hoveredPartnerId === p.id;
                           
-                          // Společný obsah (logo nebo text)
                           const partnerContent = p.logo ? (
                             <Image 
                               source={{ uri: p.logo }} 
@@ -1694,20 +1726,18 @@ export default function App() {
                             <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, textAlign: 'center', color: isHovered ? themeColor : '#000', fontWeight: 'bold' }}>{p.nazev}</Text>
                           );
 
-                          // Společné styly pro obal loga
                           const partnerStyle = { 
                             width: isDesktop ? '25%' : '50%', 
-                            paddingHorizontal: 25, 
+                            paddingHorizontal: 15, 
                             paddingVertical: 15, 
                             height: 120,        
                             marginBottom: 40,   
                             justifyContent: 'center', 
                             alignItems: 'center',
-                            textDecoration: 'none', // Důležité pro <a> tag, aby text nebyl podtržený
+                            textDecoration: 'none',
                             display: 'flex' 
                           };
 
-                          // Pokud jsme na webu a partner má odkaz, použijeme klasický <a> tag (ukáže URL vlevo dole)
                           if (Platform.OS === 'web' && p.odkaz) {
                             return (
                               <a 
@@ -1724,7 +1754,6 @@ export default function App() {
                             );
                           }
 
-                          // Pro mobily (nebo partnery bez vyplněného odkazu) použijeme původní TouchableOpacity
                           return (
                             <TouchableOpacity 
                               key={p.id} 
@@ -1751,13 +1780,26 @@ export default function App() {
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={isDesktop ? styles.desktopContainer : null}>
+                    
+                    {/* 👇 UPRAVENÁ HLAVIČKA PROGRAMU S IKONKOU FILTRU 👇 */}
                     <View style={styles.pageTitleContainer}>
                       <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); setActiveFilters(vychoziFiltry); }} activeOpacity={0.7} style={{ flex: 1 }}>
                         <Text style={styles.pageTitle}>{vybranyTag ? `PROGRAM: ${vybranyTag}` : 'PROGRAM'}</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
-                        <Ionicons name={zobrazitObrazky ? "reorder-three-outline" : "grid-outline"} size={24} color="black" />
-                      </TouchableOpacity>
+
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        {hasActiveFilters && (
+                          <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginRight: 10 }}>
+                            <Text style={{ fontFamily: 'Inter_400Regular', color: '#6B7280', fontSize: 13 }}>Zrušit filtry</Text>
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} style={styles.toggleViewBtn}>
+                          <Ionicons name="filter" size={24} color={hasActiveFilters ? themeColor : "black"} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
+                          <Ionicons name={zobrazitObrazky ? "reorder-three-outline" : "grid-outline"} size={24} color="black" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                     
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer]}>
@@ -1772,28 +1814,9 @@ export default function App() {
                       })}
                     </ScrollView>
 
-                    {/* 👇 TLAČÍTKO PRO OTEVŘENÍ FILTRU 👇 */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-                      <TouchableOpacity 
-                        onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} 
-                        style={styles.filterTriggerBtn}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="filter" size={16} color={themeColor} />
-                        <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
-                      </TouchableOpacity>
-                      
-                      {hasActiveFilters && (
-                        <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15 }}>
-                          <Text style={{ fontFamily: 'Inter_400Regular', color: '#6B7280', fontSize: 13 }}>Zrušit filtry</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    
                     <View style={{ paddingBottom: 20 }}>
                       {zobrazenePrednasky.length > 0 ? (
                         dny.map((den, index) => {
-                          // Pokud se nefiltruje složitě přes nový filtr a je vybrán konkrétní den, ukaž jen ten
                           if (!hasActiveFilters && vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
 
                           const akceDne = zobrazenePrednasky.filter(item => item.den === den);
@@ -1898,7 +1921,11 @@ export default function App() {
                       {vykresliPolozkuMenu('Archiv', 'link', 'https://muo.cz/central/dzko-2025/dzko-archiv-2025/')}
                       {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
                       {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
-                      {vykresliPolozkuMenu('Pořadatelé / Partneři', 'action', () => setAktivniTab('Partneri'))}
+                      {vykresliPolozkuMenu('Pořadatelé', 'expand', [
+                        { label: 'Muzeum umění Olomouc', url: 'https://muo.cz/' },
+                        { label: 'Židovská obec Olomouc', url: 'https://kehila-olomouc.cz/rs/' },
+                        { label: 'Centrum judaistických studií', url: 'https://judaistika.upol.cz/' }
+                      ])}
                       {vykresliPolozkuMenu('Kontakt', 'expand', 'Produkce festivalu\nAlexandr Jeništa\njenista@muo.cz\n+420 770 147 527\n\nPokladna MUO | CENTRAL\n+420 585 514 241\npokladna@muo.cz\nút–ne 10-18 hodin\n\nMuzeum umění Olomouc\nDenisova 47, 771 11 Olomouc\n+420 585 514 111\ninfo@muo.cz')}
                     </View>
 
@@ -2972,129 +2999,4 @@ const styles = StyleSheet.create({
   // 👇 STYLY PRO FILTR MODAL 👇
   filterTriggerBtn: {
     flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#E0E7FF', 
-    paddingVertical: 8, 
-    paddingHorizontal: 12, 
-    borderRadius: 20,
-    alignSelf: 'flex-start'
-  },
-  filterTriggerText: {
-    fontFamily: 'Inter_400Regular', 
-    marginLeft: 6, 
-    fontWeight: 'bold', 
-    fontSize: 13
-  },
-  filterModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(5px)' } : {}), 
-  },
-  filterModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 25,
-    width: '100%',
-    maxWidth: 400,
-    ...Platform.select({ web: { boxShadow: '0px 4px 15px rgba(0,0,0,0.1)' }, default: { elevation: 8 } })
-  },
-  filterHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20
-  },
-  filterMainTitle: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 22,
-    color: '#000',
-    fontWeight: 'bold'
-  },
-  filterResetBtn: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 20,
-    paddingVertical: 4,
-    paddingHorizontal: 12
-  },
-  filterResetText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: '#4B5563'
-  },
-  filterFieldWrapper: {
-    marginBottom: 20
-  },
-  filterFieldLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: '#000',
-    marginBottom: 8
-  },
-  filterFieldBox: {
-    backgroundColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  filterFieldText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: '#6B7280'
-  },
-  filterConfirmBtn: {
-    paddingVertical: 14,
-    borderRadius: 25,
-    alignItems: 'center',
-    marginTop: 10,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 30
-  },
-  filterConfirmBtnText: {
-    fontFamily: 'Inter_400Regular',
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 15
-  },
-  filterCheckboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12
-  },
-  filterCheckboxText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: '#374151',
-    marginLeft: 10
-  },
-  filterSubModalActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 25,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderColor: '#E5E7EB'
-  },
-  filterSubConfirmBtn: {
-    paddingVertical: 12,
-    borderRadius: 25,
-    alignItems: 'center',
-    paddingHorizontal: 25,
-    marginRight: 15
-  },
-  filterSubCancelBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 15
-  },
-  filterSubCancelText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 15,
-    color: '#000'
-  }
-});
+    alignItems:
