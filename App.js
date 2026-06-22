@@ -1345,7 +1345,7 @@ export default function App() {
                         <View style={{ flex: 1, paddingLeft: 15, justifyContent: 'center' }}>
                           <Text style={styles.speakerName}>{h.jmeno}</Text>
                           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: themeColor, fontWeight: 'bold', marginTop: 4 }}>
-                            Zobrazit profil
+                            Zobrazit více
                           </Text>
                         </View>
                       </TouchableOpacity>
@@ -1882,7 +1882,7 @@ export default function App() {
                         );
                       })
                    ) : (
-                      <Text style={[styles.emptyText, { fontSize: 20, lineHeight: 24, marginTop: 120 }]}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
+                      <Text style={[styles.emptyText, { fontSize: 21, lineHeight: 24, marginTop: 120 }]}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
                     )}
                     {oblibeneZobrazeni.length > 0 && vybranyDen !== 'VŠE' && oblibeneZobrazeni.filter(item => item.den === vybranyDen).length === 0 && (
                       <Text style={styles.emptyText}>Pro vybraný den nemáte uložené žádné oblíbené akce.</Text>
