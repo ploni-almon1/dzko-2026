@@ -1359,7 +1359,7 @@ export default function App() {
                     
                     {(maRezervaci || rezervaceOdeslana) && !chciDalsiRezervaci ? (
                       <View style={{ backgroundColor: '#ECFDF5', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#10B981' }}>
-                         <Text style={{ fontFamily: 'Inter_400Regular', color: '#065F46', textAlign: 'center', fontWeight: 'bold' }}>
+                         <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: '#065F46', textAlign: 'center', fontWeight: 'bold' }}>
                            Na tuto akci máte úspěšně zajištěnou rezervaci.
                          </Text>
                          {!jePlno && (
@@ -1376,7 +1376,7 @@ export default function App() {
                       </View>
                     ) : jePlno ? (
                       <View style={{ backgroundColor: '#F3F4F6', padding: 15, borderRadius: 8 }}>
-                         <Text style={{ fontFamily: 'Inter_400Regular', color: '#4B5563', textAlign: 'center' }}>
+                         <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: '#4B5563', textAlign: 'center' }}>
                            Kapacita této akce již byla naplněna.
                          </Text>
                       </View>
@@ -1881,8 +1881,8 @@ export default function App() {
                           </View>
                         );
                       })
-                    ) : (
-                      <Text style={styles.emptyText}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
+                   ) : (
+                      <Text style={[styles.emptyText, { fontSize: 20, lineHeight: 24, marginTop: 120 }]}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
                     )}
                     {oblibeneZobrazeni.length > 0 && vybranyDen !== 'VŠE' && oblibeneZobrazeni.filter(item => item.den === vybranyDen).length === 0 && (
                       <Text style={styles.emptyText}>Pro vybraný den nemáte uložené žádné oblíbené akce.</Text>
