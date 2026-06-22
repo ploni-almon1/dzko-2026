@@ -9,7 +9,11 @@ import { StatusBar } from 'expo-status-bar';
 const DEFAULT_THEME_COLOR = '#3A24DC'; 
 
 // --- GENERÁTOR MAPY ---
-const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandButton = false, isExpanded = false) => `
+const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandButton = false, isExpanded = false, events = []) => {
+  const safeEvents = events.map(e => ({ id: e.id, nazev: e.nazev, cas: e.cas || '' }));
+  const eventsJson = JSON.stringify(safeEvents).replace(/</g, '\\u003c');
+
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -21,64 +25,42 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandB
     <style>
         body { padding: 0; margin: 0; }
         html, body, #map { height: 100%; width: 100%; background-color: #F3F4F6; }
-        
-        .leaflet-tile-pane {
-            -webkit-filter: grayscale(95%) brightness(1.1) contrast(0.9);
-            filter: grayscale(95%) brightness(1.1) contrast(0.9);
-        }
-        
+        .leaflet-tile-pane { filter: grayscale(95%) brightness(1.1) contrast(0.9); }
         .dzko-pin-wrapper { background: transparent; border: none; }
-        
-        .dzko-pin {
-            width: 32px; height: 32px;
-            background-color: ${themeColor || DEFAULT_THEME_COLOR}; border: 2px solid white;
-            border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
-            box-shadow: -2px 2px 5px rgba(0,0,0,0.3); 
-            display: flex; align-items: center; justify-content: center;
-        }
-        
-        .dzko-pin i {
-            transform: rotate(45deg);
-            font-size: 14px;
-            color: white;
-            margin-bottom: 2px; margin-left: 2px;
-        }
-        
+        .dzko-pin { width: 32px; height: 32px; background-color: ${themeColor || '#3A24DC'}; border: 2px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: -2px 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+        .dzko-pin i { transform: rotate(45deg); font-size: 14px; color: white; margin-bottom: 2px; margin-left: 2px; }
         .leaflet-popup-content-wrapper { border-radius: 8px; }
-        .leaflet-popup-content {
-            font-family: sans-serif; font-weight: bold;
-            color: #374151; text-align: center; margin: 10px 15px;
-        }
+        .leaflet-popup-content { font-family: sans-serif; font-weight: bold; color: #374151; text-align: center; margin: 10px 15px; }
+        
+        /* STYLY PRO LEGENDU */
+        .dzko-legend { position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; border-radius: 12px; padding: 15px; width: 280px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: none; max-height: 85%; overflow-y: auto; }
+        .dzko-legend-close { position: absolute; top: 10px; right: 10px; cursor: pointer; background: #F3F4F6; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: #374151; }
+        .dzko-accordion-item { border-bottom: 1px dashed #E5E7EB; padding: 10px 0; }
+        .dzko-accordion-item:last-child { border-bottom: none; }
+        .dzko-accordion-header { font-family: sans-serif; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: #111827; }
+        .dzko-accordion-body { display: none; padding-top: 10px; }
+        .dzko-event-link { display: block; text-decoration: none; color: inherit; padding: 6px 0; font-family: sans-serif; font-size: 13px; cursor: pointer; }
+        .dzko-event-link:hover { opacity: 0.6; }
+        .dzko-no-events { font-family: sans-serif; font-size: 13px; color: #9CA3AF; font-style: italic; padding: 5px 0; }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div id="mapLegend" class="dzko-legend"></div>
+    
     <script>
         var map = L.map('map');
-
         var apiKey = 'gRioCnF44GOOJJaSU3aLnzGM48hcumaNIilX_748pbM';
-        L.tileLayer('https://api.mapy.cz/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=' + apiKey, {
-            minZoom: 10, maxZoom: 19,
-            attribution: '&copy; <a href="https://www.seznam.cz" target="_blank">Seznam.cz, a.s.</a>'
-        }).addTo(map);
+        L.tileLayer('https://api.mapy.cz/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=' + apiKey, { minZoom: 10, maxZoom: 19, attribution: '&copy; <a href="https://www.seznam.cz" target="_blank">Seznam.cz, a.s.</a>' }).addTo(map);
 
         var vsechnyPiny = [];
-
         function pridejMisto(lat, lng, nazev, iconName) {
             var currentIcon = iconName || 'fa-building';
-            var dzkoIcon = L.divIcon({
-                className: 'dzko-pin-wrapper',
-                html: '<div class="dzko-pin"><i class="fa-solid ' + currentIcon + '"></i></div>',
-                iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36]
-            });
-
+            var dzkoIcon = L.divIcon({ className: 'dzko-pin-wrapper', html: '<div class="dzko-pin"><i class="fa-solid ' + currentIcon + '"></i></div>', iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36] });
             var marker = L.marker([lat, lng], {icon: dzkoIcon}).addTo(map).bindPopup(nazev);
             vsechnyPiny.push(marker);
-
             var targetTitle = ${focusTitle ? `'${focusTitle}'` : 'null'};
-            if (targetTitle === nazev) {
-                setTimeout(() => marker.openPopup(), 300);
-            }
+            if (targetTitle === nazev) setTimeout(() => marker.openPopup(), 300);
         }
 
         pridejMisto(49.5980481, 17.2610522, 'Mozarteum', 'fa-landmark');
@@ -89,7 +71,6 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandB
 
         var focusLat = ${focusLat || 'null'};
         var focusLng = ${focusLng || 'null'};
-
         if (focusLat && focusLng) {
             map.setView([focusLat, focusLng], 17);
         } else {
@@ -97,76 +78,101 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandB
             map.fitBounds(skupinaPinu.getBounds(), { padding: [40, 40] }); 
         }
 
+        var eventsData = ${eventsJson};
+        
+        function buildLegend() {
+            var mistoMapovani = [
+                { nazev: 'Centrum judaistických studií', klic: 'CJS' },
+                { nazev: 'Mozarteum', klic: 'Mozarteum' },
+                { nazev: 'MUO CENTRAL', klic: 'Central' },
+                { nazev: 'Židovská obec Olomouc', klic: 'ŽOO' },
+                { nazev: 'Sladovna Holice', klic: 'Sladovna Holice' }
+            ];
+            
+            var legendDiv = document.getElementById('mapLegend');
+            var closeBtn = '<div class="dzko-legend-close" onclick="document.getElementById(\\'mapLegend\\').style.display=\\'none\\'"><i class="fa-solid fa-xmark"></i></div>';
+            var content = closeBtn + '<div style="margin-top: 15px;">';
+            
+            mistoMapovani.forEach(function(m) {
+                var locEvents = eventsData.filter(function(e) { return e.cas && e.cas.indexOf(m.klic) !== -1; });
+                var eventsHtml = locEvents.map(function(e) {
+                    return '<a class="dzko-event-link" onclick="window.parent.postMessage({ type: \\'OPEN_EVENT\\', id: \\'' + e.id + '\\' }, \\'*\\'); return false;">' + e.nazev + '</a>';
+                }).join('');
+                
+                if(locEvents.length === 0) eventsHtml = '<div class="dzko-no-events">Žádné akce</div>';
+                
+                content += '<div class="dzko-accordion-item">' +
+                    '<div class="dzko-accordion-header" onclick="toggleAccordion(this)">' + m.nazev + ' <i class="fa-solid fa-chevron-down"></i></div>' +
+                    '<div class="dzko-accordion-body">' + eventsHtml + '</div>' +
+                '</div>';
+            });
+            content += '</div>';
+            legendDiv.innerHTML = content;
+        }
+        buildLegend();
+        
+        window.toggleAccordion = function(el) {
+            var body = el.nextElementSibling;
+            var icon = el.querySelector('i');
+            if(body.style.display === 'block') {
+                body.style.display = 'none';
+                icon.className = 'fa-solid fa-chevron-down';
+            } else {
+                body.style.display = 'block';
+                icon.className = 'fa-solid fa-chevron-up';
+            }
+        };
+
         map.locate({setView: false, maxZoom: 16, watch: true, enableHighAccuracy: true});
-
         var userMarker = null;
-
         function onLocationFound(e) {
             if (!userMarker) {
-                var userIcon = L.divIcon({
-                    className: 'dzko-user-pin',
-                    html: '<div style="background-color: ${themeColor || DEFAULT_THEME_COLOR}; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>',
-                    iconSize: [22, 22],
-                    iconAnchor: [11, 11]
-                });
+                var userIcon = L.divIcon({ className: 'dzko-user-pin', html: '<div style="background-color: ${themeColor || '#3A24DC'}; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>', iconSize: [22, 22], iconAnchor: [11, 11] });
                 userMarker = L.marker(e.latlng, {icon: userIcon, zIndexOffset: 1000}).addTo(map).bindPopup("Vaše aktuální poloha");
             } else {
                 userMarker.setLatLng(e.latlng);
             }
         }
-
         map.on('locationfound', onLocationFound);
-
-        var userClickedLocate = false; 
-
-        map.on('locationerror', function(e) {
-            if (userClickedLocate) {
-                alert("Nepodařilo se zjistit polohu.\\n\\nDůvod: " + e.message + "\\n\\n1) Zkontrolujte povolení polohy v prohlížeči.\\n2) Pokud testujete na mobilu přes vývojářskou URL, prohlížeč to blokuje kvůli absenci HTTPS šifrování.");
-                userClickedLocate = false;
-            }
-        });
 
         var customControls = L.control({position: 'topleft'});
         customControls.onAdd = function () {
             var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            
+            var infoBtn = L.DomUtil.create('a', '', div);
+            infoBtn.href = '#';
+            infoBtn.title = 'Zobrazit informace o místech a akcích';
+            infoBtn.style.display = 'flex'; infoBtn.style.alignItems = 'center'; infoBtn.style.justifyContent = 'center'; infoBtn.style.color = 'black';
+            infoBtn.innerHTML = '<i class="fa-solid fa-info" style="font-size: 16px;"></i>';
+            infoBtn.onclick = function(e){
+                e.preventDefault();
+                var leg = document.getElementById('mapLegend');
+                leg.style.display = leg.style.display === 'block' ? 'none' : 'block';
+            };
 
             if (${showExpandButton}) {
                 var expandBtn = L.DomUtil.create('a', '', div);
                 expandBtn.href = '#';
                 expandBtn.title = ${isExpanded ? "'Zmenšit mapu'" : "'Zvětšit mapu'"};
-                expandBtn.style.display = 'flex';
-                expandBtn.style.alignItems = 'center';
-                expandBtn.style.justifyContent = 'center';
-                expandBtn.style.color = 'black';
+                expandBtn.style.display = 'flex'; expandBtn.style.alignItems = 'center'; expandBtn.style.justifyContent = 'center'; expandBtn.style.color = 'black';
                 expandBtn.innerHTML = '<i class="fa-solid ${isExpanded ? "fa-compress" : "fa-expand"}" style="font-size: 16px;"></i>';
-                expandBtn.onclick = function(e){
-                    e.preventDefault(); 
-                    window.parent.postMessage(${isExpanded ? "'CONTRACT_MAP'" : "'EXPAND_MAP'"}, '*'); 
-                };
+                expandBtn.onclick = function(e){ e.preventDefault(); window.parent.postMessage(${isExpanded ? "'CONTRACT_MAP'" : "'EXPAND_MAP'"}, '*'); };
             }
 
             var locateBtn = L.DomUtil.create('a', '', div);
             locateBtn.href = '#';
             locateBtn.title = 'Ukaž moji polohu';
-            locateBtn.style.display = 'flex';
-            locateBtn.style.alignItems = 'center';
-            locateBtn.style.justifyContent = 'center';
-            locateBtn.style.color = 'black';
+            locateBtn.style.display = 'flex'; locateBtn.style.alignItems = 'center'; locateBtn.style.justifyContent = 'center'; locateBtn.style.color = 'black';
             locateBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs" style="font-size: 16px;"></i>';
-            locateBtn.onclick = function(e){
-                e.preventDefault();
-                userClickedLocate = true; 
-                map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true});
-            };
-
+            locateBtn.onclick = function(e){ e.preventDefault(); map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true}); };
             return div;
         };
         customControls.addTo(map);
-
     </script>
 </body>
 </html>
 `;
+};
 
 const ziskejVychoziDen = () => {
   const dnes = new Date();
@@ -325,11 +331,24 @@ export default function App() {
       const handleMapMessage = (event) => {
         if (event.data === 'EXPAND_MAP') setHomeMapaZvetsena(true);
         if (event.data === 'CONTRACT_MAP') setHomeMapaZvetsena(false);
+        
+        // 👇 ZACHYCENÍ KLIKNUTÍ Z MAPY 👇
+        if (event.data && event.data.type === 'OPEN_EVENT') {
+          const eventId = event.data.id;
+          const nalezenaAkce = prednaskyVsechny.find(a => a.id === eventId);
+          if (nalezenaAkce) {
+            otevriDetail(nalezenaAkce);
+            setAktivniTab('Program');
+            setMapaModalVisible(false);
+            setHomeMapaZvetsena(false);
+          }
+        }
       };
+      
       window.addEventListener('message', handleMapMessage);
       return () => window.removeEventListener('message', handleMapMessage);
     }
-  }, []);
+  }, [prednaskyVsechny]);
 
   useEffect(() => {
     const nactiData = async () => {
@@ -624,8 +643,8 @@ export default function App() {
     'Central': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' },
     'Mozarteum': { lat: 49.5980481, lng: 17.2610522, title: 'Mozarteum' },
     'Mozarteum/Central?': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' }, 
-    'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
     'Sladovna Holice': { lat: 49.5695, lng: 17.2912, title: 'Sladovna Holice' }
+    'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
   };
 
   // 👇 AKTUALIZOVANÁ LOGIKA PRO FILTROVÁNÍ 👇
@@ -1599,7 +1618,7 @@ export default function App() {
                       {Platform.OS === 'web' ? (
                         <iframe 
                           key="home-map" 
-                          srcDoc={generateMapHtml(null, null, null, themeColor, true, false)} 
+                          srcDoc={generateMapHtml(null, null, null, themeColor, true, false, prednaskyVsechny)} 
                           style={{ width: '100%', height: '100%', border: 'none', display: 'block' }} 
                           allow="geolocation" 
                           title="Mapa DŽKO"
@@ -1635,7 +1654,7 @@ export default function App() {
 
               {Platform.OS === 'web' ? (
                 <iframe 
-                  srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor, false, false)} 
+                  srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor, false, false, prednaskyVsechny)} 
                   style={{ width: '100%', flex: 1, border: 'none' }} 
                   allow="geolocation" 
                 />
@@ -1806,7 +1825,26 @@ export default function App() {
                       })}
                     </ScrollView>
 
-                    <View style={{ paddingBottom: 20 }}>
+                    {/* 👇 TLAČÍTKO PRO OTEVŘENÍ FILTRU 👇 */}
+                    {isDesktop && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 20, justifyContent: 'flex-start', zIndex: 10 }}>
+                        <TouchableOpacity 
+                          onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} 
+                          style={styles.filterTriggerBtn}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="filter" size={16} color={themeColor} />
+                          <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
+                        </TouchableOpacity>
+                        {hasActiveFilters && (
+                          <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15 }}>
+                            <Text style={{ fontFamily: 'Inter_400Regular', color: '#6B7280', fontSize: 13 }}>Zrušit filtry</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+                    
+                    <View style={{ paddingBottom: 20, marginTop: !isDesktop ? 15 : 0 }}>
                       {zobrazenePrednasky.length > 0 ? (
                         dny.map((den, index) => {
                           if (!hasActiveFilters && vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
@@ -1814,38 +1852,32 @@ export default function App() {
                           const akceDne = zobrazenePrednasky.filter(item => item.den === den);
                           if (akceDne.length === 0) return null;
 
-                          // Zjistíme, jestli je tento den úplně první zobrazený v seznamu (kvůli zarovnání tlačítka filtru)
                           const isFirstVisibleDay = dny.find(d => 
                             (!hasActiveFilters && vybranyDen !== 'VŠE' && vybranyDen !== d) ? false : zobrazenePrednasky.some(item => item.den === d)
                           ) === den;
                           
                           return (
-                            <View key={index} style={{ marginBottom: 25, marginTop: isFirstVisibleDay ? 15 : 0 }}>
+                            <View key={index} style={{ marginBottom: 25 }}>
                               
-                              {/* SPOLEČNÝ ŘÁDEK PRO NADPIS DNE A TLAČÍTKO FILTRU */}
+                              {/* ŘÁDEK PRO NADPIS DNE (+ TLAČÍTKO FILTRU POUZE PRO MOBIL) */}
                               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 15 }}>
                                 <Text style={[styles.favoriteDayHeader, { marginBottom: 0 }]}>{den}</Text>
                                 
-                                {isFirstVisibleDay && (
+                                {!isDesktop && isFirstVisibleDay && (
                                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    {!isDesktop && hasActiveFilters && (
-                                      <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginRight: 12, paddingBottom: 5 }}>
+                                    {hasActiveFilters && (
+                                      <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginRight: 12 }}>
                                         <Ionicons name="close-circle" size={24} color="#6B7280" />
                                       </TouchableOpacity>
                                     )}
                                     <TouchableOpacity 
                                       onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} 
-                                      style={styles.filterTriggerBtn}
+                                      style={styles.mobileFilterShareBtn}
                                       activeOpacity={0.7}
                                     >
                                       <Ionicons name="filter" size={16} color={themeColor} />
-                                      <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
+                                      <Text style={[styles.mobileFilterShareText, { color: themeColor }]}>Filtrovat</Text>
                                     </TouchableOpacity>
-                                    {isDesktop && hasActiveFilters && (
-                                      <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15, paddingBottom: 5 }}>
-                                        <Text style={{ fontFamily: 'Inter_400Regular', color: '#6B7280', fontSize: 13 }}>Zrušit filtry</Text>
-                                      </TouchableOpacity>
-                                    )}
                                   </View>
                                 )}
                               </View>
@@ -1858,7 +1890,7 @@ export default function App() {
                         })
                       ) : (
                         <View style={{ marginTop: 20 }}>
-                          {hasActiveFilters && (
+                          {!isDesktop && hasActiveFilters && (
                              <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ alignSelf: 'center', marginBottom: 15, padding: 10 }}>
                                 <Text style={{ fontFamily: 'Inter_400Regular', color: themeColor, fontSize: 15, fontWeight: 'bold' }}>Zrušit filtry</Text>
                              </TouchableOpacity>
@@ -1910,44 +1942,55 @@ export default function App() {
                       })}
                     </ScrollView>
 
-                    {oblibeneZobrazeni.length > 0 ? (
-                      dny.map((den, index) => {
-                        if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
-                        const akceDne = oblibeneZobrazeni.filter(item => item.den === den);
-                        if (akceDne.length === 0) return null;
+                    {/* 👇 TLAČÍTKO SDÍLET (POUZE DESKTOP) 👇 */}
+                    {isDesktop && !sdilenyVyberIds && oblibeneIds.length > 0 && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 20, justifyContent: 'flex-start', zIndex: 10 }}>
+                        <TouchableOpacity onPress={sdiletOblibene} style={styles.filterTriggerBtn} activeOpacity={0.7}>
+                          <Ionicons name="share-social-outline" size={16} color={themeColor} />
+                          <Text style={[styles.filterTriggerText, { color: themeColor }]}>Sdílet výběr</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
 
-                        // Zjistíme, jestli je tento den první zobrazený (kvůli zarovnání tlačítka Sdílet)
-                        const isFirstVisibleDay = dny.find(d => 
-                          (vybranyDen !== 'VŠE' && vybranyDen !== d) ? false : oblibeneZobrazeni.some(item => item.den === d)
-                        ) === den;
-                        
-                        return (
-                          <View key={index} style={{ marginBottom: 25, marginTop: isFirstVisibleDay ? 15 : 0 }}>
-                            
-                            {/* SPOLEČNÝ ŘÁDEK PRO NADPIS DNE A TLAČÍTKO SDÍLET */}
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 15 }}>
-                              <Text style={[styles.favoriteDayHeader, { marginBottom: 0 }]}>{den}</Text>
+                    <View style={{ paddingBottom: 20, marginTop: !isDesktop ? 15 : 0 }}>
+                      {oblibeneZobrazeni.length > 0 ? (
+                        dny.map((den, index) => {
+                          if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
+                          const akceDne = oblibeneZobrazeni.filter(item => item.den === den);
+                          if (akceDne.length === 0) return null;
+
+                          const isFirstVisibleDay = dny.find(d => 
+                            (vybranyDen !== 'VŠE' && vybranyDen !== d) ? false : oblibeneZobrazeni.some(item => item.den === d)
+                          ) === den;
+                          
+                          return (
+                            <View key={index} style={{ marginBottom: 25 }}>
                               
-                              {isFirstVisibleDay && !sdilenyVyberIds && oblibeneIds.length > 0 && (
-                                <TouchableOpacity onPress={sdiletOblibene} style={styles.filterTriggerBtn} activeOpacity={0.7}>
-                                  <Ionicons name="share-social-outline" size={16} color={themeColor} />
-                                  <Text style={[styles.filterTriggerText, { color: themeColor }]}>Sdílet výběr</Text>
-                                </TouchableOpacity>
-                              )}
-                            </View>
+                              {/* ŘÁDEK PRO NADPIS DNE (+ TLAČÍTKO SDÍLET POUZE PRO MOBIL) */}
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 15 }}>
+                                <Text style={[styles.favoriteDayHeader, { marginBottom: 0 }]}>{den}</Text>
+                                
+                                {!isDesktop && isFirstVisibleDay && !sdilenyVyberIds && oblibeneIds.length > 0 && (
+                                  <TouchableOpacity onPress={sdiletOblibene} style={styles.mobileFilterShareBtn} activeOpacity={0.7}>
+                                    <Ionicons name="share-social-outline" size={16} color={themeColor} />
+                                    <Text style={[styles.mobileFilterShareText, { color: themeColor }]}>Sdílet výběr</Text>
+                                  </TouchableOpacity>
+                                )}
+                              </View>
 
-                            <View style={isDesktop ? styles.desktopGrid : undefined}>
-                              {akceDne.map(item => vykresliKartu(item))}
+                              <View style={isDesktop ? styles.desktopGrid : undefined}>
+                                {akceDne.map(item => vykresliKartu(item))}
+                              </View>
                             </View>
-                          </View>
-                        );
-                      })
-                   ) : (
-                      <Text style={[styles.emptyText, { fontSize: 16, lineHeight: 24, marginTop: 120 }]}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
-                    )}
-                    {oblibeneZobrazeni.length > 0 && vybranyDen !== 'VŠE' && oblibeneZobrazeni.filter(item => item.den === vybranyDen).length === 0 && (
-                      <Text style={styles.emptyText}>Pro vybraný den nemáte uložené žádné oblíbené akce.</Text>
-                    )}
+                          );
+                        })
+                      ) : (
+                        <Text style={[styles.emptyText, { fontSize: 16, lineHeight: 24, marginTop: 120 }]}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
+                      )}
+                      {oblibeneZobrazeni.length > 0 && vybranyDen !== 'VŠE' && oblibeneZobrazeni.filter(item => item.den === vybranyDen).length === 0 && (
+                        <Text style={styles.emptyText}>Pro vybraný den nemáte uložené žádné oblíbené akce.</Text>
+                      )}
+                    </View>
                   </View>
               </View>
               {isDesktop && vykresliPaticku()}
@@ -2238,7 +2281,7 @@ export default function App() {
               {Platform.OS === 'web' ? (
                 <iframe 
                   key="fullscreen-home-map-2" 
-                  srcDoc={generateMapHtml(null, null, null, themeColor, true, true)} 
+                  srcDoc={generateMapHtml(null, null, null, themeColor, true, true, prednaskyVsechny)} 
                   style={{ width: '100%', height: '100%', border: 'none' }} 
                   allow="geolocation" 
                   title="Mapa DŽKO Fullscreen"
@@ -2265,7 +2308,7 @@ export default function App() {
               
               {Platform.OS === 'web' ? (
                 <iframe 
-                  srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor, false, false)} 
+                  srcDoc={generateMapHtml(mapFocus?.lat, mapFocus?.lng, mapFocus?.title, themeColor, false, false, prednaskyVsechny)} 
                   style={{ width: '100%', height: '100%', border: 'none', borderRadius: 16 }} 
                   allow="geolocation" 
                   title="Mapa detailu"
@@ -2610,7 +2653,7 @@ const styles = StyleSheet.create({
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
   daysContainer: { flexDirection: 'row', marginBottom: 20 },
-  dayPill: { height: 29, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  dayPill: { height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   dayText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   
@@ -3058,7 +3101,7 @@ const styles = StyleSheet.create({
 
   // 👇 NOVÉ TŘÍDY POUZE PRO MOBIL 👇
   mobileFilterShareBtn: {
-    height: 29, 
+    height: 32, 
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: '#E0E7FF', 
@@ -3073,6 +3116,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold', 
     fontSize: 13,
   },
+
   filterModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
