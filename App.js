@@ -643,8 +643,8 @@ export default function App() {
     'Central': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' },
     'Mozarteum': { lat: 49.5980481, lng: 17.2610522, title: 'Mozarteum' },
     'Mozarteum/Central?': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' }, 
-    'Sladovna Holice': { lat: 49.5695, lng: 17.2912, title: 'Sladovna Holice' }
     'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
+    'Sladovna Holice': { lat: 49.5695, lng: 17.2912, title: 'Sladovna Holice' }
   };
 
   // 👇 AKTUALIZOVANÁ LOGIKA PRO FILTROVÁNÍ 👇
@@ -2653,7 +2653,7 @@ const styles = StyleSheet.create({
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
   daysContainer: { flexDirection: 'row', marginBottom: 20 },
-  dayPill: { height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  dayPill: { height: 29, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   dayText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   
@@ -3101,7 +3101,7 @@ const styles = StyleSheet.create({
 
   // 👇 NOVÉ TŘÍDY POUZE PRO MOBIL 👇
   mobileFilterShareBtn: {
-    height: 32, 
+    height: 29, 
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: '#E0E7FF', 
