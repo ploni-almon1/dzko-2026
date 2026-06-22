@@ -1758,35 +1758,71 @@ export default function App() {
                       </TouchableOpacity>
                     </View>
                     
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer]}>
-                      {dny.map((den, index) => {
-                        const isActive = (vybranyDen === den && !vybranyTag && !hasActiveFilters);
-                        return (
-                          <TouchableOpacity key={index} style={[styles.dayPill, isDesktop && styles.desktopDayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
-                            onPress={() => { setVybranyDen(isActive ? 'VŠE' : den); setVybranyTag(null); setActiveFilters(vychoziFiltry); }}>
-                            <Text style={[styles.dayText, isDesktop && styles.desktopDayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
-                          </TouchableOpacity>
-                        )
-                      })}
-                    </ScrollView>
+                    {isDesktop ? (
+                      <>
+                        {/* Původní zobrazení pro PC */}
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, styles.desktopDaysContainer]}>
+                          {dny.map((den, index) => {
+                            const isActive = (vybranyDen === den && !vybranyTag && !hasActiveFilters);
+                            return (
+                              <TouchableOpacity key={index} style={[styles.dayPill, styles.desktopDayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
+                                onPress={() => { setVybranyDen(isActive ? 'VŠE' : den); setVybranyTag(null); setActiveFilters(vychoziFiltry); }}>
+                                <Text style={[styles.dayText, styles.desktopDayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
+                              </TouchableOpacity>
+                            )
+                          })}
+                        </ScrollView>
 
-                    {/* 👇 TLAČÍTKO PRO OTEVŘENÍ FILTRU 👇 */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-                      <TouchableOpacity 
-                        onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} 
-                        style={styles.filterTriggerBtn}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="filter" size={16} color={themeColor} />
-                        <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
-                      </TouchableOpacity>
-                      
-                      {hasActiveFilters && (
-                        <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15 }}>
-                          <Text style={{ fontFamily: 'Inter_400Regular', color: '#6B7280', fontSize: 13 }}>Zrušit filtry</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                          <TouchableOpacity 
+                            onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} 
+                            style={styles.filterTriggerBtn}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name="filter" size={16} color={themeColor} />
+                            <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
+                          </TouchableOpacity>
+                          
+                          {hasActiveFilters && (
+                            <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15 }}>
+                              <Text style={{ fontFamily: 'Inter_400Regular', color: '#6B7280', fontSize: 13 }}>Zrušit filtry</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </>
+                    ) : (
+                      /* Nové kompaktní zobrazení pro mobil (Dny a Filtr v jednom řádku) */
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
+                          {dny.map((den, index) => {
+                            const isActive = (vybranyDen === den && !vybranyTag && !hasActiveFilters);
+                            return (
+                              <TouchableOpacity key={index} style={[styles.dayPill, { borderColor: themeColor }, isActive && { backgroundColor: themeColor }]}
+                                onPress={() => { setVybranyDen(isActive ? 'VŠE' : den); setVybranyTag(null); setActiveFilters(vychoziFiltry); }}>
+                                <Text style={[styles.dayText, { color: themeColor }, isActive && styles.dayTextActive]}>{den}</Text>
+                              </TouchableOpacity>
+                            )
+                          })}
+                        </ScrollView>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
+                          <TouchableOpacity 
+                            onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} 
+                            style={[styles.filterTriggerBtn, { marginBottom: 0 }]}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name="filter" size={16} color={themeColor} />
+                            <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
+                          </TouchableOpacity>
+                          
+                          {hasActiveFilters && (
+                            <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 8, padding: 4 }}>
+                              <Ionicons name="close-circle" size={24} color="#6B7280" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    )}
                     
                     <View style={{ paddingBottom: 20 }}>
                       {zobrazenePrednasky.length > 0 ? (
