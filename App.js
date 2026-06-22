@@ -202,15 +202,15 @@ const safeImage = (val) => {
   return null;
 };
 
-export default function App() {
-  const CustomLoader = ({ themeColor }) => {
+// 👇 NÁŠ NOVÝ VLASTNÍ LOADER 👇
+const CustomLoader = ({ themeColor }) => {
   const spinValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.loop(
       Animated.timing(spinValue, {
         toValue: 1,
-        duration: 2000, // Za jak dlouho se otočí o 360 stupňů (2 sekundy)
+        duration: 2000, 
         easing: Easing.linear,
         useNativeDriver: Platform.OS !== 'web', 
       })
@@ -1807,7 +1807,7 @@ export default function App() {
                     </ScrollView>
 
                     {/* 👇 TLAČÍTKO PRO OTEVŘENÍ FILTRU 👇 */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: isDesktop ? 20 : -20, justifyContent: isDesktop ? 'flex-start' : 'flex-end' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: isDesktop ? 20 : 5, justifyContent: isDesktop ? 'flex-start' : 'flex-end' }}>
                       
                       {/* Šedý křížek pro zrušení filtru na mobilu (nalevo od tlačítka) */}
                       {!isDesktop && hasActiveFilters && (
@@ -1918,7 +1918,7 @@ export default function App() {
                         );
                       })
                    ) : (
-                      <Text style={[styles.emptyText, { fontSize: 21, lineHeight: 24, marginTop: 120 }]}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
+                      <Text style={[styles.emptyText, { fontSize: 16, lineHeight: 24, marginTop: 120 }]}>Sem si můžete uložit oblíbené akce z programu kliknutím na srdíčko.</Text>
                     )}
                     {oblibeneZobrazeni.length > 0 && vybranyDen !== 'VŠE' && oblibeneZobrazeni.filter(item => item.den === vybranyDen).length === 0 && (
                       <Text style={styles.emptyText}>Pro vybraný den nemáte uložené žádné oblíbené akce.</Text>
