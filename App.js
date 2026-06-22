@@ -1806,45 +1806,50 @@ export default function App() {
                       })}
                     </ScrollView>
 
-                    {/* 👇 TLAČÍTKO PRO OTEVŘENÍ FILTRU 👇 */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: isDesktop ? 20 : 5, justifyContent: isDesktop ? 'flex-start' : 'flex-end' }}>
-                      
-                      {/* Šedý křížek pro zrušení filtru na mobilu (nalevo od tlačítka) */}
-                      {!isDesktop && hasActiveFilters && (
-                        <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginRight: 12 }}>
-                          <Ionicons name="close-circle" size={24} color="#6B7280" />
-                        </TouchableOpacity>
-                      )}
-
-                      <TouchableOpacity 
-                        onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} 
-                        style={styles.filterTriggerBtn}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="filter" size={16} color={themeColor} />
-                        <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
-                      </TouchableOpacity>
-                      
-                      {/* Textové zrušení filtru pro PC (napravo od tlačítka) */}
-                      {isDesktop && hasActiveFilters && (
-                        <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15 }}>
-                          <Text style={{ fontFamily: 'Inter_400Regular', color: '#6B7280', fontSize: 13 }}>Zrušit filtry</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    
                     <View style={{ paddingBottom: 20 }}>
                       {zobrazenePrednasky.length > 0 ? (
                         dny.map((den, index) => {
-                          // Pokud se nefiltruje složitě přes nový filtr a je vybrán konkrétní den, ukaž jen ten
                           if (!hasActiveFilters && vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
 
                           const akceDne = zobrazenePrednasky.filter(item => item.den === den);
                           if (akceDne.length === 0) return null;
+
+                          // Zjistíme, jestli je tento den úplně první zobrazený v seznamu (kvůli zarovnání tlačítka filtru)
+                          const isFirstVisibleDay = dny.find(d => 
+                            (!hasActiveFilters && vybranyDen !== 'VŠE' && vybranyDen !== d) ? false : zobrazenePrednasky.some(item => item.den === d)
+                          ) === den;
                           
                           return (
-                            <View key={index} style={{ marginBottom: 20 }}>
-                              <Text style={styles.favoriteDayHeader}>{den}</Text>
+                            <View key={index} style={{ marginBottom: 25, marginTop: isFirstVisibleDay ? 15 : 0 }}>
+                              
+                              {/* SPOLEČNÝ ŘÁDEK PRO NADPIS DNE A TLAČÍTKO FILTRU */}
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 15 }}>
+                                <Text style={[styles.favoriteDayHeader, { marginBottom: 0 }]}>{den}</Text>
+                                
+                                {isFirstVisibleDay && (
+                                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    {!isDesktop && hasActiveFilters && (
+                                      <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginRight: 12, paddingBottom: 5 }}>
+                                        <Ionicons name="close-circle" size={24} color="#6B7280" />
+                                      </TouchableOpacity>
+                                    )}
+                                    <TouchableOpacity 
+                                      onPress={() => { setTempFilters(activeFilters); setFilterModalVisible(true); }} 
+                                      style={styles.filterTriggerBtn}
+                                      activeOpacity={0.7}
+                                    >
+                                      <Ionicons name="filter" size={16} color={themeColor} />
+                                      <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
+                                    </TouchableOpacity>
+                                    {isDesktop && hasActiveFilters && (
+                                      <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15, paddingBottom: 5 }}>
+                                        <Text style={{ fontFamily: 'Inter_400Regular', color: '#6B7280', fontSize: 13 }}>Zrušit filtry</Text>
+                                      </TouchableOpacity>
+                                    )}
+                                  </View>
+                                )}
+                              </View>
+
                               <View style={isDesktop ? styles.desktopGrid : undefined}>
                                 {akceDne.map(item => vykresliKartu(item))}
                               </View>
@@ -1852,7 +1857,14 @@ export default function App() {
                           );
                         })
                       ) : (
-                        <Text style={styles.emptyText}>Zvoleným filtrům neodpovídá žádný program.</Text>
+                        <View style={{ marginTop: 20 }}>
+                          {hasActiveFilters && (
+                             <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ alignSelf: 'center', marginBottom: 15, padding: 10 }}>
+                                <Text style={{ fontFamily: 'Inter_400Regular', color: themeColor, fontSize: 15, fontWeight: 'bold' }}>Zrušit filtry</Text>
+                             </TouchableOpacity>
+                          )}
+                          <Text style={styles.emptyText}>Zvoleným filtrům neodpovídá žádný program.</Text>
+                        </View>
                       )}
                     </View>
                   </View>
@@ -1870,13 +1882,9 @@ export default function App() {
                       <TouchableOpacity onPress={() => { setVybranyDen('VŠE'); setVybranyTag(null); }} activeOpacity={0.7} style={{ flex: 1 }}>
                         <Text style={styles.pageTitle}>{sdilenyVyberIds ? 'SDÍLENÝ VÝBĚR' : 'OBLÍBENÉ'}</Text>
                       </TouchableOpacity>
-                      
-                      {!sdilenyVyberIds && oblibeneIds.length > 0 && (
-                        <TouchableOpacity onPress={sdiletOblibene} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: themeColor, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20 }} activeOpacity={0.7}>
-                          <Ionicons name="share-social-outline" size={16} color="white" />
-                          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, marginLeft: 6, color: 'white', fontWeight: 'bold' }}>Sdílet výběr</Text>
-                        </TouchableOpacity>
-                      )}
+                      <TouchableOpacity onPress={prepniObrazky} style={styles.toggleViewBtn}>
+                        <Ionicons name={zobrazitObrazky ? "reorder-three-outline" : "grid-outline"} size={24} color="black" />
+                      </TouchableOpacity>
                     </View>
 
                     {sdilenyVyberIds && (
@@ -1890,7 +1898,7 @@ export default function App() {
                       </View>
                     )}
                     
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer]}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.daysContainer, isDesktop && styles.desktopDaysContainer, !isDesktop && { marginBottom: 8 }]}>
                       {dny.map((den, index) => {
                         const isActive = (vybranyDen === den && !vybranyTag);
                         return (
@@ -1907,10 +1915,27 @@ export default function App() {
                         if (vybranyDen !== 'VŠE' && vybranyDen !== den) return null;
                         const akceDne = oblibeneZobrazeni.filter(item => item.den === den);
                         if (akceDne.length === 0) return null;
+
+                        // Zjistíme, jestli je tento den první zobrazený (kvůli zarovnání tlačítka Sdílet)
+                        const isFirstVisibleDay = dny.find(d => 
+                          (vybranyDen !== 'VŠE' && vybranyDen !== d) ? false : oblibeneZobrazeni.some(item => item.den === d)
+                        ) === den;
                         
                         return (
-                          <View key={index} style={{ marginBottom: 20 }}>
-                            <Text style={styles.favoriteDayHeader}>{den}</Text>
+                          <View key={index} style={{ marginBottom: 25, marginTop: isFirstVisibleDay ? 15 : 0 }}>
+                            
+                            {/* SPOLEČNÝ ŘÁDEK PRO NADPIS DNE A TLAČÍTKO SDÍLET */}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 15 }}>
+                              <Text style={[styles.favoriteDayHeader, { marginBottom: 0 }]}>{den}</Text>
+                              
+                              {isFirstVisibleDay && !sdilenyVyberIds && oblibeneIds.length > 0 && (
+                                <TouchableOpacity onPress={sdiletOblibene} style={styles.filterTriggerBtn} activeOpacity={0.7}>
+                                  <Ionicons name="share-social-outline" size={16} color={themeColor} />
+                                  <Text style={[styles.filterTriggerText, { color: themeColor }]}>Sdílet výběr</Text>
+                                </TouchableOpacity>
+                              )}
+                            </View>
+
                             <View style={isDesktop ? styles.desktopGrid : undefined}>
                               {akceDne.map(item => vykresliKartu(item))}
                             </View>
@@ -2585,7 +2610,7 @@ const styles = StyleSheet.create({
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
   daysContainer: { flexDirection: 'row', marginBottom: 20 },
-  dayPill: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  dayPill: { height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   dayText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   
@@ -3017,9 +3042,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: '#E0E7FF', 
-    paddingVertical: 8, 
+    paddingVertical: 6, 
     paddingHorizontal: 12, 
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
     alignSelf: 'flex-start'
   },
   filterTriggerText: {
@@ -3027,6 +3054,24 @@ const styles = StyleSheet.create({
     marginLeft: 6, 
     fontWeight: 'bold', 
     fontSize: 13
+  },
+
+  // 👇 NOVÉ TŘÍDY POUZE PRO MOBIL 👇
+  mobileFilterShareBtn: {
+    height: 32, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#E0E7FF', 
+    paddingHorizontal: 12, 
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
+  },
+  mobileFilterShareText: {
+    fontFamily: 'Inter_400Regular', 
+    marginLeft: 6, 
+    fontWeight: 'bold', 
+    fontSize: 13,
   },
   filterModalOverlay: {
     flex: 1,
