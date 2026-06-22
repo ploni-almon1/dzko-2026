@@ -1771,7 +1771,7 @@ export default function App() {
                     </ScrollView>
 
                     {/* 👇 TLAČÍTKO PRO OTEVŘENÍ FILTRU 👇 */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, justifyContent: isDesktop ? 'flex-start' : 'flex-end' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: isDesktop ? 20 : -20, justifyContent: isDesktop ? 'flex-start' : 'flex-end' }}>
                       
                       {/* Šedý křížek pro zrušení filtru na mobilu (nalevo od tlačítka) */}
                       {!isDesktop && hasActiveFilters && (
