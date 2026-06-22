@@ -2581,10 +2581,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 20, color: '#000', marginBottom: 15, marginTop: 15 }, 
+  favoriteDayHeader: { fontFamily: 'Inter_400Regular', fontSize: 20, color: '#000', marginBottom: 15, marginTop: 0 }, 
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
-  daysContainer: { flexDirection: 'row', marginBottom: -20 },
+  daysContainer: { flexDirection: 'row', marginBottom: 20 },
   dayPill: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   dayText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
