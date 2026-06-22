@@ -1674,7 +1674,7 @@ export default function App() {
                         {kat}
                       </Text>
 
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 30 }}>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 40 }}>
                         {partneriProKategorii.map(p => {
                           const isHovered = hoveredPartnerId === p.id;
                           
@@ -1698,7 +1698,7 @@ export default function App() {
                             paddingHorizontal: 15, 
                             paddingVertical: 15, 
                             height: 120,        
-                            marginBottom: 40,   
+                            marginBottom: isDesktop ? 40 : 25,   
                             justifyContent: 'center', 
                             alignItems: 'center',
                             textDecoration: 'none', // Důležité pro <a> tag, aby text nebyl podtržený
