@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert, Modal, useWindowDimensions, Share } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Platform, Linking, Image, TextInput, Alert, Modal, useWindowDimensions, Share, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Inter_400Regular } from '@expo-google-fonts/inter';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -200,6 +200,42 @@ const safeImage = (val) => {
     return val[0].url;
   }
   return null;
+};
+
+export default function App() {
+  const CustomLoader = ({ themeColor }) => {
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 2000, // Za jak dlouho se otočí o 360 stupňů (2 sekundy)
+        easing: Easing.linear,
+        useNativeDriver: Platform.OS !== 'web', 
+      })
+    ).start();
+  }, [spinValue]);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }}>
+      <Animated.Image
+        source={require('./assets/star.png')}
+        style={{
+          width: 50,
+          height: 50,
+          tintColor: themeColor,
+          transform: [{ rotate: spin }]
+        }}
+        resizeMode="contain"
+      />
+    </View>
+  );
 };
 
 export default function App() {
@@ -1434,7 +1470,7 @@ export default function App() {
     ? prednaskyVsechny.filter(item => item.hoste.some(h => h.jmeno === aktivniSelectedSpeaker.jmeno))
     : [];
 
-  if (!fontsLoaded || loading) return <ActivityIndicator size="large" color={themeColor} style={{flex: 1, justifyContent: 'center', backgroundColor: '#F3F4F6'}} />;
+  if (!fontsLoaded || loading) return <CustomLoader themeColor={themeColor} />;
   if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
 
   return (
