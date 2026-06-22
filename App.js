@@ -2610,7 +2610,7 @@ const styles = StyleSheet.create({
   
   webMap: { flex: 1, width: '100%', borderRadius: 15, marginBottom: 15, borderWidth: 0, minHeight: 350 },
   daysContainer: { flexDirection: 'row', marginBottom: 20 },
-  dayPill: { height: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  dayPill: { height: 30, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, marginRight: 8, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   dayText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   dayTextActive: { fontFamily: 'Inter_400Regular', color: 'white' },
   
@@ -3058,7 +3058,7 @@ const styles = StyleSheet.create({
 
   // 👇 NOVÉ TŘÍDY POUZE PRO MOBIL 👇
   mobileFilterShareBtn: {
-    height: 32, 
+    height: 30, 
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: '#E0E7FF', 
