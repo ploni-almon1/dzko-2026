@@ -1674,7 +1674,7 @@ export default function App() {
                         {kat}
                       </Text>
 
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 40 }}>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 30 }}>
                         {partneriProKategorii.map(p => {
                           const isHovered = hoveredPartnerId === p.id;
                           
