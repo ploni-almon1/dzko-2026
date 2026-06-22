@@ -266,6 +266,8 @@ export default function App() {
   const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
 
   const detailScrollViewRef = useRef(null);
+  // 👇 NOVÉ STAVY PRO POKROČILÝ FILTR 👇
+  const spinValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!isDesktop && aktivniTab === 'Home') {
