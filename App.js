@@ -598,43 +598,34 @@ export default function App() {
 
     const zmena = jeOblibene ? -1 : 1;
     
+    const aktualniAkce = prednaskyVsechny.find(i => i.id === id);
+    const novyPocetVAirtable = Math.max(0, (aktualniAkce?.pocetOblibenych || 0) + zmena);
+
     setPrednaskyVsechny(prev => prev.map(item => {
       if (item.id === id) {
-        return { ...item, pocetOblibenych: Math.max(0, item.pocetOblibenych + zmena) };
+        return { ...item, pocetOblibenych: novyPocetVAirtable };
       }
       return item;
     }));
 
     if (detailAkce && detailAkce.id === id) {
-      setDetailAkce(prev => ({ ...prev, pocetOblibenych: Math.max(0, prev.pocetOblibenych + zmena) }));
+      setDetailAkce(prev => ({ ...prev, pocetOblibenych: novyPocetVAirtable }));
     }
 
-    const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
-    const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
-    
-    const aktualniAkce = prednaskyVsechny.find(i => i.id === id);
-    const novyPocetVAirtable = Math.max(0, (aktualniAkce?.pocetOblibenych || 0) + zmena);
-
-    if (baseId && token) {
-      try {
-        await fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            records: [{
-              id: id,
-              fields: {
-                "Počet oblíbených": novyPocetVAirtable
-              }
-            }]
-          })
-        });
-      } catch (err) {
-        console.error('Nepodařilo se aktualizovat počet srdíček v Airtable:', err);
-      }
+    // 👇 Odeslání na náš nový bezpečný Vercel backend 👇
+    try {
+      await fetch(`/api/oblibene`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: id,
+          novyPocet: novyPocetVAirtable
+        })
+      });
+    } catch (err) {
+      console.error('Nepodařilo se odeslat srdíčko na server:', err);
     }
   };
 
@@ -807,25 +798,28 @@ export default function App() {
     }
     
     setOdesilaRezervaci(true);
-    const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
     
-    // 👇 ZDE JE ZMĚNA: Už tady nenačítáme token, aplikace ho nepotřebuje! 👇
+    // Spočítáme si nový počet rovnou tady
+    const novyPocetRezervaci = (detailAkce.pocetRezervaci || 0) + 1;
 
     try {
-      // 👇 MÍSTO AIRTABLE VOLÁME NÁŠ NOVÝ SOUBOR NA VERCELU 👇
       const response = await fetch(`/api/rezervace`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          records: [{
-            fields: {
-              "Akce ID": detailAkce.nazev,
-              "Jméno": rezervaceJmeno,
-              "Email": rezervaceEmail
-            }
-          }]
+          rezervaceData: {
+            records: [{
+              fields: {
+                "Akce ID": detailAkce.nazev,
+                "Jméno": rezervaceJmeno,
+                "Email": rezervaceEmail
+              }
+            }]
+          },
+          programId: detailAkce.id,
+          novyPocetRezervaci: novyPocetRezervaci
         })
       });
 
@@ -846,33 +840,12 @@ export default function App() {
       if (!oblibeneIds.includes(detailAkce.id)) {
         prepniOblibene(detailAkce.id);
       }
-
-      const novyPocetRezervaci = (detailAkce.pocetRezervaci || 0) + 1;
       
+      // Upravíme číslo na obrazovce
       setDetailAkce(prev => ({ ...prev, pocetRezervaci: novyPocetRezervaci }));
       setPrednaskyVsechny(prev => prev.map(item => 
         item.id === detailAkce.id ? { ...item, pocetRezervaci: novyPocetRezervaci } : item
       ));
-
-      // Aktualizace počtu rezervací v programu (číslo, nikoliv osobní údaje)
-      const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
-      if (baseId && token) {
-        await fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            records: [{
-              id: detailAkce.id,
-              fields: {
-                "Počet rezervací": novyPocetRezervaci
-              }
-            }]
-          })
-        });
-      }
 
     } catch (err) {
       setRezervaceChyba(`Chyba připojení: ${err.message}`);
