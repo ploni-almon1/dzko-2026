@@ -808,13 +808,14 @@ export default function App() {
     
     setOdesilaRezervaci(true);
     const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
-    const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
+    
+    // 👇 ZDE JE ZMĚNA: Už tady nenačítáme token, aplikace ho nepotřebuje! 👇
 
     try {
-      const response = await fetch(`https://api.airtable.com/v0/${baseId}/Rezervace`, {
+      // 👇 MÍSTO AIRTABLE VOLÁME NÁŠ NOVÝ SOUBOR NA VERCELU 👇
+      const response = await fetch(`/api/rezervace`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -830,7 +831,7 @@ export default function App() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        setRezervaceChyba(`Airtable zamítl uložení: ${errorData?.error?.message || 'Neznámý problém'}`);
+        setRezervaceChyba(`Zamítnuto: ${errorData?.error || 'Neznámý problém'}`);
         setOdesilaRezervaci(false);
         return;
       }
@@ -853,21 +854,25 @@ export default function App() {
         item.id === detailAkce.id ? { ...item, pocetRezervaci: novyPocetRezervaci } : item
       ));
 
-      await fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          records: [{
-            id: detailAkce.id,
-            fields: {
-              "Počet rezervací": novyPocetRezervaci
-            }
-          }]
-        })
-      });
+      // Aktualizace počtu rezervací v programu (číslo, nikoliv osobní údaje)
+      const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
+      if (baseId && token) {
+        await fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            records: [{
+              id: detailAkce.id,
+              fields: {
+                "Počet rezervací": novyPocetRezervaci
+              }
+            }]
+          })
+        });
+      }
 
     } catch (err) {
       setRezervaceChyba(`Chyba připojení: ${err.message}`);
