@@ -283,7 +283,16 @@ export default function App() {
   });
 
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024; 
+  
+  // Zjistíme, jestli prohlížeč posílá "průkaz totožnosti" počítače. 
+  // Pokud v User-Agentu chybí slova jako Mobi nebo Android, jde o desktop 
+  // (nebo si uživatel na mobilu vynutil "Stránky pro počítač").
+  const jeProhlizecPocitac = Platform.OS === 'web' && typeof navigator !== 'undefined' 
+    ? !/Mobi|Android|iPhone/i.test(navigator.userAgent) 
+    : false;
+
+  // Zobrazíme desktopovou verzi, pokud je okno velké, NEBO pokud si to uživatel vynutil
+  const isDesktop = width >= 1024 || jeProhlizecPocitac;
 
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   
