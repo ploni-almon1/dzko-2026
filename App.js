@@ -354,6 +354,15 @@ export default function App() {
   // 👇 INJEKCE HISTORIE PROHLÍŽEČE (HISTORY API) 👇
   const isBackNavigation = useRef(false);
   const isInitialMount = useRef(true);
+  // 👇 REGISTRACE SERVICE WORKERU PRO OFFLINE REŽIM WEBU 👇
+  useEffect(() => {
+    if (Platform.OS === 'web' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('Offline režim webu (Service Worker) úspěšně aktivován.'))
+        .catch((err) => console.log('Service Worker se nepodařilo zaregistrovat:', err));
+    }
+  }, []);
+  // 👆 KONEC REGISTRACE SW 👆
 
   // 1. ČÁST: Posloucháme kliknutí na tlačítko Zpět v prohlížeči
   useEffect(() => {
@@ -463,7 +472,10 @@ export default function App() {
   }, [prednaskyVsechny]);
 
   useEffect(() => {
-    const nactiData = async () => {
+    const nactiVse = async () => {
+      let nactenyProgram = [];
+
+      // 1. KROK: NAČTENÍ LOKÁLNÍCH PREFERENCÍ A OFFLINE DAT
       try {
         const ulozenaData = await AsyncStorage.getItem('@moje_srdicka');
         if (ulozenaData !== null) setOblibeneIds(JSON.parse(ulozenaData));
@@ -476,69 +488,68 @@ export default function App() {
 
         const ulozeneZobrazeni = await AsyncStorage.getItem('@zobrazit_obrazky');
         if (ulozeneZobrazeni !== null) setZobrazitObrazky(JSON.parse(ulozeneZobrazeni));
+
+        // Pokus o načtení dat z mezipaměti (pro offline režim)
+        const cachedProgram = await AsyncStorage.getItem('@cached_program');
+        const cachedHoste = await AsyncStorage.getItem('@cached_hoste');
+        const cachedPartneri = await AsyncStorage.getItem('@cached_partneri');
+        const cachedImage = await AsyncStorage.getItem('@cached_hero');
+
+        if (cachedProgram && cachedHoste && cachedPartneri) {
+          nactenyProgram = JSON.parse(cachedProgram);
+          setPrednaskyVsechny(nactenyProgram);
+          setHosteVsechny(JSON.parse(cachedHoste));
+          setPartneri(JSON.parse(cachedPartneri));
+          if (cachedImage) setHeroImage(cachedImage);
+          setLoading(false); // Aplikace naběhne hned z offline dat!
+        }
       } catch (error) { console.error('Chyba při načítání lokálních dat:', error); }
-    };
-    nactiData();
 
-    const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
-    const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
+      // 2. KROK: STAŽENÍ ČERSTVÝCH DAT NA POZADÍ (pokud je internet)
+      const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
+      const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
 
-    if (!baseId || !token) {
-      setError('Chybí konfigurace API klíčů.');
-      setLoading(false);
-      return;
-    }
+      if (!baseId || !token) {
+        if (nactenyProgram.length === 0) setError('Chybí konfigurace API klíčů.');
+        setLoading(false);
+        return;
+      }
 
-    fetch(`https://api.airtable.com/v0/${baseId}/Nastaveni`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) return null; 
-        return res.json();
-      })
-      .then((data) => {
-        if (data && data.records && data.records.length > 0) {
-          const record = data.records.find(r => r.fields['Home']);
-          if (record && record.fields['Home'][0]) {
-            setHeroImage(record.fields['Home'][0].url);
-          }
-        }
-      })
-      .catch((err) => console.log('Obrázek pro Home se nenačetl nebo tabulka neexistuje:', err));
+      try {
+        // Nastavení (obrázek na pozadí)
+        fetch(`https://api.airtable.com/v0/${baseId}/Nastaveni`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data && data.records && data.records.length > 0) {
+              const record = data.records.find(r => r.fields['Home']);
+              if (record && record.fields['Home'][0]) {
+                const imgUrl = record.fields['Home'][0].url;
+                setHeroImage(imgUrl);
+                AsyncStorage.setItem('@cached_hero', imgUrl);
+              }
+            }
+          }).catch(() => {});
 
-    fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?view=Grid%20view`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then((data) => {
-        if (data && data.records) {
-          const upraveniPartneri = data.records.map(record => {
-            const f = record.fields;
-            return {
-              id: record.id,
-              nazev: safeString(f['Název']),
-              odkaz: safeString(f['Odkaz']),
-              kategorie: safeString(f['Kategorie']),
-              logo: safeImage(f['Logo'])
-            };
-          });
-          setPartneri(upraveniPartneri);
-        }
-      })
-      .catch((err) => console.log('Chyba při načítání partnerů:', err));
+        // Partneři
+        fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?view=Grid%20view`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data && data.records) {
+              const upraveniPartneri = data.records.map(record => {
+                const f = record.fields;
+                return { id: record.id, nazev: safeString(f['Název']), odkaz: safeString(f['Odkaz']), kategorie: safeString(f['Kategorie']), logo: safeImage(f['Logo']) };
+              });
+              setPartneri(upraveniPartneri);
+              AsyncStorage.setItem('@cached_partneri', JSON.stringify(upraveniPartneri));
+            }
+          }).catch(() => {});
 
-    fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error('Nepodařilo se připojit k Airtable.');
-        return response.json();
-      })
-      .then((data) => {
-        const upravenaData = data.records
+        // Program a Hosté
+        const resProgram = await fetch(`https://api.airtable.com/v0/${baseId}/Program`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!resProgram.ok) throw new Error('Chyba Airtable');
+        const dataProgram = await resProgram.json();
+        
+        const upravenaData = dataProgram.records
           .filter(record => record.fields['Název akce'])
           .map(record => {
             const f = record.fields;
@@ -548,57 +559,26 @@ export default function App() {
             const slozenyCas = [denText, casText, mistoText].filter(Boolean).join(' | ');
 
             const hosteList = [];
-            
-            const host1 = safeString(f['Host']);
-            if (host1 !== '') {
-              hosteList.push({
-                jmeno: host1,
-                role: safeString(f['Role hosta']) || 'Přednášející',
-                fotka: safeImage(f['Fotka hosta']),
-                popis: safeString(f['Popis hosta']),
-                profese: safeString(f['Profese hosta'])
-              });
-            }
-            
-            const host2 = safeString(f['Host 2']);
-            if (host2 !== '') {
-              hosteList.push({
-                jmeno: host2,
-                role: safeString(f['Role hosta 2']) || 'Přednášející',
-                fotka: safeImage(f['Fotka hosta 2']),
-                popis: safeString(f['Popis hosta 2']),
-                profese: safeString(f['Profese hosta 2'])
-              });
-            }
-
-            const host3 = safeString(f['Host 3']);
-            if (host3 !== '') {
-              hosteList.push({
-                jmeno: host3,
-                role: safeString(f['Role hosta 3']) || 'Přednášející',
-                fotka: safeImage(f['Fotka hosta 3']),
-                popis: safeString(f['Popis hosta 3']),
-                profese: safeString(f['Profese hosta 3'])
-              });
-            }
+            const pridajHosta = (jmenoKey, roleKey, fotkaKey, popisKey, profeseKey) => {
+              const jmeno = safeString(f[jmenoKey]);
+              if (jmeno !== '') {
+                hosteList.push({
+                  jmeno, role: safeString(f[roleKey]) || 'Přednášející',
+                  fotka: safeImage(f[fotkaKey]), popis: safeString(f[popisKey]), profese: safeString(f[profeseKey])
+                });
+              }
+            };
+            pridajHosta('Host', 'Role hosta', 'Fotka hosta', 'Popis hosta', 'Profese hosta');
+            pridajHosta('Host 2', 'Role hosta 2', 'Fotka hosta 2', 'Popis hosta 2', 'Profese hosta 2');
+            pridajHosta('Host 3', 'Role hosta 3', 'Fotka hosta 3', 'Popis hosta 3', 'Profese hosta 3');
 
             return {
-              id: record.id,
-              den: denText,
-              cas: slozenyCas,
-              nazev: f['Název akce'],
-              hoste: hosteList,
-              host: hosteList.map(h => h.jmeno).join(', '),
+              id: record.id, den: denText, cas: slozenyCas, nazev: f['Název akce'],
+              hoste: hosteList, host: hosteList.map(h => h.jmeno).join(', '),
               roleHosta: hosteList.length > 1 ? 'Hosté' : (hosteList.length === 1 ? hosteList[0].role : 'Přednášející'),
-              tag: f['Tagy'] || [],
-              popis: f['Anotace'] || '',
-              image: safeImage(f['Obrázek']),
-              odkaz: f['Vstupenky'] || null, 
-              rezervace: !!f['Rezervace'],
-              pocetOblibenych: f['Počet oblíbených'] || 0,
-              pocetRezervaci: f['Počet rezervací'] || 0,
-              kapacita: f['Kapacita'] || null,
-              highlight: !!f['Highlight'] 
+              tag: f['Tagy'] || [], popis: f['Anotace'] || '', image: safeImage(f['Obrázek']),
+              odkaz: f['Vstupenky'] || null, rezervace: !!f['Rezervace'], pocetOblibenych: f['Počet oblíbených'] || 0,
+              pocetRezervaci: f['Počet rezervací'] || 0, kapacita: f['Kapacita'] || null, highlight: !!f['Highlight'] 
             };
           });
 
@@ -610,64 +590,63 @@ export default function App() {
           return a.cas.localeCompare(b.cas);
         });
 
+        // Uložení aktuálních dat do mezipaměti pro příští offline použití
         setPrednaskyVsechny(upravenaData);
+        AsyncStorage.setItem('@cached_program', JSON.stringify(upravenaData));
+        nactenyProgram = upravenaData;
 
         const unikatniHosteMap = new Map();
         for (const item of upravenaData) {
           for (const h of item.hoste) {
             if (h.jmeno && h.jmeno.trim() !== '') {
-              if (!unikatniHosteMap.has(h.jmeno)) {
-                unikatniHosteMap.set(h.jmeno, h);
-              }
+              if (!unikatniHosteMap.has(h.jmeno)) unikatniHosteMap.set(h.jmeno, h);
             }
           }
         }
         const unikatniHosteList = Array.from(unikatniHosteMap.values());
         unikatniHosteList.sort((a, b) => a.jmeno.localeCompare(b.jmeno));
         setHosteVsechny(unikatniHosteList);
+        AsyncStorage.setItem('@cached_hoste', JSON.stringify(unikatniHosteList));
 
+        // Zpracování URL pro sdílení
         if (Platform.OS === 'web') {
           const urlParams = new URLSearchParams(window.location.search);
-          
           const sdileneId = urlParams.get('akce');
           if (sdileneId) {
             const nalezenaAkce = upravenaData.find(a => a.id === sdileneId);
-            if (nalezenaAkce) {
-              setDetailAkce(nalezenaAkce);
-              setAktivniTab('Program');
-            }
+            if (nalezenaAkce) { setDetailAkce(nalezenaAkce); setAktivniTab('Program'); }
           }
-          
           const sdileneOblibene = urlParams.get('oblibene');
           if (sdileneOblibene) {
             const sdileneIds = sdileneOblibene.split(',');
             const platneSdileneIds = sdileneIds.filter(id => upravenaData.some(a => a.id === id));
-            
             if (platneSdileneIds.length > 0) {
-              setSdilenyVyberIds(platneSdileneIds); 
-              setAktivniTab('Oblíbené');
-              setVybranyDen('VŠE');
-              setVybranyTag(null);
-              setActiveFilters(vychoziFiltry);
+              setSdilenyVyberIds(platneSdileneIds); setAktivniTab('Oblíbené');
+              setVybranyDen('VŠE'); setVybranyTag(null); setActiveFilters({ den: [], typ: [], misto: [], hoste: [] });
             }
           }
         }
 
+        // Očištění starých srdíček
         setOblibeneIds(staraSrdicka => {
           const platnaSrdicka = staraSrdicka.filter(id => upravenaData.some(akce => akce.id === id));
-          if (platnaSrdicka.length !== staraSrdicka.length) {
-            AsyncStorage.setItem('@moje_srdicka', JSON.stringify(platnaSrdicka));
-          }
+          if (platnaSrdicka.length !== staraSrdicka.length) AsyncStorage.setItem('@moje_srdicka', JSON.stringify(platnaSrdicka));
           return platnaSrdicka;
         });
 
         setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
+      } catch (err) {
+        console.log('Jsme offline, stahování dat se nepodařilo. Použije se cache.', err);
+        // Pokud aplikace spadne na chybě (offline) a ZÁROVEŇ ještě nemá z minulosti stažená data, ukážeme error
+        if (nactenyProgram.length === 0) {
+          setError('Jste offline a v mobilu zatím nemáte uložená žádná data z festivalu. Připojte se prosím na chvíli k internetu.');
+        }
         setLoading(false);
-      });
-  }, []); 
+      }
+    };
+
+    nactiVse();
+  }, []);
 
   // 👇 LOGIKA PRO EXTRAKCI DAT DO FILTRŮ 👇
   const dostupneTypy = [...new Set(prednaskyVsechny.flatMap(p => p.tag || []))].sort();
