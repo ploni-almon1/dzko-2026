@@ -341,6 +341,75 @@ export default function App() {
   const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
 
   const detailScrollViewRef = useRef(null);
+  // 👇 INJEKCE HISTORIE PROHLÍŽEČE (HISTORY API) 👇
+  const isBackNavigation = useRef(false);
+  const isInitialMount = useRef(true);
+
+  // 1. ČÁST: Posloucháme kliknutí na tlačítko Zpět v prohlížeči
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handlePopState = (event) => {
+        isBackNavigation.current = true; // Zapamatujeme si, že jde o krok zpět
+        
+        if (event.state) {
+          // Vrátíme uživatele na správnou záložku
+          setAktivniTab(event.state.tab || (window.innerWidth >= 1024 ? 'Home' : 'Program'));
+          
+          // Pokud se vracíme na detail akce, najdeme ji podle uloženého ID
+          if (event.state.akceId && prednaskyVsechny.length > 0) {
+            const nalezenaAkce = prednaskyVsechny.find(a => a.id === event.state.akceId);
+            setDetailAkce(nalezenaAkce || null);
+          } else {
+            setDetailAkce(null); // Zavřeme detail, pokud v historii akce není
+          }
+        } else {
+          // Pokud v historii už nic není, nastavíme výchozí stav
+          setDetailAkce(null);
+          setAktivniTab(window.innerWidth >= 1024 ? 'Home' : 'Program');
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [prednaskyVsechny]);
+
+  // 2. ČÁST: Zapisujeme každý náš klik do historie prohlížeče
+  useEffect(() => {
+    if (Platform.OS === 'web' && !loading) {
+      if (isBackNavigation.current) {
+        // Pokud jsme se na tuto obrazovku dostali kliknutím na Zpět,
+        // nebudeme ji znovu zapisovat do historie. Jen resetujeme hlídač.
+        isBackNavigation.current = false;
+        return;
+      }
+
+      // Vytvoříme si balíček dat pro uložení do paměti prohlížeče
+      const currentState = { 
+        tab: aktivniTab, 
+        akceId: detailAkce ? detailAkce.id : null 
+      };
+      
+      // Vygenerujeme hezkou URL adresu pro adresní řádek nahoře
+      let novaUrl = window.location.pathname;
+      if (detailAkce) {
+        novaUrl += `?akce=${detailAkce.id}`;
+      } else if (aktivniTab !== 'Home' && aktivniTab !== 'Program') {
+        // Skryjeme z URL "Home" a "Program", aby byla výchozí adresa čistá,
+        // ale pro ostatní záložky URL vypíšeme.
+        novaUrl += `?tab=${aktivniTab.toLowerCase()}`;
+      }
+
+      // Zapíšeme stav. První načtení aplikace nahradíme (replaceState), další přidáváme (pushState).
+      if (isInitialMount.current) {
+        window.history.replaceState(currentState, '', novaUrl);
+        isInitialMount.current = false;
+      } else {
+        window.history.pushState(currentState, '', novaUrl);
+      }
+    }
+  }, [aktivniTab, detailAkce, loading]);
+  // 👆 KONEC INJEKCE HISTORIE 👆
 
   useEffect(() => {
     if (!isDesktop && aktivniTab === 'Home') {
