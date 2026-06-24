@@ -1839,7 +1839,7 @@ export default function App() {
                               
                               {/* ŘÁDEK PRO NADPIS DNE (+ TLAČÍTKO FILTRU POUZE PRO MOBIL) */}
 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 15 }}>
-  <Text style={[styles.favoriteDayHeader, { marginBottom: 0, top: !isDesktop ? 6 : 0 }]}>{den}</Text>
+  <Text style={[styles.favoriteDayHeader, { marginBottom: 0, top: !isDesktop ? 5 : 0 }]}>{den}</Text>
                                 
                                 {!isDesktop && isFirstVisibleDay && (
                                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
