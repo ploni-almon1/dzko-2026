@@ -861,29 +861,39 @@ export default function App() {
   };
 
   const vykresliPolozkuMenu = (title, type, content) => (
-    <View key={title} style={styles.menuItemWrapper}>
-      <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress(title, type, content)} activeOpacity={0.6}>
-        <Text style={styles.menuItemText}>{title}</Text>
-        {type === 'expand' && (
-          <Ionicons name={rozbaleno === title ? 'chevron-up' : 'chevron-down'} size={20} color="black" />
-        )}
-      </TouchableOpacity>
-      
-      {type === 'expand' && rozbaleno === title && (
-        <View style={[styles.menuExpandedContent, { borderLeftColor: themeColor }]}>
-          {typeof content === 'string' ? (
-            <Text style={styles.menuExpandedText}>{content}</Text>
-          ) : (
-            content.map((linkObj, index) => (
-              <TouchableOpacity key={index} onPress={() => Linking.openURL(linkObj.url)} style={styles.contentLinkRow} activeOpacity={0.6}>
-                <Text style={styles.contentInlineLink}>{linkObj.label}</Text>
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
+  <View key={title} style={styles.menuItemWrapper}>
+    <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress(title, type, content)} activeOpacity={0.6}>
+      <Text style={styles.menuItemText}>{title}</Text>
+      {type === 'expand' && (
+        <Ionicons name={rozbaleno === title ? 'chevron-up' : 'chevron-down'} size={20} color="black" />
       )}
-    </View>
-  );
+    </TouchableOpacity>
+    
+    {type === 'expand' && rozbaleno === title && (
+      <View style={[styles.menuExpandedContent, { borderLeftColor: themeColor }]}>
+        {typeof content === 'string' ? (
+          <Text style={styles.menuExpandedText}>{content}</Text>
+        ) : (
+          content.map((item, index) => {
+            if (item.isSpace) {
+              return <View key={index} style={{ height: 22 }} />;
+            }
+            if (item.isLink) {
+              return (
+                <TouchableOpacity key={index} onPress={() => Linking.openURL(item.url)} activeOpacity={0.6}>
+                  <Text style={styles.menuExpandedText}>{item.text}</Text>
+                </TouchableOpacity>
+              );
+            }
+            return (
+              <Text key={index} style={styles.menuExpandedText}>{item.text}</Text>
+            );
+          })
+        )}
+      </View>
+    )}
+  </View>
+);
 
   const vykresliKartu = (item, forceGrid) => {
     const casParts = item.cas.split(' | ');
@@ -1988,7 +1998,22 @@ export default function App() {
                       {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
                       {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
                       {vykresliPolozkuMenu('Pořadatelé / Partneři', 'action', () => setAktivniTab('Partneri'))}
-                      {vykresliPolozkuMenu('Kontakt', 'expand', 'Produkce festivalu\nAlexandr Jeništa\njenista@muo.cz\n+420 770 147 527\n\nPokladna MUO | CENTRAL\n+420 585 514 241\npokladna@muo.cz\nút–ne 10-18 hodin\n\nMuzeum umění Olomouc\nDenisova 47, 771 11 Olomouc\n+420 585 514 111\ninfo@muo.cz')}
+                      {vykresliPolozkuMenu('Kontakt', 'expand', [
+  { text: 'Produkce festivalu' },
+  { text: 'Alexandr Jeništa' },
+  { text: 'jenista@muo.cz', url: 'mailto:jenista@muo.cz', isLink: true },
+  { text: '+420 770 147 527', url: 'tel:+420770147527', isLink: true },
+  { isSpace: true },
+  { text: 'Pokladna MUO | CENTRAL' },
+  { text: '+420 585 514 241', url: 'tel:+420585514241', isLink: true },
+  { text: 'pokladna@muo.cz', url: 'mailto:pokladna@muo.cz', isLink: true },
+  { text: 'út–ne 10-18 hodin' },
+  { isSpace: true },
+  { text: 'Muzeum umění Olomouc' },
+  { text: 'Denisova 47, 771 11 Olomouc' },
+  { text: '+420 585 514 111', url: 'tel:+420585514111', isLink: true },
+  { text: 'info@muo.cz', url: 'mailto:info@muo.cz', isLink: true }
+])}
                     </View>
 
                     <View style={styles.socialContainer}>
