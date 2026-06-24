@@ -1839,7 +1839,7 @@ export default function App() {
                               
                               {/* ŘÁDEK PRO NADPIS DNE (+ TLAČÍTKO FILTRU POUZE PRO MOBIL) */}
 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 15 }}>
-  <Text style={[styles.favoriteDayHeader, { marginBottom: 0, top: !isDesktop ? 5 : 0 }]}>{den}</Text>
+  <Text style={[styles.favoriteDayHeader, { marginBottom: 0, top: !isDesktop ? 4 : 0 }]}>{den}</Text>
                                 
                                 {!isDesktop && isFirstVisibleDay && (
                                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -2652,8 +2652,8 @@ const styles = StyleSheet.create({
   cardImage: { width: '100%', height: 160, borderTopLeftRadius: 10, borderTopRightRadius: 10, backgroundColor: '#E5E7EB' },
   
   timeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, flexWrap: 'wrap' },
-  cardTime: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563' },
-  locationLink: { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#4B5563' },
+  cardTime: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#4B5563' },
+  locationLink: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#4B5563' },
   cardTitle: { fontFamily: 'Inter_400Regular', fontSize: 16, fontWeight: 'bold', marginBottom: 10, color: '#111827' },
   cardHost: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#374151', marginBottom: 10 },
   cardBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
@@ -2679,7 +2679,7 @@ const styles = StyleSheet.create({
   detailTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   detailMainTitle: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 26, fontWeight: 'bold', color: '#111827', lineHeight: 32 },
   
-  detailHost: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#374151', marginBottom: 15, marginTop: -5 },
+  detailHost: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#374151', marginBottom: 15, marginTop: -5 },
   
   detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
   wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
