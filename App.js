@@ -1294,8 +1294,8 @@ export default function App() {
                 )}
 
                 <View style={[styles.detailTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
-                    <Text style={styles.cardTime}>{timeText}</Text>
+  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1, top: !isDesktop ? 5 : 0 }}>
+    <Text style={styles.cardTime}>{timeText}</Text>
                     {mistoText && (
                       <>
                         <Text style={styles.cardTime}> | </Text>
