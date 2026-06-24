@@ -1305,10 +1305,10 @@ export default function App() {
                       </>
                     )}
                   </View>
-                  <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2, marginLeft: 10 }} activeOpacity={0.6}>
-                    <Ionicons name="share-social-outline" size={16} color="black" />
-                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
-                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0E7FF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, marginLeft: 10 }} activeOpacity={0.6}>
+  <Ionicons name="share-social-outline" size={16} color={themeColor} />
+  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: themeColor, fontWeight: 'bold' }}>Sdílet</Text>
+</TouchableOpacity>
                 </View>
 
                 {item.image && (
@@ -2681,7 +2681,7 @@ const styles = StyleSheet.create({
   
   detailHost: { fontFamily: 'Inter_400Regular', fontSize: 18, color: '#374151', marginBottom: 15, marginTop: -5 },
   
-  detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' },
+  detailTimeLocationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, flexWrap: 'wrap' },
   wireframeImage: { width: '100%', height: 200, backgroundColor: '#E5E7EB', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
   wireframeText: { fontFamily: 'Inter_400Regular', color: '#9CA3AF', marginTop: 10 },
   detailDescription: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#374151', lineHeight: 24, marginBottom: 15 },
