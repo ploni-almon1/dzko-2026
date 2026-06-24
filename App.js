@@ -39,7 +39,8 @@ const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, showExpandB
         .dzko-accordion-item:last-child { border-bottom: none; }
         .dzko-accordion-header { font-family: sans-serif; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: #111827; }
         .dzko-accordion-body { display: none; padding-top: 10px; }
-        .dzko-event-link { display: block; text-decoration: none; color: inherit; padding: 6px 0; font-family: sans-serif; font-size: 13px; cursor: pointer; }
+        .dzko-event-link { display: block; text-decoration: none; color: inherit; padding: 8px 0; margin-left: 8px; font-family: sans-serif; font-size: 13px; cursor: pointer; border-bottom: 1px dashed #E5E7EB; }
+        .dzko-event-link:last-child { border-bottom: none; }
         .dzko-event-link:hover { opacity: 0.6; }
         .dzko-no-events { font-family: sans-serif; font-size: 13px; color: #9CA3AF; font-style: italic; padding: 5px 0; }
     </style>
