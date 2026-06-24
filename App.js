@@ -1988,14 +1988,7 @@ export default function App() {
                       {vykresliPolozkuMenu('Židovská obec Olomouc', 'link', 'https://kehila-olomouc.cz/rs/')}
                       {vykresliPolozkuMenu('Stolpersteine Olomouc', 'link', 'https://kehila-olomouc.cz/stolpersteine/')}
                       {vykresliPolozkuMenu('Pořadatelé / Partneři', 'action', () => setAktivniTab('Partneri'))}
-                      {vykresliPolozkuMenu('Kontakt', 'expand', [
-  { label: '📧 Produkce: jenista@muo.cz', url: 'mailto:jenista@muo.cz' },
-  { label: '📞 Produkce: +420 770 147 527', url: 'tel:+420770147527' },
-  { label: '📧 Pokladna: pokladna@muo.cz', url: 'mailto:pokladna@muo.cz' },
-  { label: '📞 Pokladna: +420 585 514 241', url: 'tel:+420585514241' },
-  { label: '📧 Info MUO: info@muo.cz', url: 'mailto:info@muo.cz' },
-  { label: '📞 Ústředna MUO: +420 585 514 111', url: 'tel:+420585514111' }
-])}
+                      {vykresliPolozkuMenu('Kontakt', 'expand', 'Produkce festivalu\nAlexandr Jeništa\njenista@muo.cz\n+420 770 147 527\n\nPokladna MUO | CENTRAL\n+420 585 514 241\npokladna@muo.cz\nút–ne 10-18 hodin\n\nMuzeum umění Olomouc\nDenisova 47, 771 11 Olomouc\n+420 585 514 111\ninfo@muo.cz')}
                     </View>
 
                     <View style={styles.socialContainer}>
