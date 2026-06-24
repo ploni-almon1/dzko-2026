@@ -243,7 +243,40 @@ const CustomLoader = ({ themeColor }) => {
     </View>
   );
 };
+// 👇 FUNKCE PRO PŘIDÁNÍ DO KALENDÁŘE 👇
+const stahniKalendar = (akce) => {
+  const denCislo = akce.den.replace(/[^0-9]/g, ''); 
+  
+  let casZacatek = '00:00';
+  const casParts = akce.cas.split(' | ');
+  if (casParts.length > 1) {
+      casZacatek = casParts[1].trim(); 
+  }
 
+  const zDate = `202610${denCislo}T${casZacatek.replace(':', '')}00`;
+  
+  let hodinaZacatek = parseInt(casZacatek.split(':')[0], 10);
+  let konecDate = `202610${denCislo}T${String(hodinaZacatek + 1).padStart(2, '0')}${casZacatek.split(':')[1] || '00'}00`;
+
+  const mistoText = casParts.length > 2 ? casParts[2] : 'Olomouc';
+
+  const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//DZKO//Festival//CS\nBEGIN:VEVENT\nUID:${akce.id}@dzko.cz\nDTSTAMP:${zDate}\nDTSTART:${zDate}\nDTEND:${konecDate}\nSUMMARY:${akce.nazev}\nLOCATION:${mistoText}\nDESCRIPTION:Festival Dny židovské kultury Olomouc. ${akce.popis ? akce.popis.replace(/\n/g, '\\n') : ''}\nEND:VEVENT\nEND:VCALENDAR`;
+
+  if (Platform.OS === 'web') {
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute('download', `${akce.nazev.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  } else {
+      const startDate = `202610${denCislo}T${casZacatek.replace(':', '')}00Z`; 
+      const endDate = `202610${denCislo}T${String(hodinaZacatek + 1).padStart(2, '0')}${casZacatek.split(':')[1] || '00'}00Z`;
+      const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(akce.nazev)}&dates=${startDate}/${endDate}&details=${encodeURIComponent('Festival Dny židovské kultury Olomouc.')}&location=${encodeURIComponent(mistoText)}`;
+      Linking.openURL(googleCalUrl);
+  }
+};
 export default function App() {
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -1304,22 +1337,30 @@ export default function App() {
                 )}
 
                 <View style={[styles.detailTimeLocationRow, { justifyContent: 'space-between', alignItems: 'center' }]}>
-  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1, top: !isDesktop ? 5 : 0 }}>
+  <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1, top: !isDesktop ? 3 : 0 }}>
     <Text style={styles.cardTime}>{timeText}</Text>
-                    {mistoText && (
-                      <>
-                        <Text style={styles.cardTime}> | </Text>
-                        <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                          <Text style={styles.locationLink}>{mistoText}</Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
-                  </View>
-                  <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0E7FF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, marginLeft: 10 }} activeOpacity={0.6}>
-  <Ionicons name="share-social-outline" size={16} color={themeColor} />
-  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: themeColor, fontWeight: 'bold' }}>Sdílet</Text>
-</TouchableOpacity>
-                </View>
+    {mistoText && (
+      <>
+        <Text style={styles.cardTime}> | </Text>
+        <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
+          <Text style={styles.locationLink}>{mistoText}</Text>
+        </TouchableOpacity>
+      </>
+    )}
+  </View>
+  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    {/* Nové kulaté tlačítko Kalendář */}
+    <TouchableOpacity onPress={() => stahniKalendar(item)} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#E0E7FF', justifyContent: 'center', alignItems: 'center', marginLeft: 10 }} activeOpacity={0.6}>
+      <Ionicons name="calendar-outline" size={16} color={themeColor} />
+    </TouchableOpacity>
+    
+    {/* Původní pilulka Sdílet */}
+    <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0E7FF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, marginLeft: 8 }} activeOpacity={0.6}>
+      <Ionicons name="share-social-outline" size={16} color={themeColor} />
+      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: themeColor, fontWeight: 'bold' }}>Sdílet</Text>
+    </TouchableOpacity>
+  </View>
+</View>
 
                 {item.image && (
                   <Image source={{ uri: item.image }} style={styles.wireframeImage} resizeMode="cover" />
