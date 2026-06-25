@@ -1916,7 +1916,6 @@ export default function App() {
           )}
 
           {aktivniTab === 'Program' && !detailAkce && (
-            {aktivniTab === 'Program' && !detailAkce && (
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} ref={hlavniScrollViewRef} scrollEventThrottle={16} onScroll={(e) => { hlavniScrollY.current = e.nativeEvent.contentOffset.y; }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={isDesktop ? styles.desktopContainer : null}>
@@ -2022,7 +2021,6 @@ export default function App() {
           )}
                 
           {aktivniTab === 'Oblíbené' && !detailAkce && (
-            {aktivniTab === 'Oblíbené' && !detailAkce && (
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} ref={hlavniScrollViewRef} scrollEventThrottle={16} onScroll={(e) => { hlavniScrollY.current = e.nativeEvent.contentOffset.y; }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={[isDesktop ? styles.desktopContainer : null, { paddingBottom: 20 }]}>
