@@ -473,6 +473,16 @@ export default function App() {
 
   useEffect(() => {
     const nactiVse = async () => {
+      // 👇 Zaznamenáme si přesný čas startu
+      const startTime = Date.now();
+      
+      // 👇 Chytrá funkce: zaručí, že kolečko nezmizí dříve než za 800 ms (0,8 sekundy)
+      const skryjKolecko = () => {
+        const uplynulo = Date.now() - startTime;
+        const zbyva = Math.max(0, 800 - uplynulo);
+        setTimeout(() => setLoading(false), zbyva);
+      };
+
       let nactenyProgram = [];
 
       // 1. KROK: NAČTENÍ LOKÁLNÍCH PREFERENCÍ A OFFLINE DAT
@@ -501,22 +511,23 @@ export default function App() {
           setHosteVsechny(JSON.parse(cachedHoste));
           setPartneri(JSON.parse(cachedPartneri));
           if (cachedImage) setHeroImage(cachedImage);
-          setLoading(false); // Aplikace naběhne hned z offline dat!
+          
+          skryjKolecko(); // Spustíme odpočet pro skrytí kolečka
         }
       } catch (error) { console.error('Chyba při načítání lokálních dat:', error); }
 
-      // 2. KROK: STAŽENÍ ČERSTVÝCH DAT NA POZADÍ (pokud je internet)
+      // 2. KROK: STAŽENÍ ČERSTVÝCH DAT NA POZADÍ
       const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
       const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
 
       if (!baseId || !token) {
         if (nactenyProgram.length === 0) setError('Chybí konfigurace API klíčů.');
-        setLoading(false);
+        skryjKolecko();
         return;
       }
 
       try {
-        // Nastavení (obrázek na pozadí)
+        // Nastavení
         fetch(`https://api.airtable.com/v0/${baseId}/Nastaveni`, { headers: { Authorization: `Bearer ${token}` } })
           .then(res => res.ok ? res.json() : null)
           .then(data => {
@@ -544,7 +555,7 @@ export default function App() {
             }
           }).catch(() => {});
 
-        // Program a Hosté
+        // Program
         const resProgram = await fetch(`https://api.airtable.com/v0/${baseId}/Program`, { headers: { Authorization: `Bearer ${token}` } });
         if (!resProgram.ok) throw new Error('Chyba Airtable');
         const dataProgram = await resProgram.json();
@@ -590,7 +601,7 @@ export default function App() {
           return a.cas.localeCompare(b.cas);
         });
 
-        // Uložení aktuálních dat do mezipaměti pro příští offline použití
+        // Uložení aktuálních dat do mezipaměti
         setPrednaskyVsechny(upravenaData);
         AsyncStorage.setItem('@cached_program', JSON.stringify(upravenaData));
         nactenyProgram = upravenaData;
@@ -634,14 +645,13 @@ export default function App() {
           return platnaSrdicka;
         });
 
-        setLoading(false);
+        skryjKolecko(); // Spustíme odpočet
       } catch (err) {
         console.log('Jsme offline, stahování dat se nepodařilo. Použije se cache.', err);
-        // Pokud aplikace spadne na chybě (offline) a ZÁROVEŇ ještě nemá z minulosti stažená data, ukážeme error
         if (nactenyProgram.length === 0) {
           setError('Jste offline a v mobilu zatím nemáte uložená žádná data z festivalu. Připojte se prosím na chvíli k internetu.');
         }
-        setLoading(false);
+        skryjKolecko(); // Spustíme odpočet i v případě chyby
       }
     };
 
