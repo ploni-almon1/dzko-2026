@@ -351,6 +351,24 @@ export default function App() {
   const [hoveredMenuItem, setHoveredMenuItem] = useState(null);
 
   const detailScrollViewRef = useRef(null);
+  const hlavniScrollY = useRef(0);
+  const hlavniScrollViewRef = useRef(null);
+  // 👇 OBNOVENÍ POZICE ROZBALENÉHO PROGRAMU PO NÁVRATU 👇
+  useEffect(() => {
+    if (!detailAkce && hlavniScrollY.current > 0) {
+      // Krátká pauza 50 milisekund dá telefonu čas seznam vykreslit a pak teprve skočit
+      setTimeout(() => {
+        if (hlavniScrollViewRef.current) {
+          // Kód bezpečně pozná, jestli v aplikaci používáš ScrollView nebo FlatList a podle toho skočí
+          if (typeof hlavniScrollViewRef.current.scrollTo === 'function') {
+            hlavniScrollViewRef.current.scrollTo({ y: hlavniScrollY.current, animated: false });
+          } else if (typeof hlavniScrollViewRef.current.scrollToOffset === 'function') {
+            hlavniScrollViewRef.current.scrollToOffset({ offset: hlavniScrollY.current, animated: false });
+          }
+        }
+      }, 50);
+    }
+  }, [detailAkce]);
   // 👇 INJEKCE HISTORIE PROHLÍŽEČE (HISTORY API) 👇
   const isBackNavigation = useRef(false);
   const isInitialMount = useRef(true);
@@ -1898,7 +1916,8 @@ export default function App() {
           )}
 
           {aktivniTab === 'Program' && !detailAkce && (
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+            {aktivniTab === 'Program' && !detailAkce && (
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} ref={hlavniScrollViewRef} scrollEventThrottle={16} onScroll={(e) => { hlavniScrollY.current = e.nativeEvent.contentOffset.y; }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={isDesktop ? styles.desktopContainer : null}>
                     <View style={styles.pageTitleContainer}>
@@ -2003,7 +2022,8 @@ export default function App() {
           )}
                 
           {aktivniTab === 'Oblíbené' && !detailAkce && (
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+            {aktivniTab === 'Oblíbené' && !detailAkce && (
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} ref={hlavniScrollViewRef} scrollEventThrottle={16} onScroll={(e) => { hlavniScrollY.current = e.nativeEvent.contentOffset.y; }}>
               <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15 }}>
                   <View style={[isDesktop ? styles.desktopContainer : null, { paddingBottom: 20 }]}>
                     
@@ -2837,7 +2857,7 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
   menuItemText: { fontFamily: 'Inter_400Regular', fontSize: 20, color: '#000' },
   menuExpandedContent: { marginTop: 10, paddingLeft: 10, borderLeftWidth: 2 },
-  menuExpandedText: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563', lineHeight: 22 },
+  menuExpandedText: { fontFamily: 'Inter_400Regular', fontSize: 16, color: '#4B5563', lineHeight: 22 },
   contentLinkRow: { paddingVertical: 6, paddingLeft: 5 },
   contentInlineLink: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#4B5563' },
   
