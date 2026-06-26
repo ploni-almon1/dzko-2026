@@ -30,6 +30,89 @@ import CustomLoader from './src/components/CustomLoader';
 // ZDE JE TVOJE CENTRÁLNÍ BARVA PRO CELOU APLIKACI
 const DEFAULT_THEME_COLOR = '#3A24DC';
 
+// 👇 BEZPEČNÉ FUNKCE PRO NAČÍTÁNÍ Z DATABÁZE 👇
+const safeString = (val) => {
+  if (val == null) return '';
+  if (Array.isArray(val)) return String(val[0] || '').trim();
+  return String(val).trim();
+};
+
+const safeImage = (val) => {
+  if (Array.isArray(val) && val.length > 0 && val[0].url) {
+    return val[0].url;
+  }
+  return null;
+};
+
+// 👇 NÁŠ NOVÝ VLASTNÍ LOADER 👇
+const CustomLoader = ({ themeColor }) => {
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 2000, 
+        easing: Easing.linear,
+        useNativeDriver: Platform.OS !== 'web', 
+      })
+    ).start();
+  }, [spinValue]);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' }}>
+      <Animated.Image
+        source={require('./assets/star.png')}
+        style={{
+          width: 50,
+          height: 50,
+          tintColor: themeColor,
+          transform: [{ rotate: spin }]
+        }}
+        resizeMode="contain"
+      />
+    </View>
+  );
+};
+// 👇 FUNKCE PRO PŘIDÁNÍ DO KALENDÁŘE 👇
+const stahniKalendar = (akce) => {
+  const denCislo = akce.den.replace(/[^0-9]/g, ''); 
+  
+  let casZacatek = '00:00';
+  const casParts = akce.cas.split(' | ');
+  if (casParts.length > 1) {
+      casZacatek = casParts[1].trim(); 
+  }
+
+  const zDate = `202610${denCislo}T${casZacatek.replace(':', '')}00`;
+  
+  let hodinaZacatek = parseInt(casZacatek.split(':')[0], 10);
+  let konecDate = `202610${denCislo}T${String(hodinaZacatek + 1).padStart(2, '0')}${casZacatek.split(':')[1] || '00'}00`;
+
+  const mistoText = casParts.length > 2 ? casParts[2] : 'Olomouc';
+
+  const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//DZKO//Festival//CS\nBEGIN:VEVENT\nUID:${akce.id}@dzko.cz\nDTSTAMP:${zDate}\nDTSTART:${zDate}\nDTEND:${konecDate}\nSUMMARY:${akce.nazev}\nLOCATION:${mistoText}\nDESCRIPTION:Festival Dny židovské kultury Olomouc. ${akce.popis ? akce.popis.replace(/\n/g, '\\n') : ''}\nEND:VEVENT\nEND:VCALENDAR`;
+
+  if (Platform.OS === 'web') {
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute('download', `${akce.nazev.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  } else {
+      const startDate = `202610${denCislo}T${casZacatek.replace(':', '')}00Z`; 
+      const endDate = `202610${denCislo}T${String(hodinaZacatek + 1).padStart(2, '0')}${casZacatek.split(':')[1] || '00'}00Z`;
+      const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(akce.nazev)}&dates=${startDate}/${endDate}&details=${encodeURIComponent('Festival Dny židovské kultury Olomouc.')}&location=${encodeURIComponent(mistoText)}`;
+      Linking.openURL(googleCalUrl);
+  }
+};
 export default function App() {
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -371,6 +454,7 @@ export default function App() {
         prepniOblibene(detailAkce.id);
       }
       
+      // Upravíme číslo na obrazovce
       setDetailAkce(prev => ({ ...prev, pocetRezervaci: novyPocetRezervaci }));
       setPrednaskyVsechny(prev => prev.map(item => 
         item.id === detailAkce.id ? { ...item, pocetRezervaci: novyPocetRezervaci } : item
