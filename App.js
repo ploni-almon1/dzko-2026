@@ -61,25 +61,31 @@ export default function App() {
   
   const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
 
-  // 👇 1. PŘEČTENÍ ODKAZU PŘI STARTU WEBU 👇
+
+  
+
+  // 👇 1. PŘEČTENÍ ODKAZU PŘI STARTU WEBU (POMOCÍ KŘÍŽKU #) 👇
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const parametry = new URLSearchParams(window.location.search);
-      const urlTab = parametry.get('tab');
-      if (urlTab) {
+      const hashTab = window.location.hash.replace('#', '');
+      if (hashTab) {
         // Zvětší první písmeno (partneri -> Partneri)
-        const spravnyFormatTabu = urlTab.charAt(0).toUpperCase() + urlTab.slice(1);
+        const spravnyFormatTabu = hashTab.charAt(0).toUpperCase() + hashTab.slice(1);
         setAktivniTab(spravnyFormatTabu);
       }
     }
   }, []);
 
-  // 👇 2. ZÁPIS DO ODKAZU PŘI KLIKÁNÍ V MENU 👇
+  // 👇 2. ZÁPIS DO ODKAZU PŘI KLIKÁNÍ (POMOCÍ KŘÍŽKU #) 👇
   useEffect(() => {
     if (typeof window !== 'undefined' && aktivniTab) {
-      window.history.replaceState(null, '', `?tab=${aktivniTab}`);
+      // Natvrdo a bezpečně přepíše konec adresy na #NazevTabu bez ohledu na Expo
+      window.history.replaceState(null, '', `#${aktivniTab}`);
     }
   }, [aktivniTab]);
+
+
+
 
   const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
   const [vybranyTag, setVybranyTag] = useState(null);
