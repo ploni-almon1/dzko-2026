@@ -44,40 +44,7 @@ const safeImage = (val) => {
   return null;
 };
 
-// 👇 FUNKCE PRO PŘIDÁNÍ DO KALENDÁŘE 👇
-const stahniKalendar = (akce) => {
-  const denCislo = akce.den.replace(/[^0-9]/g, ''); 
-  
-  let casZacatek = '00:00';
-  const casParts = akce.cas.split(' | ');
-  if (casParts.length > 1) {
-      casZacatek = casParts[1].trim(); 
-  }
 
-  const zDate = `202610${denCislo}T${casZacatek.replace(':', '')}00`;
-  
-  let hodinaZacatek = parseInt(casZacatek.split(':')[0], 10);
-  let konecDate = `202610${denCislo}T${String(hodinaZacatek + 1).padStart(2, '0')}${casZacatek.split(':')[1] || '00'}00`;
-
-  const mistoText = casParts.length > 2 ? casParts[2] : 'Olomouc';
-
-  const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//DZKO//Festival//CS\nBEGIN:VEVENT\nUID:${akce.id}@dzko.cz\nDTSTAMP:${zDate}\nDTSTART:${zDate}\nDTEND:${konecDate}\nSUMMARY:${akce.nazev}\nLOCATION:${mistoText}\nDESCRIPTION:Festival Dny židovské kultury Olomouc. ${akce.popis ? akce.popis.replace(/\n/g, '\\n') : ''}\nEND:VEVENT\nEND:VCALENDAR`;
-
-  if (Platform.OS === 'web') {
-      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.setAttribute('download', `${akce.nazev.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  } else {
-      const startDate = `202610${denCislo}T${casZacatek.replace(':', '')}00Z`; 
-      const endDate = `202610${denCislo}T${String(hodinaZacatek + 1).padStart(2, '0')}${casZacatek.split(':')[1] || '00'}00Z`;
-      const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(akce.nazev)}&dates=${startDate}/${endDate}&details=${encodeURIComponent('Festival Dny židovské kultury Olomouc.')}&location=${encodeURIComponent(mistoText)}`;
-      Linking.openURL(googleCalUrl);
-  }
-};
 export default function App() {
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
