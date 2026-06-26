@@ -61,6 +61,21 @@ export default function App() {
   
   const [aktivniTab, setAktivniTab] = useState('Home');
 
+  // 👇 PŘEČTENÍ URL ADRESY PŘI PRVNÍM NAČTENÍ WEBU 👇
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const parametry = new URLSearchParams(window.location.search);
+      const urlTab = parametry.get('tab');
+      
+      // Pokud adresa obsahuje ?tab=neco, aplikace si to přečte
+      if (urlTab) {
+        // Automaticky zvětší první písmeno (program -> Program, partneri -> Partneri)
+        const spravnyFormatTabu = urlTab.charAt(0).toUpperCase() + urlTab.slice(1);
+        setAktivniTab(spravnyFormatTabu);
+      }
+    }
+  }, []);
+
   
 
 
