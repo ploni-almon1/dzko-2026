@@ -766,7 +766,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5F4FE',
     borderWidth: 1,                 // Přidáme ten okraj
-  borderColor: '#3AB0E1',         // Tvoje modrá
+    borderColor: '#3AB0E1',         // Tvoje modrá
     alignSelf: 'flex-start'
   },
   filterTriggerText: {
@@ -787,7 +787,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5F4FE',
     borderWidth: 1,                 // Přidáme ten okraj
-  borderColor: '#3AB0E1',         // Tvoje modrá
+    borderColor: '#3AB0E1',         // Tvoje modrá
   },
   mobileFilterShareText: {
     fontFamily: 'Inter_400Regular', 
