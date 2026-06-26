@@ -28,7 +28,7 @@ import { generateMapHtml, ziskejVychoziDen, stahniKalendar } from './src/utils';
 import CustomLoader from './src/components/CustomLoader';
 
 // ZDE JE TVOJE CENTRÁLNÍ BARVA PRO CELOU APLIKACI
-const DEFAULT_THEME_COLOR = '#3A24BC';
+const DEFAULT_THEME_COLOR = '#3A24DC';
 
 // 👇 BEZPEČNÉ FUNKCE PRO NAČÍTÁNÍ Z DATABÁZE 👇
 const safeString = (val) => {
