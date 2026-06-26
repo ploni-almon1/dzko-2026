@@ -61,23 +61,7 @@ export default function App() {
   
   const [aktivniTab, setAktivniTab] = useState('Home');
 
-  // 👇 1. PŘEČTENÍ ODKAZU PŘI STARTU WEBU (POMOCÍ KŘÍŽKU #) 👇
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hashTab = window.location.hash.replace('#', '');
-      if (hashTab) {
-        const spravnyFormatTabu = hashTab.charAt(0).toUpperCase() + hashTab.slice(1);
-        setAktivniTab(spravnyFormatTabu);
-      }
-    }
-  }, []);
-
-  // 👇 2. ZÁPIS DO ODKAZU PŘI KLIKÁNÍ (POMOCÍ KŘÍŽKU #) 👇
-  useEffect(() => {
-    if (typeof window !== 'undefined' && aktivniTab) {
-      window.history.replaceState(null, '', `#${aktivniTab}`);
-    }
-  }, [aktivniTab]);
+  
 
 
 
