@@ -60,6 +60,19 @@ export default function App() {
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   
   const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
+  // 👇 PŘEČTENÍ URL ADRESY PŘI PRVNÍM NAČTENÍ WEBU 👇
+  useEffect(() => {
+    // Ověříme, že jsme na webu (v prohlížeči) a ne v mobilním Expo Go
+    if (typeof window !== 'undefined') {
+      const parametry = new URLSearchParams(window.location.search);
+      const urlTab = parametry.get('tab');
+      
+      // Pokud URL obsahuje ?tab=neco, přepneme na to
+      if (urlTab) {
+        setAktivniTab(urlTab);
+      }
+    }
+  }, []);
   const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
   const [vybranyTag, setVybranyTag] = useState(null);
 
