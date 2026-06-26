@@ -78,6 +78,16 @@ export default function App() {
     }
   }, []);
 
+  // 👇 AKTUALIZACE URL ADRESY PŘI PŘEPÍNÁNÍ TABŮ 👇
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const aktualniUrl = new URL(window.location.href);
+      aktualniUrl.searchParams.set('tab', aktivniTab);
+      // Přepíše odkaz v prohlížeči bez znovunačtení stránky
+      window.history.pushState({}, '', aktualniUrl.toString());
+    }
+  }, [aktivniTab]);
+
   const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
   const [vybranyTag, setVybranyTag] = useState(null);
 
