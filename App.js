@@ -59,17 +59,13 @@ export default function App() {
   const isDesktop = width >= 1024 || jeProhlizecPocitac;
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   
-  const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
-
-
-  
+  const [aktivniTab, setAktivniTab] = useState('Home');
 
   // 👇 1. PŘEČTENÍ ODKAZU PŘI STARTU WEBU (POMOCÍ KŘÍŽKU #) 👇
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hashTab = window.location.hash.replace('#', '');
       if (hashTab) {
-        // Zvětší první písmeno (partneri -> Partneri)
         const spravnyFormatTabu = hashTab.charAt(0).toUpperCase() + hashTab.slice(1);
         setAktivniTab(spravnyFormatTabu);
       }
@@ -79,7 +75,6 @@ export default function App() {
   // 👇 2. ZÁPIS DO ODKAZU PŘI KLIKÁNÍ (POMOCÍ KŘÍŽKU #) 👇
   useEffect(() => {
     if (typeof window !== 'undefined' && aktivniTab) {
-      // Natvrdo a bezpečně přepíše konec adresy na #NazevTabu bez ohledu na Expo
       window.history.replaceState(null, '', `#${aktivniTab}`);
     }
   }, [aktivniTab]);
