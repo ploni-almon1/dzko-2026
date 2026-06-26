@@ -61,30 +61,23 @@ export default function App() {
   
   const [aktivniTab, setAktivniTab] = useState(Platform.OS === 'web' && window.innerWidth >= 1024 ? 'Home' : 'Program');
 
-  // 👇 PŘEČTENÍ URL ADRESY PŘI PRVNÍM NAČTENÍ WEBU 👇
+  // 👇 1. PŘEČTENÍ ODKAZU PŘI STARTU WEBU 👇
   useEffect(() => {
-    // Ověříme, že jsme na webu (v prohlížeči) a ne v mobilním Expo Go
     if (typeof window !== 'undefined') {
       const parametry = new URLSearchParams(window.location.search);
       const urlTab = parametry.get('tab');
-      
-      // Pokud URL obsahuje ?tab=neco, přepneme na to
       if (urlTab) {
-        // Tento řádek vezme např. "partneri" a udělá z toho "Partneri"
+        // Zvětší první písmeno (partneri -> Partneri)
         const spravnyFormatTabu = urlTab.charAt(0).toUpperCase() + urlTab.slice(1);
-        
         setAktivniTab(spravnyFormatTabu);
       }
     }
   }, []);
 
-  // 👇 AKTUALIZACE URL ADRESY PŘI PŘEPÍNÁNÍ TABŮ 👇
+  // 👇 2. ZÁPIS DO ODKAZU PŘI KLIKÁNÍ V MENU 👇
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const aktualniUrl = new URL(window.location.href);
-      aktualniUrl.searchParams.set('tab', aktivniTab);
-      // Přepíše odkaz v prohlížeči bez znovunačtení stránky
-      window.history.pushState({}, '', aktualniUrl.toString());
+    if (typeof window !== 'undefined' && aktivniTab) {
+      window.history.replaceState(null, '', `?tab=${aktivniTab}`);
     }
   }, [aktivniTab]);
 
