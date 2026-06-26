@@ -30,10 +30,10 @@ export default function Header({
             onPress={() => { setAktivniTab('Home'); setDetailAkce(null); }}
           >
             <Image 
-              source={require('../../assets/star.png')} 
-              style={[styles.headerLogo, { tintColor: themeColor }]} 
+  source={require('../../assets/ffest.png')} 
+  style={[styles.headerLogo, { tintColor: '#FFFFFF' }]} // Změněno na bílou
             />
-            <Text style={styles.headerText}>DNY ŽIDOVSKÉ KULTURY OLOMOUC</Text>
+           
           </TouchableOpacity>
 
           <View style={styles.desktopHeaderMenu}>
@@ -90,8 +90,8 @@ export default function Header({
           activeOpacity={0.7}
           onPress={() => { setDetailAkce(null); setAktivniTab('Další'); setRozbaleno('O festivalu'); }}
         >
-          <Image source={require('../../assets/star.png')} style={[styles.headerLogo, { tintColor: themeColor }]} />
-          <Text style={styles.headerText}>DŽKO</Text>
+          <Image source={require('../../assets/ffest.png')} style={[styles.headerLogo, { tintColor: '#FFFFFF' }]} />
+          
         </TouchableOpacity>
       )}
     </View>
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   desktopHeader: { 
     height: 55,
     width: '100%',
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: '#3AB0E1', 
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 15,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: '#3AB0E1', 
     paddingHorizontal: 15, 
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
@@ -135,8 +135,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: -5, 
   },
-  headerLogo: { width: 36, height: 36, marginRight: 10, resizeMode: 'contain' },
-  headerText: { fontFamily: 'Inter_400Regular', color: '#000000', fontSize: 22, includeFontPadding: false },
+  headerLogo: { width: 90, height: 80, marginRight: 10, marginLeft: 10, resizeMode: 'contain' },
+  
   desktopHeaderMenu: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '100%',
     left: -15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#3AB0E1',
     minWidth: 150,
     borderRadius: 8,
     paddingVertical: 8,

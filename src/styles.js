@@ -759,12 +759,14 @@ export const styles = StyleSheet.create({
   filterTriggerBtn: {
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#E0E7FF', 
+    backgroundColor: '#E5F4FE', 
     paddingVertical: 6, 
     paddingHorizontal: 12, 
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#E5F4FE',
+    borderWidth: 1,                 // Přidáme ten okraj
+  borderColor: '#3AB0E1',         // Tvoje modrá
     alignSelf: 'flex-start'
   },
   filterTriggerText: {
@@ -779,11 +781,13 @@ export const styles = StyleSheet.create({
     height: 29, 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#E0E7FF', 
+    backgroundColor: '#E5F4FE', 
     paddingHorizontal: 12, 
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#E5F4FE',
+    borderWidth: 1,                 // Přidáme ten okraj
+  borderColor: '#3AB0E1',         // Tvoje modrá
   },
   mobileFilterShareText: {
     fontFamily: 'Inter_400Regular', 
