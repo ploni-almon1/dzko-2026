@@ -59,7 +59,10 @@ export default function App() {
   const isDesktop = width >= 1024 || jeProhlizecPocitac;
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   
-  const [aktivniTab, setAktivniTab] = useState('Home');
+  // Výchozí tab se dynamicky rozhodne podle velikosti obrazovky:
+// Pokud je to počítač (isDesktop je true), nastaví se 'Home'.
+// Pokud je to mobil (isDesktop je false), nastaví se 'Program'.
+const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
 
   // 👇 PŘEČTENÍ URL ADRESY PŘI PRVNÍM NAČTENÍ WEBU 👇
   useEffect(() => {
