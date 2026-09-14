@@ -58,7 +58,6 @@ export const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, show
         pridejMisto(49.5980481, 17.2610522, 'Mozarteum', 'fa-landmark');
         pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií', 'fa-graduation-cap');
         pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc', 'fa-star-of-david');
-        pridejMisto(49.5695, 17.2912, 'Sladovna Holice', 'fa-industry');
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
 
         var focusLat = ${focusLat || 'null'};
@@ -77,8 +76,7 @@ export const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, show
                 { nazev: 'Centrum judaistických studií', klic: 'CJS' },
                 { nazev: 'Mozarteum', klic: 'Mozarteum' },
                 { nazev: 'MUO CENTRAL', klic: 'Central' },
-                { nazev: 'Židovská obec Olomouc', klic: 'ŽOO' },
-                { nazev: 'Sladovna Holice', klic: 'Sladovna Holice' }
+                { nazev: 'Židovská obec Olomouc', klic: 'ŽOO' }
             ];
             
             var legendDiv = document.getElementById('mapLegend');
