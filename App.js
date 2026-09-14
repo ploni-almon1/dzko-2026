@@ -44,7 +44,6 @@ const safeImage = (val) => {
   return null;
 };
 
-
 export default function App() {
   let [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -59,30 +58,19 @@ export default function App() {
   const isDesktop = width >= 1024 || jeProhlizecPocitac;
   const dny = ['PO 12', 'ÚT 13', 'ST 14', 'ČT 15', 'PÁ 16', 'SO 17', 'NE 18'];
   
-  // Výchozí tab se dynamicky rozhodne podle velikosti obrazovky:
-// Pokud je to počítač (isDesktop je true), nastaví se 'Home'.
-// Pokud je to mobil (isDesktop je false), nastaví se 'Program'.
-const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
+  const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
 
-  // 👇 PŘEČTENÍ URL ADRESY PŘI PRVNÍM NAČTENÍ WEBU 👇
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const parametry = new URLSearchParams(window.location.search);
       const urlTab = parametry.get('tab');
       
-      // Pokud adresa obsahuje ?tab=neco, aplikace si to přečte
       if (urlTab) {
-        // Automaticky zvětší první písmeno (program -> Program, partneri -> Partneri)
         const spravnyFormatTabu = urlTab.charAt(0).toUpperCase() + urlTab.slice(1);
         setAktivniTab(spravnyFormatTabu);
       }
     }
   }, []);
-
-  
-
-
-
 
   const [vybranyDen, setVybranyDen] = useState(ziskejVychoziDen());
   const [vybranyTag, setVybranyTag] = useState(null);
@@ -230,12 +218,19 @@ const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
     }
   };
 
+  // 👇 KOMPLETNÍ SEZNAM LOKACÍ S NOVÝMI MÍSTY 👇
   const mapaLokace = {
     'CJS': { lat: 49.5904358, lng: 17.2513681, title: 'Centrum judaistických studií' },
     'Central': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' },
     'Mozarteum': { lat: 49.5980481, lng: 17.2610522, title: 'Mozarteum' },
     'Mozarteum/Central?': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' }, 
+    'ŽOO': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
     'ŽOO, Komenského 7': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
+    'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
+    'Archiv UP': { lat: 49.5898, lng: 17.2144, title: 'Archiv UP' },
+    'VMO': { lat: 49.5975, lng: 17.2562, title: 'Vlastivědné muzeum Olomouc' },
+    'Galerie Špalíček': { lat: 49.4727, lng: 17.1121, title: 'Galerie Špalíček' },
+    'Židovský hřbitov': { lat: 49.5963414, lng: 17.2214072, title: 'Židovský hřbitov' }
   };
 
   const zobrazenePrednasky = prednaskyVsechny.filter(item => {
@@ -272,7 +267,6 @@ const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
       }
     }
   };
-
 
   const clickTagNaProgram = (tag) => {
     setVybranyTag(tag);
@@ -409,7 +403,6 @@ const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
         prepniOblibene(detailAkce.id);
       }
       
-      // Upravíme číslo na obrazovce
       setDetailAkce(prev => ({ ...prev, pocetRezervaci: novyPocetRezervaci }));
       setPrednaskyVsechny(prev => prev.map(item => 
         item.id === detailAkce.id ? { ...item, pocetRezervaci: novyPocetRezervaci } : item
@@ -427,8 +420,6 @@ const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
     setAktivniTab('Program');
     otevriDetail(akce);
   };
-
-  
 
   const speakerEvents = aktivniSelectedSpeaker 
     ? prednaskyVsechny.filter(item => item.hoste.some(h => h.jmeno === aktivniSelectedSpeaker.jmeno))
@@ -464,23 +455,23 @@ const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
         <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
           
           {aktivniTab === 'Home' && isDesktop && !detailAkce && (
-  <HomeScreen 
-    isDesktop={isDesktop}
-    heroImage={heroImage}
-    themeColor={themeColor}
-    setAktivniTab={setAktivniTab}
-    highlightAkce={highlightAkce}
-    zobrazitObrazky={zobrazitObrazky}
-    mojeRezervace={mojeRezervace}
-    oblibeneIds={oblibeneIds}
-    otevriDetail={otevriDetail}
-    handleLocationClick={handleLocationClick}
-    clickTagNaProgram={clickTagNaProgram}
-    prepniOblibene={prepniOblibene}
-    generateMapHtml={generateMapHtml}
-    prednaskyVsechny={prednaskyVsechny}
-  />
-)}
+            <HomeScreen 
+              isDesktop={isDesktop}
+              heroImage={heroImage}
+              themeColor={themeColor}
+              setAktivniTab={setAktivniTab}
+              highlightAkce={highlightAkce}
+              zobrazitObrazky={zobrazitObrazky}
+              mojeRezervace={mojeRezervace}
+              oblibeneIds={oblibeneIds}
+              otevriDetail={otevriDetail}
+              handleLocationClick={handleLocationClick}
+              clickTagNaProgram={clickTagNaProgram}
+              prepniOblibene={prepniOblibene}
+              generateMapHtml={generateMapHtml}
+              prednaskyVsechny={prednaskyVsechny}
+            />
+          )}
 
           {aktivniTab === 'Mapa' && (
             <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
@@ -514,94 +505,94 @@ const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
           )}
 
           {aktivniTab === 'Hoste' && !detailAkce && (
-  <HosteScreen 
-    isDesktop={isDesktop}
-    themeColor={themeColor}
-    hosteVsechny={hosteVsechny}
-    setAktivniSelectedSpeaker={setAktivniSelectedSpeaker}
-    setSpeakerModalVisible={setSpeakerModalVisible}
-  />
-)}
+            <HosteScreen 
+              isDesktop={isDesktop}
+              themeColor={themeColor}
+              hosteVsechny={hosteVsechny}
+              setAktivniSelectedSpeaker={setAktivniSelectedSpeaker}
+              setSpeakerModalVisible={setSpeakerModalVisible}
+            />
+          )}
 
           {aktivniTab === 'Partneri' && !detailAkce && (
-  <PartneriScreen 
-    isDesktop={isDesktop}
-    themeColor={themeColor}
-    partneri={partneri}
-    hoveredPartnerId={hoveredPartnerId}
-    setHoveredPartnerId={setHoveredPartnerId}
-  />
-)}
+            <PartneriScreen 
+              isDesktop={isDesktop}
+              themeColor={themeColor}
+              partneri={partneri}
+              hoveredPartnerId={hoveredPartnerId}
+              setHoveredPartnerId={setHoveredPartnerId}
+            />
+          )}
 
           {aktivniTab === 'Program' && !detailAkce && (
-  <ProgramScreen 
-    isDesktop={isDesktop}
-    themeColor={themeColor}
-    dny={dny}
-    vybranyDen={vybranyDen}
-    setVybranyDen={setVybranyDen}
-    vybranyTag={vybranyTag}
-    setVybranyTag={setVybranyTag}
-    activeFilters={activeFilters}
-    setActiveFilters={setActiveFilters}
-    vychoziFiltry={vychoziFiltry}
-    hasActiveFilters={hasActiveFilters}
-    zobrazitObrazky={zobrazitObrazky}
-    prepniObrazky={prepniObrazky}
-    setTempFilters={setTempFilters}
-    setFilterModalVisible={setFilterModalVisible}
-    zobrazenePrednasky={zobrazenePrednasky}
-    mojeRezervace={mojeRezervace}
-    oblibeneIds={oblibeneIds}
-    otevriDetail={otevriDetail}
-    handleLocationClick={handleLocationClick}
-    clickTagNaProgram={clickTagNaProgram}
-    prepniOblibene={prepniOblibene}
-    hlavniScrollViewRef={hlavniScrollViewRef}
-    hlavniScrollY={hlavniScrollY}
-  />
-)}
+            <ProgramScreen 
+              isDesktop={isDesktop}
+              themeColor={themeColor}
+              dny={dny}
+              vybranyDen={vybranyDen}
+              setVybranyDen={setVybranyDen}
+              vybranyTag={vybranyTag}
+              setVybranyTag={setVybranyTag}
+              activeFilters={activeFilters}
+              setActiveFilters={setActiveFilters}
+              vychoziFiltry={vychoziFiltry}
+              hasActiveFilters={hasActiveFilters}
+              zobrazitObrazky={zobrazitObrazky}
+              prepniObrazky={prepniObrazky}
+              setTempFilters={setTempFilters}
+              setFilterModalVisible={setFilterModalVisible}
+              zobrazenePrednasky={zobrazenePrednasky}
+              mojeRezervace={mojeRezervace}
+              oblibeneIds={oblibeneIds}
+              otevriDetail={otevriDetail}
+              handleLocationClick={handleLocationClick}
+              clickTagNaProgram={clickTagNaProgram}
+              prepniOblibene={prepniOblibene}
+              hlavniScrollViewRef={hlavniScrollViewRef}
+              hlavniScrollY={hlavniScrollY}
+            />
+          )}
                 
           {aktivniTab === 'Oblíbené' && !detailAkce && (
-  <OblibeneScreen 
-    isDesktop={isDesktop}
-    themeColor={themeColor}
-    dny={dny}
-    vybranyDen={vybranyDen}
-    setVybranyDen={setVybranyDen}
-    vybranyTag={vybranyTag}
-    setVybranyTag={setVybranyTag}
-    sdilenyVyberIds={sdilenyVyberIds}
-    setSdilenyVyberIds={setSdilenyVyberIds}
-    zobrazitObrazky={zobrazitObrazky}
-    prepniObrazky={prepniObrazky}
-    oblibeneIds={oblibeneIds}
-    oblibeneZobrazeni={oblibeneZobrazeni}
-    sdiletOblibene={sdiletOblibene}
-    mojeRezervace={mojeRezervace}
-    otevriDetail={otevriDetail}
-    handleLocationClick={handleLocationClick}
-    clickTagNaProgram={clickTagNaProgram}
-    prepniOblibene={prepniOblibene}
-    hlavniScrollViewRef={hlavniScrollViewRef}
-    hlavniScrollY={hlavniScrollY}
-  />
-)}
+            <OblibeneScreen 
+              isDesktop={isDesktop}
+              themeColor={themeColor}
+              dny={dny}
+              vybranyDen={vybranyDen}
+              setVybranyDen={setVybranyDen}
+              vybranyTag={vybranyTag}
+              setVybranyTag={setVybranyTag}
+              sdilenyVyberIds={sdilenyVyberIds}
+              setSdilenyVyberIds={setSdilenyVyberIds}
+              zobrazitObrazky={zobrazitObrazky}
+              prepniObrazky={prepniObrazky}
+              oblibeneIds={oblibeneIds}
+              oblibeneZobrazeni={oblibeneZobrazeni}
+              sdiletOblibene={sdiletOblibene}
+              mojeRezervace={mojeRezervace}
+              otevriDetail={otevriDetail}
+              handleLocationClick={handleLocationClick}
+              clickTagNaProgram={clickTagNaProgram}
+              prepniOblibene={prepniOblibene}
+              hlavniScrollViewRef={hlavniScrollViewRef}
+              hlavniScrollY={hlavniScrollY}
+            />
+          )}
                 
           {aktivniTab === 'Další' && !detailAkce && (
-  <DalsiScreen 
-    isDesktop={isDesktop}
-    themeColor={themeColor}
-    setAktivniTab={setAktivniTab}
-    rozbaleno={rozbaleno}
-    setRozbaleno={setRozbaleno}
-    zobrazitNastaveniBarvy={zobrazitNastaveniBarvy}
-    setZobrazitNastaveniBarvy={setZobrazitNastaveniBarvy}
-    novaBarvaInput={novaBarvaInput}
-    setNovaBarvaInput={setNovaBarvaInput}
-    ulozNovyMotiv={ulozNovyMotiv}
-  />
-)}
+            <DalsiScreen 
+              isDesktop={isDesktop}
+              themeColor={themeColor}
+              setAktivniTab={setAktivniTab}
+              rozbaleno={rozbaleno}
+              setRozbaleno={setRozbaleno}
+              zobrazitNastaveniBarvy={zobrazitNastaveniBarvy}
+              setZobrazitNastaveniBarvy={setZobrazitNastaveniBarvy}
+              novaBarvaInput={novaBarvaInput}
+              setNovaBarvaInput={setNovaBarvaInput}
+              ulozNovyMotiv={ulozNovyMotiv}
+            />
+          )}
 
           {detailAkce && (
             <EventDetail 
@@ -676,19 +667,19 @@ const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
         </View>
 
         {homeMapaZvetsena && (
-           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, backgroundColor: '#F3F4F6' }}>
-              {Platform.OS === 'web' ? (
-                <iframe 
-                  key="fullscreen-home-map-2" 
-                  srcDoc={generateMapHtml(null, null, null, themeColor, true, true, prednaskyVsechny)} 
-                  style={{ width: '100%', height: '100%', border: 'none' }} 
-                  allow="geolocation" 
-                  title="Mapa DŽKO Fullscreen"
-                />
-              ) : (
-                <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
-              )}
-           </View>
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, backgroundColor: '#F3F4F6' }}>
+            {Platform.OS === 'web' ? (
+              <iframe 
+                key="fullscreen-home-map-2" 
+                srcDoc={generateMapHtml(null, null, null, themeColor, true, true, prednaskyVsechny)} 
+                style={{ width: '100%', height: '100%', border: 'none' }} 
+                allow="geolocation" 
+                title="Mapa DŽKO Fullscreen"
+              />
+            ) : (
+              <Text style={styles.emptyText}>Mapa se načítá v prohlížeči.</Text>
+            )}
+          </View>
         )}
 
         <Modal
