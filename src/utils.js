@@ -61,7 +61,7 @@ export const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, show
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
         pridejMisto(49.5898, 17.2144, 'Archiv UP', 'fa-book');
         pridejMisto(49.5975, 17.2562, 'Vlastivědné muzeum Olomouc', 'fa-building-columns');
-        pridejMisto(49.4727, 17.1121, 'Galerie Špalíček', 'fa-palette');
+        pridejMisto(49.4727, 17.1121, 'Prostějov', 'fa-palette');
         pridejMisto(49.5963414, 17.2214072, 'Židovský hřbitov', 'fa-monument');
 
         var focusLat = ${focusLat || 'null'};
@@ -83,7 +83,7 @@ export const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, show
                 { nazev: 'Židovská obec Olomouc', klic: 'ŽOO' },
                 { nazev: 'Archiv UP', klic: 'Archiv UP' },
                 { nazev: 'Vlastivědné muzeum Olomouc', klic: 'VMO' },
-                { nazev: 'Galerie Špalíček', klic: 'Galerie Špalíček' },
+                { nazev: 'Prostějov', klic: 'Prostějov' },
                 { nazev: 'Židovský hřbitov', klic: 'Židovský hřbitov' }
             ];
             
