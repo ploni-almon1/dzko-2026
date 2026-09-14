@@ -229,7 +229,7 @@ export default function App() {
     'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
     'Archiv UP': { lat: 49.5898, lng: 17.2144, title: 'Archiv UP' },
     'VMO': { lat: 49.5975, lng: 17.2562, title: 'Vlastivědné muzeum Olomouc' },
-    'Galerie Špalíček': { lat: 49.4727, lng: 17.1121, title: 'Galerie Špalíček' },
+    'Prostějov': { lat: 49.4727, lng: 17.1121, title: 'Prostějov' },
     'Židovský hřbitov': { lat: 49.5963414, lng: 17.2214072, title: 'Židovský hřbitov' }
   };
 
