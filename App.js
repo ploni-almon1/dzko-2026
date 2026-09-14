@@ -235,8 +235,7 @@ const [aktivniTab, setAktivniTab] = useState(isDesktop ? 'Home' : 'Program');
     'Central': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' },
     'Mozarteum': { lat: 49.5980481, lng: 17.2610522, title: 'Mozarteum' },
     'Mozarteum/Central?': { lat: 49.5963561, lng: 17.2563322, title: 'MUO CENTRAL' }, 
-    'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
-    'Sladovna Holice': { lat: 49.5695, lng: 17.2912, title: 'Sladovna Holice' }
+    'ŽOO, Komenského 7': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
   };
 
   const zobrazenePrednasky = prednaskyVsechny.filter(item => {
