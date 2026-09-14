@@ -59,6 +59,10 @@ export const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, show
         pridejMisto(49.5904358, 17.2513681, 'Centrum judaistických studií', 'fa-graduation-cap');
         pridejMisto(49.5970906, 17.2627506, 'Židovská obec Olomouc', 'fa-star-of-david');
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
+        pridejMisto(49.5898, 17.2144, 'Archiv UP', 'fa-book');
+        pridejMisto(49.5975, 17.2562, 'Vlastivědné muzeum Olomouc', 'fa-building-columns');
+        pridejMisto(49.4727, 17.1121, 'Galerie Špalíček', 'fa-palette');
+        pridejMisto(49.5963414, 17.2214072, 'Židovský hřbitov', 'fa-monument');
 
         var focusLat = ${focusLat || 'null'};
         var focusLng = ${focusLng || 'null'};
@@ -76,7 +80,11 @@ export const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, show
                 { nazev: 'Centrum judaistických studií', klic: 'CJS' },
                 { nazev: 'Mozarteum', klic: 'Mozarteum' },
                 { nazev: 'MUO CENTRAL', klic: 'Central' },
-                { nazev: 'Židovská obec Olomouc', klic: 'ŽOO' }
+                { nazev: 'Židovská obec Olomouc', klic: 'ŽOO' },
+                { nazev: 'Archiv UP', klic: 'Archiv UP' },
+                { nazev: 'Vlastivědné muzeum Olomouc', klic: 'VMO' },
+                { nazev: 'Galerie Špalíček', klic: 'Galerie Špalíček' },
+                { nazev: 'Židovský hřbitov', klic: 'Židovský hřbitov' }
             ];
             
             var legendDiv = document.getElementById('mapLegend');
