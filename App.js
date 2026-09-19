@@ -28,7 +28,7 @@ import { generateMapHtml, ziskejVychoziDen, stahniKalendar } from './src/utils';
 import CustomLoader from './src/components/CustomLoader';
 
 // ZDE JE TVOJE CENTRÁLNÍ BARVA PRO CELOU APLIKACI
-const DEFAULT_THEME_COLOR = '#3A24DC';
+const DEFAULT_THEME_COLOR = '#00E637';
 
 // 👇 BEZPEČNÉ FUNKCE PRO NAČÍTÁNÍ Z DATABÁZE 👇
 const safeString = (val) => {
@@ -142,6 +142,26 @@ export default function App() {
     setMapaModalVisible,
     otevriDetail
   );
+
+  // 👇 DYNAMICKÁ BARVA PRO OZNAČOVÁNÍ TEXTU (HIGHLIGHT) 👇
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const styleId = 'dynamic-selection-color';
+      let styleTag = document.getElementById(styleId);
+      
+      if (!styleTag) {
+        styleTag = document.createElement('style');
+        styleTag.id = styleId;
+        document.head.appendChild(styleTag);
+      }
+      
+      // Nastaví pozadí výběru na aktuální themeColor a text na bílou
+      styleTag.innerHTML = `
+        ::selection { background-color: ${themeColor}; color: #ffffff; }
+        ::-moz-selection { background-color: ${themeColor}; color: #ffffff; }
+      `;
+    }
+  }, [themeColor]);
   
   const [rezervaceJmeno, setRezervaceJmeno] = useState('');
   const [rezervaceEmail, setRezervaceEmail] = useState('');
@@ -229,7 +249,7 @@ export default function App() {
     'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
     'Archiv UP': { lat: 49.5898, lng: 17.2144, title: 'Archiv UP' },
     'VMO': { lat: 49.5975, lng: 17.2562, title: 'Vlastivědné muzeum Olomouc' },
-    'Prostějov': { lat: 49.4727, lng: 17.1121, title: 'Prostějov' },
+    'Prostějov': { lat: 49.4727, lng: 17.1121, title: 'Galerie Špalíček, Prostějov' },
     'Židovský hřbitov': { lat: 49.5963414, lng: 17.2214072, title: 'Židovský hřbitov' }
   };
 
@@ -429,9 +449,9 @@ export default function App() {
   if (error) return <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}><Text style={{color: 'red'}}>{error}</Text></View>;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
-      <StatusBar style="dark" backgroundColor="#F3F4F6" translucent={false} />
-      <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#F3F4F6' }]}>
+    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      <StatusBar style="dark" backgroundColor="#FFFFFF" translucent={false} />
+      <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#FFFFFF' }]}>
         
         <Header 
           isDesktop={isDesktop}
@@ -452,7 +472,7 @@ export default function App() {
           setRozbaleno={setRozbaleno}
         />
 
-        <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+        <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
           
           {aktivniTab === 'Home' && isDesktop && !detailAkce && (
             <HomeScreen 
@@ -474,7 +494,7 @@ export default function App() {
           )}
 
           {aktivniTab === 'Mapa' && (
-            <View style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+            <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
               {!isDesktop && historieAkce && (
                 <View style={{ paddingHorizontal: 15 }}>
                   <TouchableOpacity 
@@ -667,7 +687,7 @@ export default function App() {
         </View>
 
         {homeMapaZvetsena && (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, backgroundColor: '#F3F4F6' }}>
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, backgroundColor: '#FFFFFF' }}>
             {Platform.OS === 'web' ? (
               <iframe 
                 key="fullscreen-home-map-2" 

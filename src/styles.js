@@ -295,7 +295,7 @@ export const styles = StyleSheet.create({
   },
 
   mainContainer: { flex: 1 }, 
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   
   header: { 
     height: 60,
@@ -759,12 +759,12 @@ export const styles = StyleSheet.create({
   filterTriggerBtn: {
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#E0E7FF', 
+    backgroundColor: '#F3F4F6', 
     paddingVertical: 6, 
     paddingHorizontal: 12, 
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#F3F4F6',
     alignSelf: 'flex-start'
   },
   filterTriggerText: {
@@ -779,11 +779,11 @@ export const styles = StyleSheet.create({
     height: 29, 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#E0E7FF', 
+    backgroundColor: '#F3F4F6', 
     paddingHorizontal: 12, 
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#F3F4F6',
   },
   mobileFilterShareText: {
     fontFamily: 'Inter_400Regular', 

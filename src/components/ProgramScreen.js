@@ -63,8 +63,8 @@ export default function ProgramScreen({
                   style={styles.filterTriggerBtn}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="filter" size={16} color={themeColor} />
-                  <Text style={[styles.filterTriggerText, { color: themeColor }]}>Filtrovat</Text>
+                  <Ionicons name="filter" size={16} color="black" />
+                  <Text style={[styles.filterTriggerText, { color: '#374151' }]}>Filtrovat</Text>
                 </TouchableOpacity>
                 {hasActiveFilters && (
                   <TouchableOpacity onPress={() => setActiveFilters(vychoziFiltry)} style={{ marginLeft: 15 }}>
@@ -104,8 +104,8 @@ export default function ProgramScreen({
                               style={styles.mobileFilterShareBtn}
                               activeOpacity={0.7}
                             >
-                              <Ionicons name="filter" size={16} color={themeColor} />
-                              <Text style={[styles.mobileFilterShareText, { color: themeColor }]}>Filtrovat</Text>
+                              <Ionicons name="filter" size={16} color="black" />
+                              <Text style={[styles.mobileFilterShareText, { color: '#374151' }]}>Filtrovat</Text>
                             </TouchableOpacity>
                           </View>
                         )}

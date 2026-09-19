@@ -29,11 +29,7 @@ export default function HomeScreen({
           ) : (
             <View style={[styles.homeHeroImage, { backgroundColor: '#333' }]} />
           )}
-          <View style={styles.homeHeroOverlay}>
-            <TouchableOpacity style={[styles.homeHeroBtn, { borderColor: themeColor }]} onPress={() => setAktivniTab('Program')}>
-              <Text style={[styles.homeHeroBtnText, { color: themeColor }]}>PROGRAM</Text>
-            </TouchableOpacity>
-          </View>
+          
         </View>
 
         <View style={styles.homeContentSection}>

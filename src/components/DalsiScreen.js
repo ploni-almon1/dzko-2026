@@ -105,10 +105,16 @@ export default function DalsiScreen({
               <TouchableOpacity style={styles.socialCircleBtn} onPress={() => Linking.openURL('https://www.instagram.com/judaistika_upol/')}>
                 <Ionicons name="logo-instagram" size={20} color="white" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialCircleBtn} onPress={() => {
+              
+              {/* Tvoje skryté programátorské tlačítko */}
+              <TouchableOpacity 
+                style={{ width: 36, height: 36, backgroundColor: 'transparent' }} 
+                activeOpacity={1} 
+                onPress={() => {
                   if (!zobrazitNastaveniBarvy) setNovaBarvaInput(themeColor);
                   setZobrazitNastaveniBarvy(!zobrazitNastaveniBarvy);
-              }}>
+                }}
+              >
               </TouchableOpacity>
             </View>
 

@@ -61,7 +61,10 @@ export const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, show
         pridejMisto(49.5963561, 17.2563322, 'MUO CENTRAL', 'fa-film');
         pridejMisto(49.5898, 17.2144, 'Archiv UP', 'fa-book');
         pridejMisto(49.5975, 17.2562, 'Vlastivědné muzeum Olomouc', 'fa-building-columns');
-        pridejMisto(49.4727, 17.1121, 'Prostějov', 'fa-palette');
+        
+        // Zde je upravený název pro mapu a bublinu
+        pridejMisto(49.4727, 17.1121, 'Galerie Špalíček, Prostějov', 'fa-palette');
+        
         pridejMisto(49.5963414, 17.2214072, 'Židovský hřbitov', 'fa-monument');
 
         var focusLat = ${focusLat || 'null'};
@@ -83,7 +86,8 @@ export const generateMapHtml = (focusLat, focusLng, focusTitle, themeColor, show
                 { nazev: 'Židovská obec Olomouc', klic: 'ŽOO' },
                 { nazev: 'Archiv UP', klic: 'Archiv UP' },
                 { nazev: 'Vlastivědné muzeum Olomouc', klic: 'VMO' },
-                { nazev: 'Prostějov', klic: 'Prostějov' },
+                // V legendě také zobrazíme dlouhý název, ale klic pro párování s databází musí zůstat 'Prostějov'
+                { nazev: 'Galerie Špalíček, Prostějov', klic: 'Prostějov' },
                 { nazev: 'Židovský hřbitov', klic: 'Židovský hřbitov' }
             ];
             
@@ -178,6 +182,7 @@ export const ziskejVychoziDen = () => {
   const rok = dnes.getFullYear();
   const mesic = dnes.getMonth(); 
   const den = dnes.getDate();
+  // Vzhledem k tomu, že je rok 2026, tak se defaultní den nevybere, protože v kódu se počítá s říjnem (mesic === 9, počítáno od 0).
   if (rok === 2026 && mesic === 9) {
     switch (den) {
       case 12: return 'PO 12';

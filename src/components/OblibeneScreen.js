@@ -67,9 +67,9 @@ export default function OblibeneScreen({
 
             {isDesktop && !sdilenyVyberIds && oblibeneIds.length > 0 && (
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 20, justifyContent: 'flex-start', zIndex: 10 }}>
-                <TouchableOpacity onPress={sdiletOblibene} style={styles.filterTriggerBtn} activeOpacity={0.7}>
-                  <Ionicons name="share-social-outline" size={16} color={themeColor} />
-                  <Text style={[styles.filterTriggerText, { color: themeColor }]}>Sdílet výběr</Text>
+                <TouchableOpacity onPress={sdiletOblibene} style={[styles.filterTriggerBtn, { backgroundColor: '#F3F4F6', borderColor: '#F3F4F6' }]} activeOpacity={0.7}>
+                  <Ionicons name="share-social-outline" size={16} color="black" />
+                  <Text style={[styles.filterTriggerText, { color: '#374151' }]}>Sdílet výběr</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -92,9 +92,9 @@ export default function OblibeneScreen({
                         <Text style={[styles.favoriteDayHeader, { marginBottom: 0 }]}>{den}</Text>
                         
                         {!isDesktop && isFirstVisibleDay && !sdilenyVyberIds && oblibeneIds.length > 0 && (
-                          <TouchableOpacity onPress={sdiletOblibene} style={styles.mobileFilterShareBtn} activeOpacity={0.7}>
-                            <Ionicons name="share-social-outline" size={16} color={themeColor} />
-                            <Text style={[styles.mobileFilterShareText, { color: themeColor }]}>Sdílet výběr</Text>
+                          <TouchableOpacity onPress={sdiletOblibene} style={[styles.mobileFilterShareBtn, { backgroundColor: '#F3F4F6', borderColor: '#F3F4F6' }]} activeOpacity={0.7}>
+                            <Ionicons name="share-social-outline" size={16} color="black" />
+                            <Text style={[styles.mobileFilterShareText, { color: '#374151' }]}>Sdílet výběr</Text>
                           </TouchableOpacity>
                         )}
                       </View>

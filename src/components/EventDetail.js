@@ -286,13 +286,13 @@ export default function EventDetail({
                   )}
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <TouchableOpacity onPress={() => stahniKalendar(item)} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#E0E7FF', justifyContent: 'center', alignItems: 'center', marginLeft: 10 }} activeOpacity={0.6}>
-                    <Ionicons name="calendar-outline" size={16} color={themeColor} />
+                  <TouchableOpacity onPress={() => stahniKalendar(item)} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', marginLeft: 10 }} activeOpacity={0.6}>
+                    <Ionicons name="calendar-outline" size={16} color="black" />
                   </TouchableOpacity>
                   
-                  <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0E7FF', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, marginLeft: 8 }} activeOpacity={0.6}>
-                    <Ionicons name="share-social-outline" size={16} color={themeColor} />
-                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: themeColor, fontWeight: 'bold' }}>Sdílet</Text>
+                  <TouchableOpacity onPress={() => sdiletAkci(item)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 15, marginLeft: 8 }} activeOpacity={0.6}>
+                    <Ionicons name="share-social-outline" size={16} color="black" />
+                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginLeft: 5, color: '#374151', fontWeight: 'bold' }}>Sdílet</Text>
                   </TouchableOpacity>
                 </View>
               </View>
