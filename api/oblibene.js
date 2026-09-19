@@ -20,15 +20,31 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Chybí tajný Airtable token na serveru.' });
   }
 
-  // Získáme ID akce a nový počet srdíček z aplikace
-  const { id, novyPocet } = req.body;
+  // Získáme ID akce a ZMĚNU (1 pro přidání, -1 pro odebrání)
+  const { id, zmena } = req.body;
 
-  if (!id || novyPocet === undefined) {
-    return res.status(400).json({ error: 'Chybí ID akce nebo nový počet.' });
+  if (!id || zmena === undefined) {
+    return res.status(400).json({ error: 'Chybí ID akce nebo hodnota změny.' });
   }
 
   try {
-    // Upravíme číslo v tabulce Program pomocí tajného klíče
+    // 1. Zjistíme aktuální počet srdíček přímo z databáze
+    const programZaznam = await fetch(`https://api.airtable.com/v0/${baseId}/Program/${id}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${airtableToken}` }
+    });
+    
+    const programData = await programZaznam.json();
+    
+    if (!programZaznam.ok) {
+      return res.status(programZaznam.status).json({ error: 'Nepodařilo se načíst akci z databáze.' });
+    }
+
+    const aktualniPocet = programData.fields["Počet oblíbených"] || 0;
+    // Pojistka, aby počet srdíček nikdy neklesl pod nulu
+    const bezpecnyNovyPocet = Math.max(0, aktualniPocet + zmena);
+
+    // 2. Upravíme číslo v tabulce Program bezpečně vypočítanou hodnotou
     const airtableResponse = await fetch(`https://api.airtable.com/v0/${baseId}/Program`, {
       method: 'PATCH',
       headers: {
@@ -39,7 +55,7 @@ export default async function handler(req, res) {
         records: [{
           id: id,
           fields: {
-            "Počet oblíbených": novyPocet
+            "Počet oblíbených": bezpecnyNovyPocet
           }
         }]
       })

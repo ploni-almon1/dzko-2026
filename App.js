@@ -232,7 +232,7 @@ export default function App() {
       await fetch(`/api/oblibene`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id, novyPocet: novyPocetVAirtable })
+        body: JSON.stringify({ id: id, zmena: zmena })
       });
     } catch (err) {
       console.error('Nepodařilo se odeslat srdíčko na server:', err);
@@ -385,6 +385,8 @@ export default function App() {
     }
     
     setOdesilaRezervaci(true);
+    // Tuto hodnotu už na server NEPOSÍLÁME, ale necháváme si ji zde 
+    // pro okamžitou aktualizaci vzhledu v aplikaci.
     const novyPocetRezervaci = (detailAkce.pocetRezervaci || 0) + 1;
 
     try {
@@ -401,8 +403,8 @@ export default function App() {
               }
             }]
           },
-          programId: detailAkce.id,
-          novyPocetRezervaci: novyPocetRezervaci
+          programId: detailAkce.id
+          // novyPocetRezervaci byl odsud smazán, počítá si jej bezpečně backend
         })
       });
 
@@ -451,7 +453,7 @@ export default function App() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <StatusBar style="dark" backgroundColor="#FFFFFF" translucent={false} />
+      <StatusBar style="light" backgroundColor="#000000" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#FFFFFF' }]}>
         
         {/* ZDE JE NOVĚ PŘIDANÝ BANNER */}
