@@ -5,15 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "primaryColor": "#3A24DC",
+    "primaryColor": "#FFFFFF",
     "assetBundlePatterns": [
       "**/*"
     ],
     "web": {
       "favicon": "./assets/icon.png",
       "display": "standalone",
-      "backgroundColor": "#F1F1F1",
-      "themeColor": "#3A24DC",
+      "backgroundColor": "#FFFFFF",
+      "themeColor": "#FFFFFF",
       "name": "Dny židovské kultury Olomouc",
       "shortName": "DŽKO"
     },
