@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Platform, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, StyleSheet, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -83,7 +83,9 @@ export default function InstallBanner({ themeColor }) {
   return (
     <View style={styles.bannerContainer}>
       <View style={styles.content}>
-        <View style={[styles.iconPlaceholder, { backgroundColor: themeColor }]} />
+        
+        {/* Místo barevného čtverečku teď načítáme skutečnou ikonu aplikace z assets */}
+        <Image source={require('../../assets/icon.png')} style={styles.appIcon} />
         
         <View style={styles.textContainer}>
           <Text style={styles.title} numberOfLines={1}>Nainstalovat aplikaci DŽKO</Text>
@@ -91,7 +93,8 @@ export default function InstallBanner({ themeColor }) {
         </View>
         
         <TouchableOpacity onPress={handleInstallClick} activeOpacity={0.6} style={{ paddingHorizontal: 10 }}>
-          <Text style={[styles.installButton, { color: themeColor }]}>Instalovat</Text>
+          {/* Tlačítko převedeno natvrdo na černou barvu */}
+          <Text style={[styles.installButton, { color: '#000000' }]}>Instalovat</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={handleCloseClick} activeOpacity={0.6} style={styles.closeBtn}>
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconPlaceholder: {
+  appIcon: {
     width: 40,
     height: 40,
     borderRadius: 10,
