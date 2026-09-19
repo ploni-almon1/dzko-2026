@@ -110,19 +110,9 @@ export default function useAirtableData(
     }
   }, [aktivniTab, detailAkce, loading]);
 
-  // 5. EFEKT: Meta tagy, barva pozadí a zachycení kliknutí z iframe Mapy
+  // 5. EFEKT: Čisté a funkční nastavení pro bílé lišty
   useEffect(() => {
     if (Platform.OS === 'web') {
-      // Zablokování Auto Dark Mode
-      let metaColor = document.querySelector('meta[name="color-scheme"]');
-      if (!metaColor) {
-        metaColor = document.createElement('meta');
-        metaColor.name = 'color-scheme';
-        document.head.appendChild(metaColor);
-      }
-      metaColor.content = 'light only';
-
-      // Vynucení bílého tématu
       let metaTheme = document.querySelector('meta[name="theme-color"]');
       if (!metaTheme) {
         metaTheme = document.createElement('meta');
@@ -131,9 +121,16 @@ export default function useAirtableData(
       }
       metaTheme.content = '#FFFFFF';
 
+      let metaColor = document.querySelector('meta[name="color-scheme"]');
+      if (!metaColor) {
+        metaColor = document.createElement('meta');
+        metaColor.name = 'color-scheme';
+        document.head.appendChild(metaColor);
+      }
+      metaColor.content = 'light';
+
       document.body.style.backgroundColor = '#FFFFFF';
       document.documentElement.style.backgroundColor = '#FFFFFF';
-      document.documentElement.style.colorScheme = 'light';
 
       const handleMapMessage = (event) => {
         if (event.data === 'EXPAND_MAP') setHomeMapaZvetsena(true);

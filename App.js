@@ -453,7 +453,7 @@ export default function App() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <StatusBar style="auto" translucent={false} />
+      <StatusBar style="dark" backgroundColor="#FFFFFF" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#FFFFFF' }]}>
         
         {/* ZDE JE NOVĚ PŘIDANÝ BANNER */}
