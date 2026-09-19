@@ -23,6 +23,7 @@ import DalsiScreen from './src/components/DalsiScreen';
 
 import HosteScreen from './src/components/HosteScreen';
 import PartneriScreen from './src/components/PartneriScreen';
+import InstallBanner from './src/components/InstallBanner';
 
 import { generateMapHtml, ziskejVychoziDen, stahniKalendar } from './src/utils';
 import CustomLoader from './src/components/CustomLoader';
@@ -453,6 +454,9 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#FFFFFF" translucent={false} />
       <SafeAreaView style={[styles.mainContainer, { backgroundColor: '#FFFFFF' }]}>
         
+        {/* ZDE JE NOVĚ PŘIDANÝ BANNER */}
+        <InstallBanner themeColor={themeColor} />
+
         <Header 
           isDesktop={isDesktop}
           themeColor={themeColor}
