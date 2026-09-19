@@ -110,17 +110,26 @@ export default function useAirtableData(
   // 5. EFEKT: Meta tagy, barva pozadí a zachycení kliknutí z iframe Mapy
   useEffect(() => {
     if (Platform.OS === 'web') {
-      let meta = document.querySelector('meta[name="theme-color"]');
-      if (!meta) {
-        meta = document.createElement('meta');
-        meta.name = 'theme-color';
-        document.head.appendChild(meta);
+      // Zablokování Auto Dark Mode
+      let metaColor = document.querySelector('meta[name="color-scheme"]');
+      if (!metaColor) {
+        metaColor = document.createElement('meta');
+        metaColor.name = 'color-scheme';
+        document.head.appendChild(metaColor);
       }
-      meta.content = '#FFFFFF';
+      metaColor.content = 'light only';
+
+      // Vynucení bílého tématu
+      let metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (!metaTheme) {
+        metaTheme = document.createElement('meta');
+        metaTheme.name = 'theme-color';
+        document.head.appendChild(metaTheme);
+      }
+      metaTheme.content = '#FFFFFF';
+
       document.body.style.backgroundColor = '#FFFFFF';
       document.documentElement.style.backgroundColor = '#FFFFFF';
-      
-      // TENTO ŘÁDEK ZABRÁNÍ SAMOVOLNÉMU CERNÉMU REŽIMU LIŠT:
       document.documentElement.style.colorScheme = 'light';
 
       const handleMapMessage = (event) => {
