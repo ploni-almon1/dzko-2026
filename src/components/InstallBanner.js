@@ -3,72 +3,75 @@ import { View, Text, TouchableOpacity, Platform, StyleSheet } from 'react-native
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
+// Odchytíme událost úplně globálně hned při startu, aby nám neutekla
+let deferredPrompt = null;
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+  });
+}
+
 export default function InstallBanner({ themeColor }) {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     // Spustíme jen na webu
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
 
-    // Pokud už je aplikace nainstalovaná a otevřená jako samostatné okno, banner neukážeme
+    // Pokud už je aplikace nainstalovaná a otevřená, banner neukážeme
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     if (isStandalone) return;
 
-    let promptHandler = null;
+    // Zkontrolujeme, zda jsme opravdu na mobilním zařízení (nechceme to ukazovat na velkém monitoru)
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (!isMobile) return;
 
-    const checkCooldownAndListen = async () => {
+    const checkCooldownAndShow = async () => {
       try {
-        // Podíváme se do paměti telefonu, kdy naposledy se banner ukázal
         const lastShownStr = await AsyncStorage.getItem('@install_banner_last_shown');
         if (lastShownStr) {
           const lastShown = parseInt(lastShownStr, 10);
           const now = Date.now();
-          const hours24 = 24 * 60 * 60 * 1000; // 24 hodin v milisekundách
+          const hours24 = 24 * 60 * 60 * 1000;
           
           if (now - lastShown < hours24) {
-            // 24 hodin ještě neuběhlo, kód ukončíme a banner neukážeme
+            // 24 hodin ještě neuběhlo, kód ukončíme
             return;
           }
         }
 
-        // Pokud jsme tady, 24h uběhlo nebo to ještě nebylo zobrazeno
-        promptHandler = (e) => {
-          e.preventDefault();
-          setDeferredPrompt(e);
-          setIsVisible(true);
-          
-          // Ihned po zobrazení si uložíme aktuální čas do paměti
-          AsyncStorage.setItem('@install_banner_last_shown', Date.now().toString()).catch(console.error);
-        };
-
-        window.addEventListener('beforeinstallprompt', promptHandler);
+        // Ukážeme banner a hned uložíme čas do paměti
+        setIsVisible(true);
+        AsyncStorage.setItem('@install_banner_last_shown', Date.now().toString()).catch(console.error);
       } catch (error) {
         console.error('Chyba při kontrole paměti pro banner:', error);
       }
     };
 
-    checkCooldownAndListen();
+    // Dáme aplikaci půl vteřiny na načtení, aby banner naskočil plynule
+    setTimeout(checkCooldownAndShow, 500);
 
-    // Úklid po zavření komponenty
-    return () => {
-      if (promptHandler) {
-        window.removeEventListener('beforeinstallprompt', promptHandler);
-      }
-    };
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    
-    // Vyvoláme nativní okno telefonu pro instalaci
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setIsVisible(false);
+    if (deferredPrompt) {
+      // Funkční nativní instalace (typicky Chrome na Androidu)
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsVisible(false);
+      }
+      deferredPrompt = null;
+    } else {
+      // Fallback: Pokud prohlížeč nativní okno nedovolil (nebo jsme na iPhonu)
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        window.alert('Pro instalaci na iPhone:\n\n1. Klikněte dole na ikonu sdílení (čtvereček se šipkou)\n2. Zvolte "Přidat na plochu" ➕');
+      } else {
+        window.alert('Pro instalaci:\n\n1. Klikněte na tři tečky v pravém horním rohu\n2. Zvolte "Přidat na plochu" nebo "Instalovat aplikaci"');
+      }
     }
-    setDeferredPrompt(null);
   };
 
   const handleCloseClick = () => {
@@ -80,7 +83,6 @@ export default function InstallBanner({ themeColor }) {
   return (
     <View style={styles.bannerContainer}>
       <View style={styles.content}>
-        {/* Zde můžeš časem dát i logo, teď použijeme jen čistý barevný čtvereček v barvě aplikace */}
         <View style={[styles.iconPlaceholder, { backgroundColor: themeColor }]} />
         
         <View style={styles.textContainer}>
@@ -114,7 +116,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 8,
-    zIndex: 9999, // Zajistí, že to bude úplně nad vším ostatním
+    zIndex: 9999, 
   },
   content: {
     flexDirection: 'row',
