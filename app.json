@@ -14,8 +14,8 @@
       "display": "standalone",
       "backgroundColor": "#FFFFFF",
       "themeColor": "#FFFFFF",
-      "name": "Dny židovské kultury Olomouc",
-      "shortName": "DŽKO"
+      "name": "Dny židovské kultury Olomouc 2026",
+      "shortName": "DŽKO 2026"
     },
     "plugins": [
       "expo-font",
