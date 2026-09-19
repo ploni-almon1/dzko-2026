@@ -116,9 +116,12 @@ export default function useAirtableData(
         meta.name = 'theme-color';
         document.head.appendChild(meta);
       }
-      meta.content = '#F3F4F6';
-      document.body.style.backgroundColor = '#F3F4F6';
-      document.documentElement.style.backgroundColor = '#F3F4F6';
+      meta.content = '#FFFFFF';
+      document.body.style.backgroundColor = '#FFFFFF';
+      document.documentElement.style.backgroundColor = '#FFFFFF';
+      
+      // TENTO ŘÁDEK ZABRÁNÍ SAMOVOLNÉMU CERNÉMU REŽIMU LIŠT:
+      document.documentElement.style.colorScheme = 'light';
 
       const handleMapMessage = (event) => {
         if (event.data === 'EXPAND_MAP') setHomeMapaZvetsena(true);
