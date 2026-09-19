@@ -52,15 +52,12 @@ export default function useAirtableData(
     }
   }, [detailAkce]);
 
-  // 2. EFEKT: DOČASNÉ ZABITÍ Service Workera (pro ladění barev)
+  // 2. EFEKT: Service Worker pro web
   useEffect(() => {
     if (Platform.OS === 'web' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let registration of registrations) {
-          registration.unregister();
-          console.log('Starý Service Worker úspěšně odregistrován a zabit!');
-        }
-      });
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('Offline režim webu (Service Worker) úspěšně aktivován.'))
+        .catch((err) => console.log('Service Worker se nepodařilo zaregistrovat:', err));
     }
   }, []);
 
