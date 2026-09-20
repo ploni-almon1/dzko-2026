@@ -617,6 +617,7 @@ export default function App() {
               novaBarvaInput={novaBarvaInput}
               setNovaBarvaInput={setNovaBarvaInput}
               ulozNovyMotiv={ulozNovyMotiv}
+              heroImage={heroImage} 
             />
           )}
 

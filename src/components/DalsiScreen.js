@@ -14,10 +14,10 @@ export default function DalsiScreen({
   setZobrazitNastaveniBarvy,
   novaBarvaInput,
   setNovaBarvaInput,
-  ulozNovyMotiv
+  ulozNovyMotiv,
+  heroImage
 }) {
 
-  // Funkce, kterou jsme přesunuli z App.js, aby tu nepřekážela
   const handleMenuPress = (nazev, type, content) => {
     if (type === 'action') {
       content(); 
@@ -28,7 +28,6 @@ export default function DalsiScreen({
     }
   };
 
-  // Další funkce přesunutá z App.js
   const vykresliPolozkuMenu = (title, type, content) => (
     <View key={title} style={styles.menuItemWrapper}>
       <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress(title, type, content)} activeOpacity={0.6}>
@@ -39,7 +38,12 @@ export default function DalsiScreen({
       </TouchableOpacity>
       
       {type === 'expand' && rozbaleno === title && (
-        <View style={[styles.menuExpandedContent, { borderLeftColor: themeColor }]}>
+        <View style={[
+          styles.menuExpandedContent, 
+          (title === 'O festivalu' || title === 'Kontakt') 
+            ? { borderLeftWidth: 0, paddingLeft: 0, marginLeft: 0 } 
+            : { borderLeftColor: themeColor }
+        ]}>
           {typeof content === 'string' ? (
             <Text style={styles.menuExpandedText}>{content}</Text>
           ) : (
@@ -58,6 +62,14 @@ export default function DalsiScreen({
                 <Text key={index} style={styles.menuExpandedText}>{item.text}</Text>
               );
             })
+          )}
+          
+          {title === 'O festivalu' && heroImage && (
+            <Image 
+              source={{ uri: heroImage }} 
+              style={{ width: '100%', height: 200, borderRadius: 8, marginTop: 15 }} 
+              resizeMode="cover" 
+            />
           )}
         </View>
       )}
@@ -106,7 +118,6 @@ export default function DalsiScreen({
                 <Ionicons name="logo-instagram" size={20} color="white" />
               </TouchableOpacity>
               
-              {/* Tvoje skryté programátorské tlačítko */}
               <TouchableOpacity 
                 style={{ width: 36, height: 36, backgroundColor: 'transparent' }} 
                 activeOpacity={1} 
