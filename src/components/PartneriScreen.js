@@ -15,7 +15,6 @@ export default function PartneriScreen({
   const prioritniPoradi = [
     'Pořadatelé', 
     'Partneři', 
-    'Spolupořadatelé', 
     'Podpora', 
     'Mediální partneři'
   ];
