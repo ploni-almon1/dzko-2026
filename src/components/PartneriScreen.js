@@ -10,10 +10,41 @@ export default function PartneriScreen({
   hoveredPartnerId,
   setHoveredPartnerId
 }) {
+
+  // 1. ZDE SI MŮŽETE MĚNIT POŘADÍ HLAVNÍCH KATEGORIÍ
+  const prioritniPoradi = [
+    'Pořadatelé', 
+    'Partneři', 
+    'Spolupořadatelé', 
+    'Podpora', 
+    'Mediální partneři'
+  ];
+
+  // 2. Automatická detekce všech existujících kategorií v databázi
+  const vsechnyKategorieZDat = [...new Set(partneri.map(p => p.kategorie).filter(Boolean))];
+
+  // 3. Chytré poskládání kategorií (nejdřív ty prioritní, pak automaticky zbytek)
+  const finalniKategorie = [];
+  
+  prioritniPoradi.forEach(prioritaKat => {
+    const nalezena = vsechnyKategorieZDat.find(k => k.toLowerCase() === prioritaKat.toLowerCase());
+    if (nalezena) {
+      finalniKategorie.push(nalezena);
+    }
+  });
+
+  const zbyvajiciKategorie = vsechnyKategorieZDat
+    .filter(k => !prioritniPoradi.some(priK => priK.toLowerCase() === k.toLowerCase()))
+    .sort(); // Nové, neznámé kategorie seřadíme abecedně a dáme na konec
+
+  const usporadaneKategorie = [...finalniKategorie, ...zbyvajiciKategorie];
+
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
       <View style={{ flex: 1, width: '100%', maxWidth: 1270, alignSelf: 'center', paddingHorizontal: 15, paddingTop: 40 }}>
-        {['Pořadatelé', 'Podpora', 'Mediální partneři'].map((kat) => {
+        
+        {usporadaneKategorie.map((kat) => {
+          // Vyfiltrujeme partnery pro danou kategorii
           const partneriProKategorii = partneri.filter(p => p.kategorie && p.kategorie.toLowerCase() === kat.toLowerCase());
           
           if (partneriProKategorii.length === 0) return null;
