@@ -151,16 +151,16 @@ export default function useAirtableData(
   // 6. EFEKT: Google Analytics a sledování PWA aplikace
   useEffect(() => {
     if (Platform.OS === 'web') {
-      // Vložení základního měřícího skriptu z Googlu
+      // Vložení základního měřícího skriptu z Googlu - NOVÉ ID PRO DŽKO
       const script = document.createElement('script');
-      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-6H3RZ5VT2P';
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-GX6BYGPYWN';
       script.async = true;
       document.head.appendChild(script);
 
       window.dataLayer = window.dataLayer || [];
       function gtag(){window.dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-6H3RZ5VT2P');
+      gtag('config', 'G-GX6BYGPYWN'); // <--- ZMĚNĚNÉ ID ZDE
 
       // Detekce, zda uživatel právě čte web jako nainstalovanou aplikaci
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
