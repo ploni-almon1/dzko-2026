@@ -148,7 +148,40 @@ export default function useAirtableData(
     }
   }, [prednaskyVsechny]);
 
-  // 6. EFEKT: SAMOTNÉ STAŽENÍ DAT (AIRTABLE + ASYNCSTORAGE)
+  // 6. EFEKT: Google Analytics a sledování PWA aplikace
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // Vložení základního měřícího skriptu z Googlu
+      const script = document.createElement('script');
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-6H3RZ5VT2P';
+      script.async = true;
+      document.head.appendChild(script);
+
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-6H3RZ5VT2P');
+
+      // Detekce, zda uživatel právě čte web jako nainstalovanou aplikaci
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (isStandalone) {
+        gtag('event', 'pwa_opened', {
+          event_category: 'PWA',
+          event_label: 'Aplikace spuštěna z plochy'
+        });
+      }
+
+      // Zaznamenání samotného momentu instalace (kliknutí na Přidat na plochu)
+      window.addEventListener('appinstalled', () => {
+        gtag('event', 'pwa_installed', {
+          event_category: 'PWA',
+          event_label: 'Aplikace nainstalována na plochu'
+        });
+      });
+    }
+  }, []);
+
+  // 7. EFEKT: SAMOTNÉ STAŽENÍ DAT (AIRTABLE + ASYNCSTORAGE)
   useEffect(() => {
     const nactiVse = async () => {
       const startTime = Date.now();
