@@ -56,7 +56,7 @@ export default function useAirtableData(
   useEffect(() => {
     if (Platform.OS === 'web' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log('Offline režim webu (Service Worker) úspěšně aktivován.'))
+        .then(() => console.log('Offline režim webu úspěšně aktivován.'))
         .catch((err) => console.log('Service Worker se nepodařilo zaregistrovat:', err));
     }
   }, []);
@@ -107,7 +107,7 @@ export default function useAirtableData(
     }
   }, [aktivniTab, detailAkce, loading]);
 
-  // 5. EFEKT: Čisté a funkční nastavení pro bílé lišty
+  // 5. EFEKT: Vaše původní fungující nastavení bílé lišty a komunikace s mapou
   useEffect(() => {
     if (Platform.OS === 'web') {
       let metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -148,7 +148,7 @@ export default function useAirtableData(
     }
   }, [prednaskyVsechny]);
 
-  // 6. EFEKT: SAMOTNÉ STAŽENÍ DAT (AIRTABLE + ASYNCSTORAGE)
+  // 6. EFEKT: SAMOTNÉ STAŽENÍ DAT (AIRTABLE + ASYNCSTORAGE) - VČETNĚ PARTNERŮ!
   useEffect(() => {
     const nactiVse = async () => {
       const startTime = Date.now();
@@ -320,7 +320,6 @@ export default function useAirtableData(
     nactiVse();
   }, []);
 
-  // Vrátíme všechny stavy, aby je App.js mohl používat
   return {
     prednaskyVsechny, setPrednaskyVsechny,
     hosteVsechny, setHosteVsechny,
