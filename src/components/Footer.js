@@ -25,7 +25,7 @@ export default function Footer({ isDesktop }) {
         <View style={[styles.footerSocialCol, !isDesktop && { justifyContent: 'flex-start' }]}>
           {Platform.OS === 'web' ? (
             <>
-              <a href="https://muo.cz/central/dzko-2025/" target="_blank" style={{...styles.footerSocialBtn, textDecoration: 'none'}}>
+              <a href="https://muo.cz/central/dzko-2026/" target="_blank" style={{...styles.footerSocialBtn, textDecoration: 'none'}}>
                 <Image source={require('../../assets/muo2-icon.png')} style={styles.footerSocialIconImg} />
               </a>
               <a href="https://www.facebook.com/profile.php?id=61567469939592" target="_blank" style={{...styles.footerSocialBtn, textDecoration: 'none'}}>
