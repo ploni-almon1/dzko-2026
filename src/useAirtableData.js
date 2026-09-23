@@ -148,7 +148,37 @@ export default function useAirtableData(
     }
   }, [prednaskyVsechny]);
 
-  // 6. EFEKT: SAMOTNÉ STAŽENÍ DAT (AIRTABLE + ASYNCSTORAGE) - VČETNĚ PARTNERŮ!
+  // 6. EFEKT: Google Analytics a sledování PWA aplikace (Čistý účet DŽKO)
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const script = document.createElement('script');
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-GX6BYGPYWN';
+      script.async = true;
+      document.head.appendChild(script);
+
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GX6BYGPYWN');
+
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (isStandalone) {
+        gtag('event', 'pwa_opened', {
+          event_category: 'PWA',
+          event_label: 'Aplikace spuštěna z plochy'
+        });
+      }
+
+      window.addEventListener('appinstalled', () => {
+        gtag('event', 'pwa_installed', {
+          event_category: 'PWA',
+          event_label: 'Aplikace nainstalována na plochu'
+        });
+      });
+    }
+  }, []);
+
+  // 7. EFEKT: SAMOTNÉ STAŽENÍ DAT (AIRTABLE + ASYNCSTORAGE) - VČETNĚ PARTNERŮ!
   useEffect(() => {
     const nactiVse = async () => {
       const startTime = Date.now();
