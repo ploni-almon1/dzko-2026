@@ -107,33 +107,28 @@ export default function useAirtableData(
     }
   }, [aktivniTab, detailAkce, loading]);
 
-  // 5A. EFEKT: Okamžité nastavení bílých lišt a PWA status baru
+  // 5. EFEKT: Čisté a funkční nastavení pro bílé lišty (VRÁCENO ZPĚT DO VAŠEHO FUNKČNÍHO STAVU)
   useEffect(() => {
     if (Platform.OS === 'web') {
-      const nastavitMeta = (name, content) => {
-        let meta = document.querySelector(`meta[name="${name}"]`);
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.name = name;
-          document.head.appendChild(meta);
-        }
-        meta.content = content;
-      };
+      let metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (!metaTheme) {
+        metaTheme = document.createElement('meta');
+        metaTheme.name = 'theme-color';
+        document.head.appendChild(metaTheme);
+      }
+      metaTheme.content = '#FFFFFF';
 
-      // Vynucení světlého režimu pro lišty prohlížeče a instalované PWA
-      nastavitMeta('theme-color', '#FFFFFF');
-      nastavitMeta('color-scheme', 'light');
-      nastavitMeta('apple-mobile-web-app-capable', 'yes');
-      nastavitMeta('apple-mobile-web-app-status-bar-style', 'default');
+      let metaColor = document.querySelector('meta[name="color-scheme"]');
+      if (!metaColor) {
+        metaColor = document.createElement('meta');
+        metaColor.name = 'color-scheme';
+        document.head.appendChild(metaColor);
+      }
+      metaColor.content = 'light';
 
       document.body.style.backgroundColor = '#FFFFFF';
       document.documentElement.style.backgroundColor = '#FFFFFF';
-    }
-  }, []); // Běží hned při startu aplikace, na nic nečeká
 
-  // 5B. EFEKT: Komunikace s mapou
-  useEffect(() => {
-    if (Platform.OS === 'web') {
       const handleMapMessage = (event) => {
         if (event.data === 'EXPAND_MAP') setHomeMapaZvetsena(true);
         if (event.data === 'CONTRACT_MAP') setHomeMapaZvetsena(false);
@@ -153,33 +148,37 @@ export default function useAirtableData(
     }
   }, [prednaskyVsechny]);
 
-  // 6. EFEKT: Google Analytics a sledování PWA aplikace
+  // 6. EFEKT: Google Analytics (ODLOŽENÉ NAČTENÍ, ABY NEBLOKOVALO BARVY A GRAFIKU PWA)
   useEffect(() => {
     if (Platform.OS === 'web') {
-      const script = document.createElement('script');
-      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-GX6BYGPYWN';
-      script.async = true;
-      document.head.appendChild(script);
+      const timer = setTimeout(() => {
+        const script = document.createElement('script');
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-GX6BYGPYWN';
+        script.async = true;
+        document.head.appendChild(script);
 
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){window.dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-GX6BYGPYWN');
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){window.dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-GX6BYGPYWN');
 
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-      if (isStandalone) {
-        gtag('event', 'pwa_opened', {
-          event_category: 'PWA',
-          event_label: 'Aplikace spuštěna z plochy'
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isStandalone) {
+          gtag('event', 'pwa_opened', {
+            event_category: 'PWA',
+            event_label: 'Aplikace spuštěna z plochy'
+          });
+        }
+
+        window.addEventListener('appinstalled', () => {
+          gtag('event', 'pwa_installed', {
+            event_category: 'PWA',
+            event_label: 'Aplikace nainstalována na plochu'
+          });
         });
-      }
+      }, 2000); // Zpoždění 2 vteřiny zaručí, že grafika má absolutní přednost
 
-      window.addEventListener('appinstalled', () => {
-        gtag('event', 'pwa_installed', {
-          event_category: 'PWA',
-          event_label: 'Aplikace nainstalována na plochu'
-        });
-      });
+      return () => clearTimeout(timer);
     }
   }, []);
 
