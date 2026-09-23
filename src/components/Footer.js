@@ -37,7 +37,7 @@ export default function Footer({ isDesktop }) {
             </>
           ) : (
             <>
-              <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')}>
+              <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://muo.cz/central/dzko-2026/')}>
                 <Image source={require('../../assets/muo2-icon.png')} style={styles.footerSocialIconImg} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.footerSocialBtn} onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')}>
