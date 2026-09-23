@@ -107,28 +107,33 @@ export default function useAirtableData(
     }
   }, [aktivniTab, detailAkce, loading]);
 
-  // 5. EFEKT: Čisté a funkční nastavení pro bílé lišty
+  // 5A. EFEKT: Okamžité nastavení bílých lišt a PWA status baru
   useEffect(() => {
     if (Platform.OS === 'web') {
-      let metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (!metaTheme) {
-        metaTheme = document.createElement('meta');
-        metaTheme.name = 'theme-color';
-        document.head.appendChild(metaTheme);
-      }
-      metaTheme.content = '#FFFFFF';
+      const nastavitMeta = (name, content) => {
+        let meta = document.querySelector(`meta[name="${name}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.name = name;
+          document.head.appendChild(meta);
+        }
+        meta.content = content;
+      };
 
-      let metaColor = document.querySelector('meta[name="color-scheme"]');
-      if (!metaColor) {
-        metaColor = document.createElement('meta');
-        metaColor.name = 'color-scheme';
-        document.head.appendChild(metaColor);
-      }
-      metaColor.content = 'light';
+      // Vynucení světlého režimu pro lišty prohlížeče a instalované PWA
+      nastavitMeta('theme-color', '#FFFFFF');
+      nastavitMeta('color-scheme', 'light');
+      nastavitMeta('apple-mobile-web-app-capable', 'yes');
+      nastavitMeta('apple-mobile-web-app-status-bar-style', 'default');
 
       document.body.style.backgroundColor = '#FFFFFF';
       document.documentElement.style.backgroundColor = '#FFFFFF';
+    }
+  }, []); // Běží hned při startu aplikace, na nic nečeká
 
+  // 5B. EFEKT: Komunikace s mapou
+  useEffect(() => {
+    if (Platform.OS === 'web') {
       const handleMapMessage = (event) => {
         if (event.data === 'EXPAND_MAP') setHomeMapaZvetsena(true);
         if (event.data === 'CONTRACT_MAP') setHomeMapaZvetsena(false);
@@ -151,7 +156,6 @@ export default function useAirtableData(
   // 6. EFEKT: Google Analytics a sledování PWA aplikace
   useEffect(() => {
     if (Platform.OS === 'web') {
-      // Vložení základního měřícího skriptu z Googlu - NOVÉ ID PRO DŽKO
       const script = document.createElement('script');
       script.src = 'https://www.googletagmanager.com/gtag/js?id=G-GX6BYGPYWN';
       script.async = true;
@@ -160,9 +164,8 @@ export default function useAirtableData(
       window.dataLayer = window.dataLayer || [];
       function gtag(){window.dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-GX6BYGPYWN'); // <--- ZMĚNĚNÉ ID ZDE
+      gtag('config', 'G-GX6BYGPYWN');
 
-      // Detekce, zda uživatel právě čte web jako nainstalovanou aplikaci
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
       if (isStandalone) {
         gtag('event', 'pwa_opened', {
@@ -171,7 +174,6 @@ export default function useAirtableData(
         });
       }
 
-      // Zaznamenání samotného momentu instalace (kliknutí na Přidat na plochu)
       window.addEventListener('appinstalled', () => {
         gtag('event', 'pwa_installed', {
           event_category: 'PWA',
@@ -353,7 +355,6 @@ export default function useAirtableData(
     nactiVse();
   }, []);
 
-  // Vrátíme všechny stavy, aby je App.js mohl používat
   return {
     prednaskyVsechny, setPrednaskyVsechny,
     hosteVsechny, setHosteVsechny,
