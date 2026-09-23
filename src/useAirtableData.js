@@ -107,7 +107,7 @@ export default function useAirtableData(
     }
   }, [aktivniTab, detailAkce, loading]);
 
-  // 5. EFEKT: Čisté a funkční nastavení pro bílé lišty (VRÁCENO ZPĚT DO VAŠEHO FUNKČNÍHO STAVU)
+  // 5. EFEKT: Čisté a funkční nastavení pro bílé lišty
   useEffect(() => {
     if (Platform.OS === 'web') {
       let metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -148,37 +148,36 @@ export default function useAirtableData(
     }
   }, [prednaskyVsechny]);
 
-  // 6. EFEKT: Google Analytics (ODLOŽENÉ NAČTENÍ, ABY NEBLOKOVALO BARVY A GRAFIKU PWA)
+  // 6. EFEKT: Google Analytics a sledování PWA aplikace
   useEffect(() => {
     if (Platform.OS === 'web') {
-      const timer = setTimeout(() => {
-        const script = document.createElement('script');
-        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-GX6BYGPYWN';
-        script.async = true;
-        document.head.appendChild(script);
+      // Vložení základního měřícího skriptu z Googlu - NOVÉ ID PRO DŽKO
+      const script = document.createElement('script');
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-GX6BYGPYWN';
+      script.async = true;
+      document.head.appendChild(script);
 
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){window.dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-GX6BYGPYWN');
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GX6BYGPYWN'); // <--- ZMĚNĚNÉ ID ZDE
 
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-        if (isStandalone) {
-          gtag('event', 'pwa_opened', {
-            event_category: 'PWA',
-            event_label: 'Aplikace spuštěna z plochy'
-          });
-        }
-
-        window.addEventListener('appinstalled', () => {
-          gtag('event', 'pwa_installed', {
-            event_category: 'PWA',
-            event_label: 'Aplikace nainstalována na plochu'
-          });
+      // Detekce, zda uživatel právě čte web jako nainstalovanou aplikaci
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (isStandalone) {
+        gtag('event', 'pwa_opened', {
+          event_category: 'PWA',
+          event_label: 'Aplikace spuštěna z plochy'
         });
-      }, 2000); // Zpoždění 2 vteřiny zaručí, že grafika má absolutní přednost
+      }
 
-      return () => clearTimeout(timer);
+      // Zaznamenání samotného momentu instalace (kliknutí na Přidat na plochu)
+      window.addEventListener('appinstalled', () => {
+        gtag('event', 'pwa_installed', {
+          event_category: 'PWA',
+          event_label: 'Aplikace nainstalována na plochu'
+        });
+      });
     }
   }, []);
 
@@ -354,6 +353,7 @@ export default function useAirtableData(
     nactiVse();
   }, []);
 
+  // Vrátíme všechny stavy, aby je App.js mohl používat
   return {
     prednaskyVsechny, setPrednaskyVsechny,
     hosteVsechny, setHosteVsechny,
