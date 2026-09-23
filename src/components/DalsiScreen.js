@@ -108,7 +108,7 @@ export default function DalsiScreen({
             </View>
 
             <View style={styles.socialContainer}>
-              <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2025/')} activeOpacity={0.7}>
+              <TouchableOpacity onPress={() => Linking.openURL('https://muo.cz/central/dzko-2026/')} activeOpacity={0.7}>
                 <Image source={require('../../assets/muo-icon.png')} style={styles.customSocialIcon} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61567469939592')} activeOpacity={0.7}>
