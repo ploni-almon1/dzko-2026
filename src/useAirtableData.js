@@ -33,11 +33,9 @@ export default function useAirtableData(
   const [themeColor, setThemeColor] = useState(DEFAULT_THEME_COLOR);
   const [zobrazitObrazky, setZobrazitObrazky] = useState(true);
 
-  // Hlídače pro History API nahoře v adresním řádku
   const isBackNavigation = useRef(false);
   const isInitialMount = useRef(true);
 
-  // 1. EFEKT: Obnova pozice scrollu
   useEffect(() => {
     if (!detailAkce && hlavniScrollY.current > 0) {
       setTimeout(() => {
@@ -52,16 +50,17 @@ export default function useAirtableData(
     }
   }, [detailAkce]);
 
-  // 2. EFEKT: Service Worker pro web
   useEffect(() => {
     if (Platform.OS === 'web' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log('Offline režim webu úspěšně aktivován.'))
+        .then((reg) => {
+          console.log('Offline režim webu úspěšně aktivován.');
+          reg.update(); 
+        })
         .catch((err) => console.log('Service Worker se nepodařilo zaregistrovat:', err));
     }
   }, []);
 
-  // 3. EFEKT: History API - Tlačítko zpět v prohlížeči
   useEffect(() => {
     if (Platform.OS === 'web') {
       const handlePopState = (event) => {
@@ -84,7 +83,6 @@ export default function useAirtableData(
     }
   }, [prednaskyVsechny]);
 
-  // 4. EFEKT: History API - Zápis kliknutí do URL adresy
   useEffect(() => {
     if (Platform.OS === 'web' && !loading) {
       if (isBackNavigation.current) {
@@ -107,7 +105,6 @@ export default function useAirtableData(
     }
   }, [aktivniTab, detailAkce, loading]);
 
-  // 5. EFEKT: Vaše původní fungující nastavení bílé lišty a komunikace s mapou
   useEffect(() => {
     if (Platform.OS === 'web') {
       let metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -128,27 +125,9 @@ export default function useAirtableData(
 
       document.body.style.backgroundColor = '#FFFFFF';
       document.documentElement.style.backgroundColor = '#FFFFFF';
-
-      const handleMapMessage = (event) => {
-        if (event.data === 'EXPAND_MAP') setHomeMapaZvetsena(true);
-        if (event.data === 'CONTRACT_MAP') setHomeMapaZvetsena(false);
-        if (event.data && event.data.type === 'OPEN_EVENT') {
-          const eventId = event.data.id;
-          const nalezenaAkce = prednaskyVsechny.find(a => a.id === eventId);
-          if (nalezenaAkce) {
-            otevriDetail(nalezenaAkce);
-            setAktivniTab('Program');
-            setMapaModalVisible(false);
-            setHomeMapaZvetsena(false);
-          }
-        }
-      };
-      window.addEventListener('message', handleMapMessage);
-      return () => window.removeEventListener('message', handleMapMessage);
     }
-  }, [prednaskyVsechny]);
+  }, []);
 
-  // 6. EFEKT: Google Analytics a sledování PWA aplikace (Čistý účet DŽKO)
   useEffect(() => {
     if (Platform.OS === 'web') {
       const script = document.createElement('script');
@@ -163,22 +142,15 @@ export default function useAirtableData(
 
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
       if (isStandalone) {
-        gtag('event', 'pwa_opened', {
-          event_category: 'PWA',
-          event_label: 'Aplikace spuštěna z plochy'
-        });
+        gtag('event', 'pwa_opened', { event_category: 'PWA', event_label: 'Aplikace spuštěna z plochy' });
       }
-
       window.addEventListener('appinstalled', () => {
-        gtag('event', 'pwa_installed', {
-          event_category: 'PWA',
-          event_label: 'Aplikace nainstalována na plochu'
-        });
+        gtag('event', 'pwa_installed', { event_category: 'PWA', event_label: 'Aplikace nainstalována na plochu' });
       });
     }
   }, []);
 
-  // 7. EFEKT: SAMOTNÉ STAŽENÍ DAT (AIRTABLE + ASYNCSTORAGE) - VČETNĚ PARTNERŮ!
+  // HLAVNÍ ZÁCHRANNÝ BLOK
   useEffect(() => {
     const nactiVse = async () => {
       const startTime = Date.now();
@@ -189,31 +161,44 @@ export default function useAirtableData(
       };
 
       let nactenyProgram = [];
+      let pouzitCache = false;
 
       try {
+        // Načtení uživatelského nastavení
         const ulozenaData = await AsyncStorage.getItem('@moje_srdicka');
         if (ulozenaData !== null) setOblibeneIds(JSON.parse(ulozenaData));
         const ulozeneRezervace = await AsyncStorage.getItem('@moje_rezervace');
         if (ulozeneRezervace !== null) setMojeRezervace(JSON.parse(ulozeneRezervace));
         const ulozenaBarva = await AsyncStorage.getItem('@theme_color_v2');
         if (ulozenaBarva !== null) setThemeColor(ulozenaBarva);
-        const ulozeneZobrazeni = await AsyncStorage.getItem('@zobrazit_obrazky');
-        if (ulozeneZobrazeni !== null) setZobrazitObrazky(JSON.parse(ulozeneZobrazeni));
+        
+        // ZJIŠTĚNÍ ČASU POSLEDNÍ AKTUALIZACE DAT
+        const casPoslednihoStazeni = await AsyncStorage.getItem('@posledni_stazeni');
+        const nyni = Date.now();
+        // 15 minut v milisekundách = 900 000
+        const LIMIT_CACHE = 900000; 
 
         const cachedProgram = await AsyncStorage.getItem('@cached_program');
         const cachedHoste = await AsyncStorage.getItem('@cached_hoste');
         const cachedPartneri = await AsyncStorage.getItem('@cached_partneri');
         const cachedImage = await AsyncStorage.getItem('@cached_hero');
 
+        // Pokud máme data A ZÁROVEŇ jsou mladší než 15 minut, použijeme je a STOP!
         if (cachedProgram && cachedHoste && cachedPartneri) {
           nactenyProgram = JSON.parse(cachedProgram);
           setPrednaskyVsechny(nactenyProgram);
           setHosteVsechny(JSON.parse(cachedHoste));
           setPartneri(JSON.parse(cachedPartneri));
           if (cachedImage) setHeroImage(cachedImage);
-          skryjKolecko();
+          
+          if (casPoslednihoStazeni && (nyni - parseInt(casPoslednihoStazeni, 10) < LIMIT_CACHE)) {
+            console.log("Používám čerstvou paměť, nezatěžuji Airtable.");
+            pouzitCache = true;
+            skryjKolecko();
+            return; // Zastaví spouštění, Airtable zůstává v klidu
+          }
         }
-      } catch (error) { console.error('Chyba při načítání lokálních dat:', error); }
+      } catch (error) { console.error('Chyba paměti:', error); }
 
       const baseId = process.env.EXPO_PUBLIC_AIRTABLE_BASE_ID;
       const token = process.env.EXPO_PUBLIC_AIRTABLE_TOKEN;
@@ -224,9 +209,27 @@ export default function useAirtableData(
         return;
       }
 
+      // Funkce, která náhodně počká, pokud je Airtable přetížený (Retry mechanismus)
+      const fetchSFrontou = async (url, options, maxPokusu = 4) => {
+        for (let i = 0; i < maxPokusu; i++) {
+          const res = await fetch(url, options);
+          if (res.ok) return res;
+          if (res.status === 429) {
+            const pauza = 1000 * Math.pow(1.5, i) + Math.random() * 1000;
+            console.warn(`Airtable plný, čekám ${Math.round(pauza)}ms...`);
+            await new Promise(resolve => setTimeout(resolve, pauza));
+          } else {
+            throw new Error(`Chyba: ${res.status}`);
+          }
+        }
+        throw new Error('Přetíženo.');
+      };
+
       try {
-        fetch(`https://api.airtable.com/v0/${baseId}/Nastaveni`, { headers: { Authorization: `Bearer ${token}` } })
-          .then(res => res.ok ? res.json() : null)
+        console.log("Stahuji nová data z Airtable...");
+        
+        fetchSFrontou(`https://api.airtable.com/v0/${baseId}/Nastaveni`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => res.json())
           .then(data => {
             if (data && data.records && data.records.length > 0) {
               const record = data.records.find(r => r.fields['Home']);
@@ -238,8 +241,8 @@ export default function useAirtableData(
             }
           }).catch(() => {});
 
-        fetch(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?view=Grid%20view`, { headers: { Authorization: `Bearer ${token}` } })
-          .then(res => res.ok ? res.json() : null)
+        fetchSFrontou(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent('Partneři')}?view=Grid%20view`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => res.json())
           .then(data => {
             if (data && data.records) {
               const upraveniPartneri = data.records.map(record => {
@@ -251,35 +254,24 @@ export default function useAirtableData(
             }
           }).catch(() => {});
 
-        const resProgram = await fetch(`https://api.airtable.com/v0/${baseId}/Program`, { headers: { Authorization: `Bearer ${token}` } });
-        if (!resProgram.ok) throw new Error('Chyba Airtable');
+        const resProgram = await fetchSFrontou(`https://api.airtable.com/v0/${baseId}/Program`, { headers: { Authorization: `Bearer ${token}` } });
         const dataProgram = await resProgram.json();
         
         const upravenaData = dataProgram.records
           .filter(record => record.fields['Název akce'])
           .map(record => {
             const f = record.fields;
-            const denText = f['Den'] || 'PO 12';
-            const casText = f['Čas'] || '--:--';
-            const mistoText = f['Místo'] || '';
-            const slozenyCas = [denText, casText, mistoText].filter(Boolean).join(' | ');
-
             const hosteList = [];
             const pridajHosta = (jmenoKey, roleKey, fotkaKey, popisKey, profeseKey) => {
               const jmeno = safeString(f[jmenoKey]);
-              if (jmeno !== '') {
-                hosteList.push({
-                  jmeno, role: safeString(f[roleKey]) || 'Přednášející',
-                  fotka: safeImage(f[fotkaKey]), popis: safeString(f[popisKey]), profese: safeString(f[profeseKey])
-                });
-              }
+              if (jmeno !== '') hosteList.push({ jmeno, role: safeString(f[roleKey]) || 'Přednášející', fotka: safeImage(f[fotkaKey]), popis: safeString(f[popisKey]), profese: safeString(f[profeseKey]) });
             };
             pridajHosta('Host', 'Role hosta', 'Fotka hosta', 'Popis hosta', 'Profese hosta');
             pridajHosta('Host 2', 'Role hosta 2', 'Fotka hosta 2', 'Popis hosta 2', 'Profese hosta 2');
             pridajHosta('Host 3', 'Role hosta 3', 'Fotka hosta 3', 'Popis hosta 3', 'Profese hosta 3');
 
             return {
-              id: record.id, den: denText, cas: slozenyCas, nazev: f['Název akce'],
+              id: record.id, den: f['Den'] || 'PO 12', cas: [f['Den'], f['Čas'], f['Místo']].filter(Boolean).join(' | '), nazev: f['Název akce'],
               hoste: hosteList, host: hosteList.map(h => h.jmeno).join(', '),
               roleHosta: hosteList.length > 1 ? 'Hosté' : (hosteList.length === 1 ? hosteList[0].role : 'Přednášející'),
               tag: f['Tagy'] || [], popis: f['Anotace'] || '', image: safeImage(f['Obrázek']),
@@ -298,51 +290,20 @@ export default function useAirtableData(
 
         setPrednaskyVsechny(upravenaData);
         AsyncStorage.setItem('@cached_program', JSON.stringify(upravenaData));
-        nactenyProgram = upravenaData;
+        AsyncStorage.setItem('@posledni_stazeni', Date.now().toString()); // Uložení času úspěšného stáhnutí
 
         const unikatniHosteMap = new Map();
         for (const item of upravenaData) {
-          for (const h of item.hoste) {
-            if (h.jmeno && h.jmeno.trim() !== '') {
-              if (!unikatniHosteMap.has(h.jmeno)) unikatniHosteMap.set(h.jmeno, h);
-            }
-          }
+          for (const h of item.hoste) if (h.jmeno && h.jmeno.trim() !== '' && !unikatniHosteMap.has(h.jmeno)) unikatniHosteMap.set(h.jmeno, h);
         }
-        const unikatniHosteList = Array.from(unikatniHosteMap.values());
-        unikatniHosteList.sort((a, b) => a.jmeno.localeCompare(b.jmeno));
+        const unikatniHosteList = Array.from(unikatniHosteMap.values()).sort((a, b) => a.jmeno.localeCompare(b.jmeno));
         setHosteVsechny(unikatniHosteList);
         AsyncStorage.setItem('@cached_hoste', JSON.stringify(unikatniHosteList));
 
-        if (Platform.OS === 'web') {
-          const urlParams = new URLSearchParams(window.location.search);
-          const sdileneId = urlParams.get('akce');
-          if (sdileneId) {
-            const nalezenaAkce = upravenaData.find(a => a.id === sdileneId);
-            if (nalezenaAkce) { setDetailAkce(nalezenaAkce); setAktivniTab('Program'); }
-          }
-          const sdileneOblibene = urlParams.get('oblibene');
-          if (sdileneOblibene) {
-            const sdileneIds = sdileneOblibene.split(',');
-            const platneSdileneIds = sdileneIds.filter(id => upravenaData.some(a => a.id === id));
-            if (platneSdileneIds.length > 0) {
-              setSdilenyVyberIds(platneSdileneIds); setAktivniTab('Oblíbené');
-              setVybranyDen('VŠE'); setVybranyTag(null); setActiveFilters({ den: [], typ: [], misto: [], hoste: [] });
-            }
-          }
-        }
-
-        setOblibeneIds(staraSrdicka => {
-          const platnaSrdicka = staraSrdicka.filter(id => upravenaData.some(akce => akce.id === id));
-          if (platnaSrdicka.length !== staraSrdicka.length) AsyncStorage.setItem('@moje_srdicka', JSON.stringify(platnaSrdicka));
-          return platnaSrdicka;
-        });
-
         skryjKolecko();
       } catch (err) {
-        console.log('Jsme offline, stahování dat se nepodařilo. Použije se cache.', err);
-        if (nactenyProgram.length === 0) {
-          setError('Jste offline a v mobilu zatím nemáte uložená žádná data z festivalu. Připojte se prosím na chvíli k internetu.');
-        }
+        console.log('Jsme offline nebo je přetíženo, stahování dat se nepodařilo.', err);
+        if (nactenyProgram.length === 0) setError('Nepodařilo se načíst data z festivalu. Zkuste to prosím za chvíli.');
         skryjKolecko();
       }
     };
@@ -350,16 +311,5 @@ export default function useAirtableData(
     nactiVse();
   }, []);
 
-  return {
-    prednaskyVsechny, setPrednaskyVsechny,
-    hosteVsechny, setHosteVsechny,
-    partneri, setPartneri,
-    heroImage, setHeroImage,
-    loading, setLoading,
-    error, setError,
-    oblibeneIds, setOblibeneIds,
-    mojeRezervace, setMojeRezervace,
-    themeColor, setThemeColor,
-    zobrazitObrazky, setZobrazitObrazky
-  };
+  return { prednaskyVsechny, setPrednaskyVsechny, hosteVsechny, setHosteVsechny, partneri, setPartneri, heroImage, setHeroImage, loading, setLoading, error, setError, oblibeneIds, setOblibeneIds, mojeRezervace, setMojeRezervace, themeColor, setThemeColor, zobrazitObrazky, setZobrazitObrazky };
 }
