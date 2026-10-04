@@ -163,6 +163,30 @@ export default function App() {
       `;
     }
   }, [themeColor]);
+
+  // 👇 POSLOUCHAČ PRO KLIKNUTÍ NA AKCI V MAPĚ 👇
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleMessage = (event) => {
+        // Pokud zpráva z mapy říká, že chce otevřít akci
+        if (event.data && event.data.type === 'OPEN_EVENT') {
+          const akceId = event.data.id;
+          // Najdeme celou akci v datech z Airtablu
+          const cilovaAkce = prednaskyVsechny.find(a => String(a.id) === String(akceId));
+          
+          if (cilovaAkce) {
+            setMapaModalVisible(false); // Zavře případné okno s mapou
+            setHomeMapaZvetsena(false); // Zavře velkou mapu
+            setAktivniTab('Program');   // Přepne tab na Program
+            otevriDetail(cilovaAkce);   // Vykreslí detaily akce!
+          }
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+      return () => window.removeEventListener('message', handleMessage);
+    }
+  }, [prednaskyVsechny]);
   
   const [rezervaceJmeno, setRezervaceJmeno] = useState('');
   const [rezervaceEmail, setRezervaceEmail] = useState('');
@@ -248,10 +272,12 @@ export default function App() {
     'ŽOO': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
     'ŽOO, Komenského 7': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
     'ŽOO, Komenského 9': { lat: 49.5970906, lng: 17.2627506, title: 'Židovská obec Olomouc' },
-    'Archiv UP': { lat: 49.5898, lng: 17.2144, title: 'Archiv UP' },
-    'VMO': { lat: 49.5975, lng: 17.2562, title: 'Vlastivědné muzeum Olomouc' },
-    'Prostějov': { lat: 49.4727, lng: 17.1121, title: 'Galerie Špalíček, Prostějov' },
-    'Židovský hřbitov': { lat: 49.5963414, lng: 17.2214072, title: 'Židovský hřbitov' }
+    'Archiv UP': { lat: 49.5935933, lng: 17.2102094, title: 'Archiv UP' },
+    'VMO': { lat: 49.5963553, lng: 17.2570528, title: 'Vlastivědné muzeum Olomouc' },
+    'Prostějov': { lat: 49.4710464, lng: 17.1121250, title: 'Galerie Špalíček, Prostějov' },
+    'Židovský hřbitov': { lat: 49.5963414, lng: 17.2214072, title: 'Židovský hřbitov' },
+    'Pekařská 21': { lat: 49.5955992, lng: 17.2534006, title: 'Pekařská 21' },
+    'MUO': { lat: 49.5962053, lng: 17.2563678, title: 'Muzeum umění Olomouc' }
   };
 
   const zobrazenePrednasky = prednaskyVsechny.filter(item => {
@@ -587,9 +613,8 @@ export default function App() {
               vybranyDen={vybranyDen}
               setVybranyDen={setVybranyDen}
               vybranyTag={vybranyTag}
-              setVybranyTag={setVybranyTag}
-              sdilenyVyberIds={sdilenyVyberIds}
               setSdilenyVyberIds={setSdilenyVyberIds}
+              sdilenyVyberIds={sdilenyVyberIds}
               zobrazitObrazky={zobrazitObrazky}
               prepniObrazky={prepniObrazky}
               oblibeneIds={oblibeneIds}

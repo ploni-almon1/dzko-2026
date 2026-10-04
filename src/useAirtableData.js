@@ -175,8 +175,8 @@ export default function useAirtableData(
         // ZJIŠTĚNÍ ČASU POSLEDNÍ AKTUALIZACE DAT
         const casPoslednihoStazeni = await AsyncStorage.getItem('@posledni_stazeni');
         const nyni = Date.now();
-        // 15 minut v milisekundách = 900 000
-        const LIMIT_CACHE = 900000; 
+        // 3 hodiny v milisekundách = 10 800 000
+        const LIMIT_CACHE = 10800000; 
 
         const cachedProgram = await AsyncStorage.getItem('@cached_program');
         const cachedHoste = await AsyncStorage.getItem('@cached_hoste');
