@@ -29,6 +29,8 @@ export default function EventDetail({
   stahniKalendar,
   detailScrollViewRef
 }) {
+  const [isLocationHovered, setIsLocationHovered] = React.useState(false);
+
   const casParts = item.cas.split(' | ');
   const timeText = casParts.length > 2 ? `${casParts[0]} | ${casParts[1]}` : item.cas;
   const mistoText = casParts.length > 2 ? casParts[2] : null;
@@ -90,8 +92,13 @@ export default function EventDetail({
                       {mistoText && (
                         <>
                           <Text style={styles.desktopCardTime}> | </Text>
-                          <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                            <Text style={styles.desktopCardTime}>{mistoText}</Text>
+                          <TouchableOpacity 
+                            onPress={() => handleLocationClick(mistoText)} 
+                            activeOpacity={0.6}
+                            onMouseEnter={() => setIsLocationHovered(true)}
+                            onMouseLeave={() => setIsLocationHovered(false)}
+                          >
+                            <Text style={[styles.desktopCardTime, isLocationHovered && { color: themeColor }]}>{mistoText}</Text>
                           </TouchableOpacity>
                         </>
                       )}
@@ -279,8 +286,13 @@ export default function EventDetail({
                   {mistoText && (
                     <>
                       <Text style={styles.cardTime}> | </Text>
-                      <TouchableOpacity onPress={() => handleLocationClick(mistoText)} activeOpacity={0.6}>
-                        <Text style={styles.locationLink}>{mistoText}</Text>
+                      <TouchableOpacity 
+                        onPress={() => handleLocationClick(mistoText)} 
+                        activeOpacity={0.6}
+                        onMouseEnter={() => setIsLocationHovered(true)}
+                        onMouseLeave={() => setIsLocationHovered(false)}
+                      >
+                        <Text style={[styles.locationLink, isLocationHovered && { color: themeColor }]}>{mistoText}</Text>
                       </TouchableOpacity>
                     </>
                   )}
